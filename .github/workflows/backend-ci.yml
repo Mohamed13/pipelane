@@ -1,0 +1,26 @@
+name: backend-ci
+
+on:
+  push:
+    paths:
+      - 'pipelane-api/**'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    paths:
+      - 'pipelane-api/**'
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Restore
+        run: dotnet restore pipelane-api/Pipelane.sln
+      - name: Build
+        run: dotnet build pipelane-api/Pipelane.sln -c Release --no-restore
+      - name: Test
+        run: dotnet test pipelane-api/tests/Pipelane.Tests/Pipelane.Tests.csproj -c Release --no-build --logger trx
+

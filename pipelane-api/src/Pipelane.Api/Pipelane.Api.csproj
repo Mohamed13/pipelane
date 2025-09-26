@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Pipelane.Infrastructure/Pipelane.Infrastructure.csproj" />
+    <ProjectReference Include="../Pipelane.Application/Pipelane.Application.csproj" />
+    <ProjectReference Include="../Pipelane.Domain/Pipelane.Domain.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Serilog.AspNetCore" Version="8.*" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.*" />
+    <PackageReference Include="FluentValidation.AspNetCore" Version="11.*" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.*" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.*" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.*" />
+    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.*" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.*" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.*">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+</Project>

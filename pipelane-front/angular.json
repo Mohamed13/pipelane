@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json.schemastore.org/angular.json",
+  "version": 1,
+  "projects": {
+    "pipelane-front": {
+      "projectType": "application",
+      "root": "",
+      "sourceRoot": "src",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:browser",
+          "options": {
+            "outputPath": "dist/pipelane-front",
+            "index": "src/index.html",
+            "main": "src/main.ts",
+            "polyfills": ["zone.js"],
+            "tsConfig": "tsconfig.app.json",
+            "assets": [
+              "src/favicon.ico",
+              "src/assets"
+            ],
+            "styles": [
+              "src/styles.scss"
+            ]
+          }
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "options": { "browserTarget": "pipelane-front:build" }
+        },
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": { "polyfills": ["zone.js", "zone.js/testing"] }
+        }
+      }
+    }
+  },
+  "cli": { "analytics": false }
+}
+

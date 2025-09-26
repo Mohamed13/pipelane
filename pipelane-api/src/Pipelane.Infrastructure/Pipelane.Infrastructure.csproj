@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Pipelane.Domain/Pipelane.Domain.csproj" />
+    <ProjectReference Include="../Pipelane.Application/Pipelane.Application.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.*" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.*">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.*" />
+    <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="8.*" />
+    <PackageReference Include="Serilog" Version="3.*" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="5.*" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.*" />
+  </ItemGroup>
+</Project>

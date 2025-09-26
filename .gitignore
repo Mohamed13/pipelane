@@ -1,0 +1,28 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+dist/
+coverage/
+pipelane-front/node_modules/
+pipelane-front/dist/
+pipelane-front/coverage/
+pipelane-front/.env
+
+# Dotnet
+**/bin/
+**/obj/
+*.user
+*.suo
+*.swp
+
+# Logs
+*.log
+
+# Tooling
+.vs/
+.vscode/
+*.tgz
+

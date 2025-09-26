@@ -1,0 +1,24 @@
+:root {
+  --bg: #ffffff;
+  --fg: #111111;
+  --muted: #666666;
+  --primary: #0d6efd;
+}
+html.theme-dark {
+  --bg: #0f1115;
+  --fg: #e5e7eb;
+  --muted: #9ca3af;
+  --primary: #60a5fa;
+}
+html, body { height: 100%; }
+body {
+  margin: 0; font-family: Inter, system-ui, Arial, sans-serif;
+  background: var(--bg); color: var(--fg);
+}
+.container { max-width: 1200px; margin: 0 auto; padding: 1rem; }
+.header { display:flex; align-items:center; gap:1rem; padding: .75rem 1rem; border-bottom:1px solid #ddd; }
+.spacer { flex:1; }
+button { cursor:pointer; background: var(--primary); color: white; border: none; padding: .5rem .75rem; border-radius: .4rem; }
+input, select { padding: .5rem; border-radius: .4rem; border: 1px solid #ccc; background: transparent; color: var(--fg) }
+.muted { color: var(--muted); }
+

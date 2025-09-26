@@ -1,0 +1,60 @@
+name: frontend-ci
+
+on:
+  push:
+    paths:
+      - 'pipelane-front/**'
+      - '.github/workflows/frontend-ci.yml'
+  pull_request:
+    paths:
+      - 'pipelane-front/**'
+  workflow_dispatch:
+    inputs:
+      run-e2e:
+        description: "Run Cypress E2E"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: pipelane-front/package.json
+      - name: Install
+        working-directory: pipelane-front
+        run: npm ci || npm install
+      - name: Build
+        working-directory: pipelane-front
+        run: npm run build --if-present
+      - name: Test
+        working-directory: pipelane-front
+        run: npm test -- --ci --reporters=default --reporters=jest-junit
+
+  e2e:
+    needs: build-test
+    if: ${{ inputs.run-e2e || vars.RUN_E2E == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: pipelane-front/package.json
+      - name: Install
+        working-directory: pipelane-front
+        run: npm ci || npm install
+      - name: Run Cypress
+        uses: cypress-io/github-action@v6
+        with:
+          working-directory: pipelane-front
+          start: npm start
+          wait-on: 'http://localhost:4200'
+        env:
+          API_BASE_URL: http://localhost:5000
