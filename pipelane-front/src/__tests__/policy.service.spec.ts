@@ -8,8 +8,7 @@ describe('PolicyService', () => {
   });
   it('blocks WA text after 24h', () => {
     const svc = new PolicyService();
-    const ok = svc.isWhatsAppTextAllowed(new Date(Date.now() - 25*3600_000).toISOString());
+    const ok = svc.isWhatsAppTextAllowed(new Date(Date.now() - 25 * 3600_000).toISOString());
     expect(ok).toBe(false);
   });
 });
-

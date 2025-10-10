@@ -1,8 +1,10 @@
 using System.Text.Json;
+
 using Microsoft.EntityFrameworkCore;
+
 using Pipelane.Application.Abstractions;
-using Pipelane.Application.Storage;
 using Pipelane.Application.DTOs;
+using Pipelane.Application.Storage;
 using Pipelane.Domain.Entities;
 using Pipelane.Domain.Enums;
 
@@ -72,7 +74,7 @@ public sealed class MessagingService : IMessagingService
         if (req.Type.Equals("template", StringComparison.OrdinalIgnoreCase))
         {
             var template = await _db.Templates.FirstAsync(t => t.TenantId == contact.TenantId && t.Name == (req.TemplateName ?? "") && t.Channel == req.Channel && t.Lang == (req.Lang ?? "en"), ct);
-            var vars = req.Variables ?? new Dictionary<string,string>();
+            var vars = req.Variables ?? new Dictionary<string, string>();
 
             // enqueue to outbox for reliability
             var outbox = new OutboxMessage

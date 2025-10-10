@@ -1,0 +1,12 @@
+---
+interface Props {
+  metric: string;
+  description: string;
+}
+
+const { metric, description } = Astro.props as Props;
+---
+<div class="reveal rounded-3xl border border-[var(--line)] bg-[rgba(255,255,255,0.05)] p-6 text-left">
+  <p class="text-3xl font-semibold text-[var(--color-primary)]">{metric}</p>
+  <p class="mt-4 text-base text-[var(--color-muted)]">{description}</p>
+</div>

@@ -1,0 +1,54 @@
+---
+import { Icon } from "@astrojs/icon/components";
+---
+<button
+  type="button"
+  class="btn-ghost w-12 justify-center rounded-full border border-transparent bg-[rgba(255,255,255,0.06)] p-0"
+  data-theme-toggle
+  aria-label="Basculer le thème"
+>
+  <Icon name="ph:moon-stars-duotone" width="22" height="22" class="toggle-icon toggle-icon--dark" />
+  <Icon name="ph:sun-duotone" width="22" height="22" class="toggle-icon toggle-icon--light hidden" />
+</button>
+<script is:inline>
+  (() => {
+    const applyTheme = (mode) => {
+      const root = document.documentElement;
+      if (!root) return;
+      const useLight = mode === "light";
+      root.classList.toggle("light", useLight);
+      root.classList.toggle("dark", !useLight);
+      root.dataset.theme = useLight ? "light" : "dark";
+      document.querySelectorAll("[data-theme-toggle]").forEach((btn) => {
+        btn.setAttribute("aria-pressed", useLight ? "true" : "false");
+        const darkIcon = btn.querySelector(".toggle-icon--dark");
+        const lightIcon = btn.querySelector(".toggle-icon--light");
+        if (darkIcon && lightIcon) {
+          darkIcon.classList.toggle("hidden", useLight);
+          lightIcon.classList.toggle("hidden", !useLight);
+        }
+      });
+    };
+
+    const stored = localStorage.getItem("theme");
+    if (stored === "dark" || stored === "light") {
+      applyTheme(stored);
+    }
+
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const button = target.closest("[data-theme-toggle]");
+      if (!button) return;
+      const isLight = document.documentElement.classList.contains("light");
+      const next = isLight ? "dark" : "light";
+      localStorage.setItem("theme", next);
+      applyTheme(next);
+    });
+
+    window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", (event) => {
+      if (localStorage.getItem("theme")) return;
+      applyTheme(event.matches ? "light" : "dark");
+    });
+  })();
+</script>

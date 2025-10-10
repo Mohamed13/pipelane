@@ -4,6 +4,11 @@
     "types": []
   },
   "files": ["src/main.ts"],
-  "include": ["src/**/*.d.ts", "src/**/*.ts"]
+  "include": ["src/**/*.d.ts", "src/**/*.ts"],
+  "exclude": [
+    "src/**/*.spec.ts",
+    "src/**/__tests__/**/*.ts",
+    "src/app/api/openapi-types.ts",
+    "src/app/core/models.ts"
+  ]
 }
-

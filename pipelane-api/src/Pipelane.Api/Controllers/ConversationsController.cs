@@ -1,12 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+
 using Pipelane.Application.Storage;
 
 namespace Pipelane.Api.Controllers;
 
 [ApiController]
 [Microsoft.AspNetCore.Authorization.Authorize]
-[Route("conversations")] 
+[Route("conversations")]
 public class ConversationsController : ControllerBase
 {
     private readonly IAppDbContext _db;

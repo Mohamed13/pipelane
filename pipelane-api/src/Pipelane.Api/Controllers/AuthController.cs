@@ -1,45 +1,112 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using Pipelane.Domain.Entities;
+using Pipelane.Infrastructure.Persistence;
+using Pipelane.Infrastructure.Security;
 
 namespace Pipelane.Api.Controllers;
-
-public record LoginRequest(string Email, string Password, Guid? TenantId);
-public record LoginResponse(string Token, Guid TenantId, string Role);
 
 [ApiController]
 [Route("auth")]
 public class AuthController : ControllerBase
 {
-    private readonly IConfiguration _cfg;
-    public AuthController(IConfiguration cfg) => _cfg = cfg;
+    private readonly AppDbContext _db;
+    private readonly IPasswordHasher _hasher;
+    private readonly IConfiguration _config;
+
+    public AuthController(AppDbContext db, IPasswordHasher hasher, IConfiguration config)
+    {
+        _db = db; _hasher = hasher; _config = config;
+    }
+
+    public record LoginRequest(string Email, string Password, Guid? TenantId);
+    public record RegisterRequest(string Email, string Password, string? TenantName);
 
     [AllowAnonymous]
     [HttpPost("login")]
-    public IActionResult Login([FromBody] LoginRequest req)
+    public async Task<IActionResult> Login([FromBody] LoginRequest req, CancellationToken ct)
     {
-        // Demo in-memory auth: any email/password accepted, role=owner; tenant from request or new
-        var tenantId = req.TenantId ?? Guid.NewGuid();
-        var key = _cfg["JWT_KEY"] ?? Environment.GetEnvironmentVariable("JWT_KEY") ?? "dev-secret-key-please-change";
-        var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
+        if (string.IsNullOrWhiteSpace(req.Email) || string.IsNullOrEmpty(req.Password))
+            return Unauthorized();
 
-        var claims = new[]
+        // Query without tenant filter to locate the user by email (or specific tenant if provided)
+        var query = _db.Users.AsNoTracking().IgnoreQueryFilters().AsQueryable();
+        if (req.TenantId is Guid tid && tid != Guid.Empty)
+            query = query.Where(u => u.TenantId == tid);
+
+        var user = await query.FirstOrDefaultAsync(u => u.Email == req.Email, ct);
+        if (user is null) return Unauthorized();
+        if (!_hasher.Verify(req.Password, user.PasswordHash)) return Unauthorized();
+
+        var token = CreateJwt(user);
+        return Ok(new { token, tenantId = user.TenantId, role = user.Role });
+    }
+
+    [AllowAnonymous]
+    [HttpPost("register")]
+    public async Task<IActionResult> Register([FromBody] RegisterRequest req, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(req.Email) || string.IsNullOrWhiteSpace(req.Password))
+            return BadRequest();
+
+        // Create a new tenant and owner user
+        var tenant = new Tenant { Id = Guid.NewGuid(), Name = string.IsNullOrWhiteSpace(req.TenantName) ? "Tenant" : req.TenantName! };
+        var exists = await _db.Users.AsNoTracking().IgnoreQueryFilters().AnyAsync(u => u.Email == req.Email, ct);
+        if (exists) return Conflict(new { message = "Email already exists" });
+
+        _db.Tenants.Add(tenant);
+        var user = new User
         {
-            new Claim(JwtRegisteredClaimNames.Sub, req.Email),
-            new Claim("tid", tenantId.ToString()),
-            new Claim(ClaimTypes.Role, "owner")
+            Id = Guid.NewGuid(),
+            TenantId = tenant.Id,
+            Email = req.Email,
+            PasswordHash = _hasher.Hash(req.Password),
+            Role = "owner",
+            CreatedAt = DateTime.UtcNow
         };
-        var token = new JwtSecurityToken(
+        _db.Users.Add(user);
+        await _db.SaveChangesAsync(ct);
+
+        var token = CreateJwt(user);
+        return Ok(new { token, tenantId = user.TenantId, role = user.Role });
+    }
+
+    [Authorize]
+    [HttpGet("me")]
+    public IActionResult Me()
+    {
+        var claims = User.Claims.ToDictionary(c => c.Type, c => c.Value);
+        return Ok(new { sub = claims.GetValueOrDefault(JwtRegisteredClaimNames.Sub), email = claims.GetValueOrDefault(JwtRegisteredClaimNames.Email), tid = claims.GetValueOrDefault("tid"), role = claims.GetValueOrDefault(ClaimTypes.Role) });
+    }
+
+    private string CreateJwt(User user)
+    {
+        var key = _config["JWT_KEY"] ?? "dev-secret-key-please-change";
+        var keyBytes = Encoding.UTF8.GetBytes(key);
+        if (keyBytes.Length < 32) keyBytes = SHA256.HashData(keyBytes);
+        var signingKey = new SymmetricSecurityKey(keyBytes);
+        var creds = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
+
+        var claims = new List<Claim>
+        {
+            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new(JwtRegisteredClaimNames.Email, user.Email),
+            new("tid", user.TenantId.ToString()),
+            new(ClaimTypes.Role, user.Role)
+        };
+
+        var jwt = new JwtSecurityToken(
             claims: claims,
-            notBefore: DateTime.UtcNow,
             expires: DateTime.UtcNow.AddHours(8),
-            signingCredentials: new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256)
+            signingCredentials: creds
         );
-        var jwt = new JwtSecurityTokenHandler().WriteToken(token);
-        return Ok(new LoginResponse(jwt, tenantId, "owner"));
+        return new JwtSecurityTokenHandler().WriteToken(jwt);
     }
 }
-

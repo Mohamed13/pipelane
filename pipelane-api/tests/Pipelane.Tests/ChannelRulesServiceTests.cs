@@ -2,13 +2,17 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+
 using FluentAssertions;
+
 using Microsoft.EntityFrameworkCore;
-using Xunit;
+
 using Pipelane.Application.Services;
 using Pipelane.Application.Storage;
 using Pipelane.Domain.Entities;
 using Pipelane.Domain.Enums;
+
+using Xunit;
 
 namespace Pipelane.Tests;
 
@@ -20,6 +24,7 @@ public class FakeDbContext : DbContext, IAppDbContext
     public DbSet<Consent> Consents => Set<Consent>();
     public DbSet<Conversation> Conversations => Set<Conversation>();
     public DbSet<Message> Messages => Set<Message>();
+    public DbSet<MessageEvent> MessageEvents => Set<MessageEvent>();
     public DbSet<Template> Templates => Set<Template>();
     public DbSet<Campaign> Campaigns => Set<Campaign>();
     public DbSet<Event> Events => Set<Event>();
@@ -27,6 +32,8 @@ public class FakeDbContext : DbContext, IAppDbContext
     public DbSet<LeadScore> LeadScores => Set<LeadScore>();
     public DbSet<ChannelSettings> ChannelSettings => Set<ChannelSettings>();
     public DbSet<OutboxMessage> Outbox => Set<OutboxMessage>();
+    public DbSet<User> Users => Set<User>();
+    public DbSet<FollowupTask> FollowupTasks => Set<FollowupTask>();
 }
 
 public class ChannelRulesServiceTests

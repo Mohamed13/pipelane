@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+
 using Pipelane.Application.DTOs;
 using Pipelane.Application.Storage;
 using Pipelane.Domain.Entities;
@@ -8,7 +9,7 @@ namespace Pipelane.Api.Controllers;
 
 [ApiController]
 [Microsoft.AspNetCore.Authorization.Authorize]
-[Route("campaigns")] 
+[Route("campaigns")]
 public class CampaignsController : ControllerBase
 {
     private readonly IAppDbContext _db;

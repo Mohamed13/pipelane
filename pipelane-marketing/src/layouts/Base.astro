@@ -1,0 +1,209 @@
+---
+import "@styles/globals.css";
+
+interface Props {
+  title?: string;
+  description?: string;
+  canonical?: string;
+}
+
+const {
+  title = "Pipelane — centralisez, automatisez, convertissez.",
+  description =
+    "Pipelane est la plateforme d’automations omni-canales pour orchestrer WhatsApp, Email et SMS depuis une console unique.",
+  canonical = "https://www.pipelane.app"
+} = Astro.props as Props;
+---
+<html lang="fr" class="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="theme-color" content="#0b0f17" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f7f9ff" media="(prefers-color-scheme: light)" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Pipelane" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content="https://www.pipelane.app/og-cover.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content="https://www.pipelane.app/og-cover.png" />
+    <meta name="twitter:creator" content="@pipelane" />
+
+    <script is:inline>
+      const root = document.documentElement;
+      const stored = localStorage.getItem("theme");
+      const media = window.matchMedia("(prefers-color-scheme: light)");
+      const useLight = stored === "light" || (!stored && media.matches);
+      root.classList.toggle("light", useLight);
+      root.classList.toggle("dark", !useLight);
+      root.dataset.theme = useLight ? "light" : "dark";
+    </script>
+  </head>
+  <body class="min-h-screen bg-[var(--bg-base)] text-[var(--color-text)] bg-grid">
+    <div class="pointer-events-none fixed inset-0 -z-10 bg-hero-gradient opacity-90"></div>
+    <div class="pointer-events-none fixed inset-0 -z-20" aria-hidden="true">
+      <div class="absolute inset-0 translate-y-[-10%] bg-[radial-gradient(circle_at_20%_-10%,rgba(117,240,255,0.22),transparent_65%)]"></div>
+      <div class="absolute inset-0 translate-y-[15%] bg-[radial-gradient(circle_at_80%_120%,rgba(96,247,163,0.18),transparent_70%)]"></div>
+    </div>
+    <slot />
+    <script is:inline>
+      (() => {
+        const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+        const activateReveal = () => {
+          const elements = Array.from(document.querySelectorAll('.reveal'));
+          if (!elements.length) {
+            return;
+          }
+
+          const showImmediately = prefersReducedMotion.matches || !("IntersectionObserver" in window);
+          if (showImmediately) {
+            elements.forEach((el) => el.classList.add('reveal-in'));
+            return;
+          }
+
+          const observer = new IntersectionObserver(
+            (entries, obs) => {
+              entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                  entry.target.classList.add('reveal-in');
+                  obs.unobserve(entry.target);
+                }
+              });
+            },
+            {
+              threshold: 0.15,
+              rootMargin: '0px 0px -10% 0px'
+            }
+          );
+
+          elements.forEach((el, index) => {
+            el.style.transitionDelay = `${Math.min(index * 40, 320)}ms`;
+            observer.observe(el);
+          });
+        };
+
+        const activateNavSpy = () => {
+          const navLinks = Array.from(document.querySelectorAll('[data-nav-link]'));
+          if (!navLinks.length) {
+            return;
+          }
+
+          const sections = navLinks
+            .map((link) => {
+              const hash = link.getAttribute('href');
+              if (!hash || !hash.startsWith('#')) {
+                return null;
+              }
+              const section = document.querySelector(hash);
+              return section instanceof HTMLElement ? section : null;
+            })
+            .filter(Boolean);
+
+          const setActive = (id) => {
+            navLinks.forEach((link) => {
+              const isActive = link.getAttribute('href') === id;
+              link.classList.toggle('active', Boolean(isActive));
+            });
+          };
+
+          if (!("IntersectionObserver" in window)) {
+            const handleScroll = () => {
+              const threshold = window.scrollY + window.innerHeight * 0.25;
+              let activeId = undefined;
+              for (const section of sections) {
+                if (section.offsetTop <= threshold) {
+                  activeId = `#${section.id}`;
+                }
+              }
+              setActive(activeId);
+            };
+            window.addEventListener('scroll', handleScroll, { passive: true });
+            handleScroll();
+            return;
+          }
+
+          const observer = new IntersectionObserver(
+            (entries) => {
+              let topEntry = null;
+              entries.forEach((entry) => {
+                if (!entry.isIntersecting) {
+                  return;
+                }
+                const target = entry.target;
+                if (!(target instanceof HTMLElement)) {
+                  return;
+                }
+                if (!topEntry) {
+                  topEntry = target;
+                  return;
+                }
+                if (target.offsetTop < topEntry.offsetTop) {
+                  topEntry = target;
+                }
+              });
+              if (topEntry) {
+                setActive(`#${topEntry.id}`);
+              }
+            },
+            {
+              rootMargin: '-40% 0px -40% 0px',
+              threshold: 0.25
+            }
+          );
+
+          sections.forEach((section) => observer.observe(section));
+        };
+
+        const activateParallax = () => {
+          if (prefersReducedMotion.matches) {
+            return;
+          }
+          const elements = Array.from(document.querySelectorAll('[data-parallax]'));
+          if (!elements.length) {
+            return;
+          }
+          let ticking = false;
+
+          const update = () => {
+            elements.forEach((el) => {
+              if (!(el instanceof HTMLElement)) {
+                return;
+              }
+              const speed = parseFloat(el.dataset.parallaxSpeed || '0.35');
+              const rect = el.getBoundingClientRect();
+              const offset = rect.top + rect.height / 2 - window.innerHeight / 2;
+              const translate = -(offset * speed) / window.innerHeight * 60;
+              el.style.transform = `translate3d(0, ${translate.toFixed(2)}px, 0)`;
+            });
+            ticking = false;
+          };
+
+          const requestTick = () => {
+            if (!ticking) {
+              ticking = true;
+              window.requestAnimationFrame(update);
+            }
+          };
+
+          window.addEventListener('scroll', requestTick, { passive: true });
+          window.addEventListener('resize', requestTick);
+          requestTick();
+        };
+
+        activateReveal();
+        activateNavSpy();
+        activateParallax();
+      })();
+    </script>
+  </body>
+</html>

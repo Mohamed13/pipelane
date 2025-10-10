@@ -1,27 +1,26 @@
 version: '3.9'
 services:
-  postgres:
-    image: postgres:16
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: pipelane
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "Your_strong_password123!"
     ports:
-      - "5432:5432"
+      - "1433:1433"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - mssqldata:/var/opt/mssql
 
   api:
     build:
       context: ./pipelane-api
       dockerfile: Dockerfile
     environment:
-      DB_CONNECTION: Host=postgres;Port=5432;Database=pipelane;Username=postgres;Password=postgres
+      DB_CONNECTION: Server=sqlserver;Database=Pipelane;User Id=sa;Password=Your_strong_password123!;TrustServerCertificate=true;MultipleActiveResultSets=true
       ENCRYPTION_KEY: dev-key
       JWT_KEY: dev-secret-key-please-change
       ASPNETCORE_URLS: http://0.0.0.0:5000
     depends_on:
-      - postgres
+      - sqlserver
     ports:
       - "5000:5000"
 
@@ -37,5 +36,4 @@ services:
       - "8080:80"
 
 volumes:
-  pgdata:
-
+  mssqldata:

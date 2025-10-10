@@ -1,16 +1,30 @@
 import { Injectable, signal } from '@angular/core';
 
+type ThemeMode = 'classic' | 'dark';
+
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
-  theme = signal<'classic'|'dark'>((localStorage.getItem('theme') as any) || 'classic');
-  constructor() { this.apply(); }
-  toggle() {
-    this.theme.set(this.theme() === 'dark' ? 'classic' : 'dark');
+  private readonly storageKey = 'theme';
+  theme = signal<ThemeMode>(this.readInitialTheme());
+
+  constructor() {
     this.apply();
   }
-  private apply() {
-    localStorage.setItem('theme', this.theme());
-    document.documentElement.classList.toggle('theme-dark', this.theme() === 'dark');
+
+  toggle(): void {
+    const next: ThemeMode = this.theme() === 'dark' ? 'classic' : 'dark';
+    this.theme.set(next);
+    this.apply();
+  }
+
+  private apply(): void {
+    const mode = this.theme();
+    localStorage.setItem(this.storageKey, mode);
+    document.documentElement.classList.toggle('theme-dark', mode === 'dark');
+  }
+
+  private readInitialTheme(): ThemeMode {
+    const stored = localStorage.getItem(this.storageKey);
+    return stored === 'dark' ? 'dark' : 'classic';
   }
 }
-

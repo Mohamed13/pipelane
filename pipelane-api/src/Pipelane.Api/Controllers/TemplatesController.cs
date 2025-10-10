@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+
 using Pipelane.Application.Storage;
 using Pipelane.Domain.Entities;
 
@@ -7,7 +8,7 @@ namespace Pipelane.Api.Controllers;
 
 [ApiController]
 [Microsoft.AspNetCore.Authorization.Authorize]
-[Route("templates")] 
+[Route("templates")]
 public class TemplatesController : ControllerBase
 {
     private readonly IAppDbContext _db;

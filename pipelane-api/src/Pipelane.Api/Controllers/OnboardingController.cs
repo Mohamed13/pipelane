@@ -1,5 +1,7 @@
 using System.Text.Json;
+
 using Microsoft.AspNetCore.Mvc;
+
 using Pipelane.Application.DTOs;
 using Pipelane.Application.Storage;
 using Pipelane.Domain.Entities;
@@ -9,7 +11,7 @@ namespace Pipelane.Api.Controllers;
 
 [ApiController]
 [Microsoft.AspNetCore.Authorization.Authorize]
-[Route("onboarding")] 
+[Route("onboarding")]
 public class OnboardingController : ControllerBase
 {
     private readonly IAppDbContext _db;

@@ -25,7 +25,7 @@ public sealed class AesGcmEncryptionService : IEncryptionService
         var plain = Encoding.UTF8.GetBytes(plaintext);
         var cipher = new byte[plain.Length];
         var tag = new byte[16];
-        using var gcm = new AesGcm(_key);
+        using var gcm = new AesGcm(_key, 16);
         gcm.Encrypt(nonce, plain, cipher, tag);
         var combined = new byte[nonce.Length + tag.Length + cipher.Length];
         Buffer.BlockCopy(nonce, 0, combined, 0, nonce.Length);
@@ -44,7 +44,7 @@ public sealed class AesGcmEncryptionService : IEncryptionService
         Buffer.BlockCopy(data, nonce.Length, tag, 0, tag.Length);
         Buffer.BlockCopy(data, nonce.Length + tag.Length, cipher, 0, cipher.Length);
         var plain = new byte[cipher.Length];
-        using var gcm = new AesGcm(_key);
+        using var gcm = new AesGcm(_key, 16);
         gcm.Decrypt(nonce, cipher, tag, plain);
         return Encoding.UTF8.GetString(plain);
     }

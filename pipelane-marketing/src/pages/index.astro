@@ -1,0 +1,406 @@
+---
+import BaseLayout from "@layouts/Base.astro";
+import Navbar from "@components/Navbar.astro";
+import NeonBadge from "@components/NeonBadge.astro";
+import Section from "@components/Section.astro";
+import FeatureCard from "@components/FeatureCard.astro";
+import IntegrationCard from "@components/IntegrationCard.astro";
+import PricingCard from "@components/PricingCard.astro";
+import FAQItem from "@components/FAQItem.astro";
+import CTA from "@components/CTA.astro";
+import TimelineStep from "@components/TimelineStep.astro";
+import StatCard from "@components/StatCard.astro";
+
+const timeline = [
+  {
+    title: "Capture & import",
+    description: "Formulaires, webhooks, intégrations CRM, import CSV en quelques clics."
+  },
+  {
+    title: "Orchestration & règles",
+    description: "Fenêtre WhatsApp, séquences conditionnelles, quiet hours, segmentation dynamique."
+  },
+  {
+    title: "Envoi & suivi",
+    description: "Statuts Sent / Delivered / Open / Failed visualisés en temps réel, alerts et relances."
+  },
+  {
+    title: "Analytics & conversions",
+    description: "Sources, templates, ROI et attribution multi-canale dans un cockpit unifié."
+  }
+];
+
+const features = [
+  {
+    icon: "ph:arrows-left-right-duotone",
+    title: "Omni-canal",
+    description: "WhatsApp, Email, SMS dans une seule timeline partagée par vos équipes."
+  },
+  {
+    icon: "ph:flow-arrow-duotone",
+    title: "Règles & séquences",
+    description: "Triggers, conditions, actions et fenêtres horaires pour orchestrer vos campagnes."
+  },
+  {
+    icon: "ph:chart-donut-duotone",
+    title: "Analytics avancées",
+    description: "Suivez sent/delivered/open/failed par template, canal, segment, opérateur."
+  },
+  {
+    icon: "ph:clock-counter-clockwise-duotone",
+    title: "Follow-ups intelligents",
+    description: "Relances auto si pas de réponse, avec priorisation par scoring d’engagement."
+  },
+  {
+    icon: "ph:webhooks-logo-duotone",
+    title: "Webhooks & intégrations",
+    description: "Connectez n8n, Resend, Slack, Meta Cloud, CRM maison via webhooks sécurisés."
+  },
+  {
+    icon: "ph:buildings-duotone",
+    title: "Multi-tenant & rôles",
+    description: "Segmentation stricte, audit logs et rôles granulaires pour chaque tenant."
+  }
+];
+
+const integrations = [
+  { icon: "simple-icons:whatsapp", label: "WhatsApp Cloud" },
+  { icon: "simple-icons:resend", label: "Resend" },
+  { icon: "simple-icons:n8n", label: "n8n" },
+  { icon: "simple-icons:slack", label: "Slack" },
+  { icon: "ph:envelope-duotone", label: "SMTP" },
+  { icon: "ph:brackets-curly-duotone", label: "Webhooks" }
+];
+
+const pricing = [
+  {
+    tier: "Starter",
+    price: "49€/mois",
+    description: "1 tenant, 3 utilisateurs, 10k events",
+    features: ["Console unifiée", "Workflows no-code", "Support email"],
+    highlight: false
+  },
+  {
+    tier: "Growth",
+    price: "149€/mois",
+    description: "5 tenants, 15 utilisateurs, 100k events",
+    features: ["Rôles avancés", "API temps réel", "Support prioritaire"],
+    highlight: true
+  },
+  {
+    tier: "Scale",
+    price: "Sur mesure",
+    description: "SSO, SLA, support dédié",
+    features: ["SLA 99,9%", "Tenant illimités", "Intégrations custom"],
+    highlight: false
+  }
+];
+
+const faq = [
+  {
+    question: "Puis-je utiliser uniquement l’email ?",
+    answer: "Oui, chaque canal est optionnel et vous gardez le contrôle sur la configuration et les coûts."
+  },
+  {
+    question: "Gérez-vous la fenêtre WhatsApp 24h ?",
+    answer: "Oui, des règles automatiques vérifient la fenêtre et déclenchent des relances adaptées." 
+  },
+  {
+    question: "Puis-je brancher mes webhooks entrants ?",
+    answer: "Oui, nous exposons des endpoints sécurisés par canal avec vérification de signature."
+  },
+  {
+    question: "Données & sécurité ?",
+    answer: "Multi-tenant, chiffrage des secrets, audit complet et contrôle RBAC sur chaque action."
+  },
+  {
+    question: "Essai gratuit ?",
+    answer: "Démo guidée et sandbox disponibles pour tester vos cas d’usage avant abonnement."
+  },
+  {
+    question: "Migration depuis mon outil actuel ?",
+    answer: "Import CSV, APIs et accompagnement pour récupérer vos contacts, templates et historiques."
+  }
+];
+
+const benefits = [
+  {
+    metric: "+20–35%",
+    description: "de taux de réponse grâce aux séquences et relances intelligentes."
+  },
+  {
+    metric: "Jusqu’à 2h",
+    description: "gagnées par opérateur et par jour via automatisations & templates."
+  },
+  {
+    metric: "Vue consolidée",
+    description: "pour prioriser ce qui convertit vraiment, par canal et template."
+  }
+];
+
+const howItWorks = [
+  "Connectez vos canaux (WhatsApp, Email, SMS)",
+  "Créez vos règles (si/alors) et séquences",
+  "Lancez vos campagnes et suivez les conversions"
+];
+
+const quotes = [
+  "Mise en prod en 48h",
+  "+22% de réponses",
+  "On a enfin une vision claire"
+];
+
+const logos = ["NovaTech", "Velia", "QuantifyX", "Orbitline", "Bluehawk"];
+---
+<BaseLayout>
+  <Navbar />
+  <main>
+    <section id="hero" class="relative isolate overflow-hidden pt-44 pb-28">
+      <div class="container grid gap-16 lg:grid-cols-[1fr_1fr] lg:items-center">
+        <div class="reveal space-y-8">
+          <NeonBadge text="Plateforme d’automations omni-canales" />
+          <div class="space-y-4">
+            <h1 class="text-4xl font-semibold tracking-tight sm:text-5xl">
+              Pipelane — centralisez, automatisez, convertissez.
+            </h1>
+            <p class="max-w-xl text-lg text-[var(--color-muted)]">
+              Une console unique pour capter, envoyer et suivre tous vos messages (WhatsApp, Email, SMS), avec règles intelligentes, analytics temps réel et suivi multi-tenant.
+            </p>
+          </div>
+          <div class="flex flex-wrap gap-3 text-xs font-medium uppercase tracking-[0.3em] text-[var(--color-muted)]">
+            <span class="chip">Multi-tenant</span>
+            <span class="chip">Automations no-code</span>
+            <span class="chip">Analytics temps réel</span>
+          </div>
+          <div class="flex flex-wrap gap-4">
+            <a href="#contact" class="btn-primary">
+              Demander une démo
+            </a>
+            <a href="#product" class="btn-ghost">
+              Voir le produit
+            </a>
+          </div>
+          <form
+            id="hero-form"
+            class="grid gap-4 rounded-[28px] border border-[var(--line)] bg-[rgba(255,255,255,0.04)] p-6 backdrop-blur-xl sm:grid-cols-2"
+            action="/api/demo-request"
+            method="post"
+            data-astro-reload
+          >
+            <div class="grid gap-2">
+              <label class="text-xs font-semibold uppercase tracking-[0.15em]" for="hero-name">Nom</label>
+              <input
+                id="hero-name"
+                name="name"
+                type="text"
+                required
+                placeholder="Votre nom"
+                class="w-full rounded-2xl border border-[var(--line)] bg-[rgba(11,15,23,0.65)] px-4 py-3 text-sm text-[var(--color-text)] outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/40"
+              />
+            </div>
+            <div class="grid gap-2">
+              <label class="text-xs font-semibold uppercase tracking-[0.15em]" for="hero-email">Email</label>
+              <input
+                id="hero-email"
+                name="email"
+                type="email"
+                required
+                placeholder="vous@entreprise.com"
+                class="w-full rounded-2xl border border-[var(--line)] bg-[var(--bg-base)]/60 px-4 py-3 text-sm text-[var(--color-text)] outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/40"
+              />
+            </div>
+            <div class="grid gap-2 sm:col-span-1">
+              <label class="text-xs font-semibold uppercase tracking-[0.15em]" for="hero-company">Entreprise</label>
+              <input
+                id="hero-company"
+                name="company"
+                type="text"
+                required
+                placeholder="Pipelane"
+                class="w-full rounded-2xl border border-[var(--line)] bg-[var(--bg-base)]/60 px-4 py-3 text-sm text-[var(--color-text)] outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/40"
+              />
+            </div>
+            <div class="grid gap-2 sm:col-span-1">
+              <label class="text-xs font-semibold uppercase tracking-[0.15em]" for="hero-volume">
+                Volume mensuel
+              </label>
+              <select
+                id="hero-volume"
+                name="volume"
+                required
+                class="w-full appearance-none rounded-2xl border border-[var(--line)] bg-[var(--bg-base)]/60 px-4 py-3 text-sm text-[var(--color-text)] outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/40"
+              >
+                <option value="">Sélectionnez</option>
+                <option value="-5k">Moins de 5 000</option>
+                <option value="5k-25k">5 000 - 25 000</option>
+                <option value="25k-100k">25 000 - 100 000</option>
+                <option value="100k+">Plus de 100 000</option>
+              </select>
+            </div>
+            <button type="submit" class="btn-primary sm:col-span-2 justify-center">
+              Demander une démo
+            </button>
+          </form>
+        </div>
+        <div class="relative">
+          <div
+            class="pointer-events-none absolute -top-24 right-[-18%] h-48 w-48 -z-10 rounded-full bg-[rgba(117,240,255,0.25)] blur-[60px]"
+            aria-hidden="true"
+            data-parallax
+            data-parallax-speed="0.2"
+          ></div>
+          <div
+            class="pointer-events-none absolute -bottom-16 left-[-10%] h-56 w-56 -z-10 rounded-full bg-[rgba(96,247,163,0.25)] blur-[70px]"
+            aria-hidden="true"
+            data-parallax
+            data-parallax-speed="0.35"
+          ></div>
+          <div class="absolute -left-16 top-0 hidden h-40 w-40 rounded-full bg-[rgba(117,240,255,0.2)] blur-3xl lg:block" aria-hidden="true"></div>
+          <div class="reveal relative rounded-[36px] border border-[rgba(117,240,255,0.25)] bg-[rgba(9,12,20,0.9)] p-6 shadow-soft backdrop-blur-xl">
+            <div class="grid gap-6">
+              <div class="glass radial-highlight rounded-3xl border border-[var(--line)] p-6">
+                <p class="text-sm uppercase tracking-[0.3em] text-[var(--color-muted)]">Timeline omni-canale</p>
+                <div class="mt-3 space-y-3">
+                  <div class="rounded-2xl border border-[var(--line)] bg-[rgba(255,255,255,0.04)] p-4">
+                    <p class="text-xs uppercase tracking-[0.2em] text-[var(--color-muted)]">WhatsApp • NovaTech</p>
+                    <p class="mt-2 text-lg font-semibold">Séquence onboarding</p>
+                    <p class="mt-1 text-xs text-[var(--color-muted)]">Sent → Delivered → Opened</p>
+                  </div>
+                  <div class="rounded-2xl border border-[var(--line)] bg-[rgba(117,240,255,0.08)] p-4">
+                    <p class="text-xs uppercase tracking-[0.2em] text-[var(--color-muted)]">Email • Bluehawk</p>
+                    <p class="mt-2 text-lg font-semibold">Campagne Nurture</p>
+                    <p class="mt-1 text-xs text-[var(--color-muted)]">Conversions +22%</p>
+                  </div>
+                  <div class="rounded-2xl border border-[var(--line)] bg-[rgba(96,247,163,0.08)] p-4">
+                    <p class="text-xs uppercase tracking-[0.2em] text-[var(--color-muted)]">SMS • Orbitline</p>
+                    <p class="mt-2 text-lg font-semibold">Rappel fenêtre 24h</p>
+                    <p class="mt-1 text-xs text-[var(--color-muted)]">Follow-up automatisé</p>
+                  </div>
+                </div>
+              </div>
+              <div class="rounded-3xl border border-[var(--line)] bg-[rgba(255,255,255,0.04)] p-5">
+                <p class="text-sm uppercase tracking-[0.2em] text-[var(--color-muted)]">Analytics temps réel</p>
+                <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p class="text-xs text-[var(--color-muted)]">Taux de réponse</p>
+                    <p class="text-2xl font-semibold text-[var(--color-primary)]">32%</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-[var(--color-muted)]">ROI campagne</p>
+                    <p class="text-2xl font-semibold text-[var(--color-accent)]">3,8x</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-[var(--color-muted)]">Templates actifs</p>
+                    <p class="text-xl font-semibold">124</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-[var(--color-muted)]">Relances auto</p>
+                    <p class="text-xl font-semibold">48</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="pointer-events-none absolute inset-x-0 top-0 -z-10 h-full translate-y-[-25%] bg-[radial-gradient(circle_at_center,rgba(117,240,255,0.18),transparent_65%)]"></div>
+    </section>
+
+    <Section id="social" title="Déjà adoptée par des équipes orientées résultats" center>
+      <div class="grid gap-10">
+        <div class="flex flex-wrap items-center justify-center gap-10 text-sm uppercase tracking-[0.4em] text-[var(--color-muted)]">
+          {logos.map((logo) => (
+            <span key={logo} class="reveal text-base font-semibold text-[rgba(255,255,255,0.75)]">{logo}</span>
+          ))}
+        </div>
+        <div class="flex flex-wrap justify-center gap-6 text-sm text-[var(--color-muted)]">
+          {quotes.map((quote) => (
+            <span key={quote} class="reveal rounded-full border border-[var(--line)] px-4 py-2 uppercase tracking-[0.25em]">
+              “{quote}”
+            </span>
+          ))}
+        </div>
+      </div>
+    </Section>
+
+    <Section id="product" title="Votre pipeline de messages, de A à Z" center>
+      <div class="grid gap-8 lg:grid-cols-2">
+        {timeline.map((step, index) => (
+          <TimelineStep number={index + 1} title={step.title} description={step.description} />
+        ))}
+      </div>
+    </Section>
+
+    <Section id="benefits" title="Pourquoi Pipelane change la donne" center>
+      <div class="grid gap-6 md:grid-cols-3">
+        {benefits.map((benefit) => (
+          <StatCard metric={benefit.metric} description={benefit.description} />
+        ))}
+      </div>
+    </Section>
+
+    <Section id="how" title="Comment ça marche" description="Trois étapes pour passer de la vision à l’exécution.">
+      <div class="grid gap-4 md:grid-cols-3">
+        {howItWorks.map((step, index) => (
+          <div key={step} class="reveal rounded-3xl border border-[var(--line)] bg-[rgba(255,255,255,0.04)] p-6">
+            <span class="text-sm uppercase tracking-[0.3em] text-[var(--color-muted)]">Étape {index + 1}</span>
+            <p class="mt-4 text-lg font-semibold">{step}</p>
+          </div>
+        ))}
+      </div>
+    </Section>
+
+    <Section id="features" title="Tout ce qu’il faut pour orchestrer vos conversations" description="Une plateforme complète pensée pour les équipes qui veulent scaler leurs interactions.">
+      <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        {features.map((feature, index) => (
+          <FeatureCard icon={feature.icon} title={feature.title} description={feature.description} index={index} />
+        ))}
+      </div>
+    </Section>
+
+    <Section id="integrations" title="Connectez votre stack" description="WhatsApp, Email, SMS, Resend, n8n, Meta Cloud, Slack… Pipelane s’interface avec vos outils.">
+      <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {integrations.map((integration) => (
+          <IntegrationCard icon={integration.icon} label={integration.label} />
+        ))}
+      </div>
+    </Section>
+
+    <Section id="pricing" title="Tarification simple, sans surprise" description="Aucun frais caché. Annulable à tout moment." center>
+      <div class="grid gap-6 md:grid-cols-3">
+        {pricing.map((plan) => (
+          <PricingCard tier={plan.tier} price={plan.price} description={plan.description} features={plan.features} highlight={plan.highlight} />
+        ))}
+      </div>
+    </Section>
+
+    <Section id="faq" title="Questions fréquentes" description="Besoin d’en savoir plus ? Notre équipe répond en direct lors de la démo.">
+      <div class="grid gap-5 md:grid-cols-2">
+        {faq.map((item) => (
+          <FAQItem question={item.question} answer={item.answer} />
+        ))}
+      </div>
+    </Section>
+
+    <CTA
+      id="contact"
+      title="Prêt à centraliser vos messages et accélérer la conversion ?"
+      description="Nos experts vous guident pour connecter vos canaux, configurer vos règles et lancer vos campagnes en quelques jours."
+      primaryLabel="Demander une démo"
+      secondaryLabel="Voir la documentation"
+      secondaryHref="https://docs.pipelane.app"
+    />
+  </main>
+  <footer class="border-t border-[var(--line)] bg-[rgba(255,255,255,0.03)] py-10">
+    <div class="container flex flex-col gap-6 text-sm text-[var(--color-muted)] md:flex-row md:items-center md:justify-between">
+      <div class="flex flex-wrap gap-5 uppercase tracking-[0.25em]">
+        <a href="#product">Produit</a>
+        <a href="#pricing">Prix</a>
+        <a href="#contact">Docs</a>
+        <a href="#faq">Sécurité</a>
+        <a href="mailto:contact@pipelane.app">Contact</a>
+      </div>
+      <p>© Pipelane. Tous droits réservés.</p>
+    </div>
+  </footer>
+</BaseLayout>

@@ -1,46 +1,59 @@
 # Repository Guidelines
 
-This guide defines the standards for contributing to this repository. Keep changes focused, documented, and verified locally before opening a pull request.
+Standards for contributing to this repository. Keep changes focused, documented, and verified locally before opening a pull request.
 
-## Project Structure & Module Organization
-- `src/` – application code organized by domain (e.g., `core/`, `services/`, `cli/`).
-- `tests/` – mirrors `src/` structure; shared fixtures in `tests/fixtures/`.
-- `scripts/` – developer tasks; provide both `.sh` and `.ps1` where possible.
-- `docs/`, `assets/`, `.github/workflows/` – documentation, static files, CI.
-- Root config (recommended): `.editorconfig`, `pre-commit` config, linter configs.
+## Project Structure
+- `pipelane-api/` — .NET 8 backend (Api, Application, Infrastructure, Domain)
+  - `src/` — projects by layer
+  - `tests/` — unit tests (`Pipelane.Tests`)
+  - `scripts/` — PowerShell and bash helpers for build/test/dev
+- `pipelane-front/` — Angular 17 frontend
+  - `src/` — standalone components/services
+  - `tools/` — helpers (env injection, swagger fetch)
+  - `jest.config.js`, `setup-jest.ts` — unit test config
+- `.github/workflows/` — CI (if present)
 
-## Build, Test, and Development Commands
-Use script entrypoints to keep tooling consistent across OSes:
-- Setup: `scripts/setup.(sh|ps1)` – install dependencies and pre-commit hooks.
-- Develop: `scripts/dev.(sh|ps1)` – run the app/service locally.
-- Build: `scripts/build.(sh|ps1)` – produce build artifacts.
-- Test: `scripts/test.(sh|ps1)` – run unit tests with coverage.
-- Lint/Format: `scripts/lint*` / `scripts/format*` – static checks and formatting.
-Example (PowerShell): `./scripts/test.ps1`  •  Example (bash): `bash scripts/test.sh`
+Root configs recommended: `.editorconfig`, pre-commit, linters. Node and .NET artifacts are already ignored in `.gitignore`.
 
-## Coding Style & Naming Conventions
-- Indentation: 4 spaces (Python); 2 spaces (JS/TS). UTF-8, LF line endings.
-- Names: `snake_case` (Python), `camelCase` (JS/TS), `PascalCase` for classes/types.
-- Files: modules `snake_case.py`; tests `test_*.py` or `*.test.ts`.
-- Tools (recommended): Black + Ruff (Python), Prettier + ESLint (JS/TS). Run formatters before commit.
+## Build, Test, and Dev
+Backend (.NET):
+- Setup: `cd pipelane-api` then `dotnet restore`
+- Build: `./pipelane-api/scripts/build.(ps1|sh)`
+- Test: `./pipelane-api/scripts/test.(ps1|sh)`
+- Dev:  `./pipelane-api/scripts/dev.(ps1|sh)` (serves on `http://localhost:5000` by default)
+ - Lint (analyzers): `./pipelane-api/scripts/lint.(ps1|sh)`
+ - Format: `./pipelane-api/scripts/format.(ps1|sh)`
 
-## Testing Guidelines
-- Place tests in `tests/` mirroring `src/` paths; integration tests in `tests/integration/`.
-- Strive for ≥80% line coverage; include regression tests for bug fixes.
-- Fast feedback first: unit tests > integration tests; use fixtures over sleeps.
-- Run via `scripts/test.(sh|ps1)`; if Python, it should call `pytest -q --maxfail=1 --disable-warnings --cov`.
+Frontend (Angular):
+- Setup: `cd pipelane-front && npm ci`
+- Env: `tools/inject-env.mjs` generates `src/app/core/env.generated.ts` from `.env` (`API_BASE_URL`, defaults to `http://localhost:5000`)
+- Build: `npm run build`
+- Test: `npm test`
+ - Lint: `npm run lint` (Angular ESLint)
+ - Format: `npm run format` (Prettier)
+- Optional: Generate API types — `npm run gen:api` (starts API, fetches Swagger, generates TS types)
 
-## Commit & Pull Request Guidelines
-- Follow Conventional Commits: `feat:`, `fix:`, `docs:`, `refactor:`, `chore:`.
-  Example: `feat(cli): add pipeline init command`.
-- PRs must: describe the change and rationale, link issues (e.g., `Closes #123`), include tests and docs when applicable, and pass CI.
-- Keep PRs small and cohesive; prefer follow-ups over large mixes.
+Security/Audit (manual for now):
+- Backend: `cd pipelane-api && dotnet list package --vulnerable`
+- Frontend: `cd pipelane-front && npm audit`
 
-## Security & Configuration Tips
-- Never commit secrets; provide `.env.example`. Use `.env.local` and CI secrets for real values.
-- Pin dependencies where feasible and run `scripts/audit.(sh|ps1)` for vulnerability scans.
+## Coding Style
+- .NET: conventional C# style, nullable enabled, `PascalCase` for public APIs.
+- Angular: `camelCase` for variables/functions, `PascalCase` for classes; standalone components with `OnPush` change detection preferred.
+- Formatting: use IDE formatters or project linters; keep diffs minimal.
+
+## Testing
+- Backend: xUnit tests in `pipelane-api/tests`; run via the scripts above.
+- Frontend: Jest tests under `pipelane-front/src/__tests__`; CI-friendly by default.
+
+## Commits & PRs
+- Conventional Commits: `feat:`, `fix:`, `docs:`, `refactor:`, `chore:` (e.g., `feat(api): add campaign endpoints`).
+- PRs describe rationale, link issues (e.g., `Closes #123`), include tests/docs as applicable, and pass CI.
+
+## Secrets & Config
+- Do not commit secrets. Frontend reads `.env` (local only). Backend reads env vars (`DB_CONNECTION`, `ENCRYPTION_KEY`, `JWT_KEY`). Provide `.env.example` when adding new variables.
 
 ## Agent-Specific Instructions
 - Keep patches minimal and localized; prefer small, reviewable diffs.
-- Adhere to this file’s conventions for any new code, tests, or scripts.
-- When adding tools, expose them through `scripts/` and document the usage above.
+- Align with this file for any new code, tests, or scripts.
+- When adding tools, expose them through `scripts/` or npm/dotnet scripts and document usage here.

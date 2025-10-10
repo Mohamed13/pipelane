@@ -6,7 +6,6 @@ export class PolicyService {
   isWhatsAppTextAllowed(lastInboundUtc?: string | null): boolean {
     if (!lastInboundUtc) return false;
     const last = new Date(lastInboundUtc).getTime();
-    return (Date.now() - last) <= 24 * 3600 * 1000;
+    return Date.now() - last <= 24 * 3600 * 1000;
   }
 }
-

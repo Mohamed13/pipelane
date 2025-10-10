@@ -1,0 +1,11 @@
+dist/
+coverage/
+node_modules/
+src/app/core/env.generated.ts
+.angular/
+cypress/
+angular.json
+jest.config.js
+tsconfig*.json
+src/app/api/openapi-types.ts
+README.md

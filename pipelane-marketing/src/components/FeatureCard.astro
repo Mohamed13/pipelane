@@ -1,0 +1,26 @@
+---
+import { Icon } from "@astrojs/icon/components";
+
+interface Props {
+  icon: string;
+  title: string;
+  description: string;
+  index?: number;
+}
+
+const { icon, title, description, index = 0 } = Astro.props as Props;
+---
+<article
+  class="reveal rounded-3xl border border-[var(--line)] bg-[rgba(255,255,255,0.04)] p-8 backdrop-blur-xl transition-transform duration-500 hover:-translate-y-1 hover:border-[var(--color-primary)]"
+  style={`transition-delay: ${index * 70}ms;`}
+>
+  <div class="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-[rgba(117,240,255,0.14)] text-[var(--color-primary)]">
+    <Icon name={icon} width="26" height="26" />
+  </div>
+  <h3 class="text-xl font-semibold text-white">
+    {title}
+  </h3>
+  <p class="mt-4 text-base text-[var(--color-muted)]">
+    {description}
+  </p>
+</article>

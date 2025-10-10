@@ -1,0 +1,21 @@
+@use './tokens' as *;
+
+.surface-card {
+  @include card-surface;
+  padding: var(--space-5);
+}
+
+.body-text-muted {
+  color: var(--color-text-muted);
+}
+
+.elevated {
+  box-shadow: var(--elevation-1);
+}
+
+.grid-responsive {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+

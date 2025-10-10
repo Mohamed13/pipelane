@@ -1,5 +1,7 @@
 using System.Net.Http.Json;
+
 using Microsoft.Extensions.Logging;
+
 using Pipelane.Application.Abstractions;
 using Pipelane.Domain.Entities;
 using Pipelane.Domain.Enums;
@@ -17,11 +19,11 @@ public sealed class WhatsAppChannel : IMessageChannel
         _httpFactory = httpFactory; _logger = logger;
     }
 
-    public async Task<WebhookResult> HandleWebhookAsync(string body, IDictionary<string,string> headers, CancellationToken ct)
+    public Task<WebhookResult> HandleWebhookAsync(string body, IDictionary<string, string> headers, CancellationToken ct)
     {
         // Parse provider event minimal stub
         _logger.LogInformation("WhatsApp webhook received");
-        return new WebhookResult(true, null);
+        return Task.FromResult(new WebhookResult(true, null));
     }
 
     public async Task<SendResult> SendTemplateAsync(Contact c, Template t, IDictionary<string, string> vars, SendMeta meta, CancellationToken ct)

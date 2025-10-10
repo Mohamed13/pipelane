@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+
 using Pipelane.Application.DTOs;
 using Pipelane.Application.Services;
 
@@ -6,7 +7,7 @@ namespace Pipelane.Api.Controllers;
 
 [ApiController]
 [Microsoft.AspNetCore.Authorization.Authorize]
-[Route("messages")] 
+[Route("messages")]
 public class MessagesController : ControllerBase
 {
     private readonly IMessagingService _svc;

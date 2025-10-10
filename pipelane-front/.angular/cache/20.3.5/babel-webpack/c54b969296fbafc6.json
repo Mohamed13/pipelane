@@ -1,0 +1,1 @@
+{"ast":null,"code":"export const ChannelLabels = {\n  whatsapp: 'WhatsApp',\n  email: 'Email',\n  sms: 'SMS'\n};","map":null,"metadata":{},"sourceType":"module","externalDependencies":[]}

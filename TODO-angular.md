@@ -1,88 +1,231 @@
-YOU ARE an expert Angular 20 engineer. Build a production-ready operator console for an
-“Omni-Channel Revenue Engine” (rename with the product brand if provided).
-Stack: Angular 20 (standalone components, Signals or NgRx), OnPush, RxJS, Chart.js, Jest, Cypress, i18n EN/FR, theme toggle (Classic/Dark).
+✅ Completed: Angular dashboard has been refreshed with Material shell, design tokens, responsive tables, KPI/Chart cards, interactions, and dark mode. The details below capture the original requirements for reference.
 
-GOAL
-A fast, clean SPA that lets users:
-- finish onboarding (per-channel credentials & checks),
-- manage templates (import/preview per channel),
-- search contacts & chat (read-only thread + send within policy),
-- build/schedule campaigns with channel + fallback,
-- view analytics by channel and overall.
+I have a working Angular app that looks plain. I want a modern, responsive dashboard UI with vibrant colors, cards, smooth micro-animations, and clean spacing. Keep existing business logic, routes, and API calls intact.
 
-ROUTES (lazy, standalone)
-- `/onboarding`
-  - Wizard steps per channel:
-    1) WhatsApp (PhoneNumberId, AccessToken, VerifyToken) + “Verify webhook” + “Send test template”
-    2) Email ESP (API key, domain) + “Send test email”
-    3) SMS (API key) + “Send test sms”
-  - Save to `POST /onboarding/channel-settings`, show status badges.
-- `/templates`
-  - List provider templates (group by channel/lang), refresh (`POST /templates/refresh`), preview (rendered).
-- `/contacts`
-  - Search bar (phone/email/name/tags), list with last activity + channel badges + opt-in chips.
-  - Click → **Conversation view**: last N messages (inbound/outbound bubbles), composer:
-    - Respect policy: WhatsApp text only within 24h session; else force template selection.
-    - Email composer (subject + HTML preview) or SMS text when those channels are chosen.
-- `/campaigns`
-  - **Builder (wizard)**:
-    - Step 1: **Channel & Fallback** (primary channel + ordered fallbacks)
-    - Step 2: **Template** (choose per channel, variables mapping, lang)
-    - Step 3: **Audience** (segment builder: tags, lastInboundAt, opt-in per channel)
-    - Step 4: **Schedule** (now or date/time) → Review → Create (POST /campaigns)
-  - Campaign detail: progress (queued/sent/delivered/read/failed), errors, per-channel breakdown.
-- `/analytics`
-  - KPI cards: leads captured, reply rate, avg first response time, qualified, meetings, revenue.
-  - Charts (7/30d): sent/delivered/read per channel, replies, conversions.
-- `/settings`
-  - Channel credentials, language preferences, quiet hours, default fallback policy.
-  - Account/tenant info.
+Primary choice: use Angular Material (preferred). If something is already using Bootstrap, you may keep it, but favor Material for new UI.
 
-CORE SERVICES
-- `ApiService`
-  - `saveChannelSettings()`, `getTemplates()`, `refreshTemplates()`
-  - `searchContacts()`, `getConversation(contactId)`
-  - `sendMessage({ contactId|phone, channel, type:'text'|'template', text?, templateName?, lang?, variables? })`
-  - `createCampaign()`, `getCampaign(id)`
-  - `getAnalyticsOverview(from,to)`
-- `PolicyService`
-  - Given contact + channel returns what’s allowed (WA text allowed if last inbound ≤24h; otherwise template).
-- `I18nService` (EN/FR) with JSON dictionaries; language selector in the header.
-- `ThemeService` (Classic/Dark) with CSS variables; persist in localStorage.
+Objectives
 
-COMPONENTS (standalone, OnPush)
-- OnboardingWizardComponent
-- TemplatesListComponent + TemplatePreviewComponent
-- ContactsListComponent + ConversationThreadComponent (virtual scroll) + MessageComposerComponent
-- CampaignBuilderComponent (ChannelPicker, TemplatePicker, SegmentBuilder, Scheduler, Review)
-- AnalyticsOverviewComponent (KPI cards + charts)
-- Header with language + theme toggles; ToastService; ErrorBoundary
+Upgrade the UI to a polished dashboard look & feel.
 
-STATE
-- Use Signals store or NgRx:
-  - `settings`, `templates`, `contacts`, `conversation`, `campaignDraft`, `analytics`
-- Sync URL query params for campaign builder (channel/fallback/lang/template) for shareable drafts.
-- Cache templates and recent searches in memory with TTL.
+Add consistent spacing (paddings/margins), readable typography, and an accessible color palette (vibrant but WCAG-compliant).
 
-UI/UX
-- Responsive, keyboard accessible, ARIA roles/labels, focus outlines.
-- Clear policy hints (why a channel or text is disabled).
-- Loading skeletons, empty/error states.
-- Chart.js with default styling; no heavy theming needed.
+Use cards, grids, and charts. Add subtle animations and ho  ver effects.
 
-TESTS
-- Jest: ApiService (mocks), PolicyService, CampaignBuilder validators, MessageComposer rules.
-- Cypress:
-  - Onboarding happy path (save WA creds, verify webhook, send test)
-  - Contact search → open conversation → policy blocks WA text outside 24h → send template
-  - Create campaign with WA primary + Email fallback → shows queued with counts
-  - Analytics loads charts with mocked API
+Make everything responsive (desktop/tablet/mobile).
 
-I18N & THEME
-- Provide `src/assets/i18n/en.json` + `fr.json` with keys for navigation, onboarding, templates, contacts, conversation, campaigns, analytics, settings, policy messages, toasts.
-- `styles.scss`: CSS variables for Classic/Dark; `.theme-dark` on `<html>` toggles dark.
+Keep all current features working; do not break APIs.
 
-DELIVERABLES
-- Full code for routes/components/services (TS/HTML/SCSS), environment (`API_BASE_URL`), i18n files, theme variables, Jest tests and a Cypress spec.
-- Short README: how to run (`npm start`), set env, switch language/theme, and connect to API.
-Generate the complete Angular implementation now.
+Tasks (end-to-end)
+
+Install & Setup
+
+Add Angular Material, CDK, Animations, and Material Icons.
+
+Add a light/dark theme with a primary/accent/warn palette (vibrant style).
+
+Create a global SCSS with spacing + elevation helpers.
+
+Design System
+
+Define theme in styles.scss (or a dedicated theme folder) with:
+
+Color tokens: --color-primary, --color-accent, --color-bg, --color-surface, --color-text.
+
+Spacing scale: --space-1 … --space-6.
+
+Radius scale: --radius-sm, --radius-md, --radius-xl (use large rounded corners).
+
+Shadow utilities for cards and buttons (soft shadows).
+
+Ensure high contrast for text on colored backgrounds.
+
+Layout & Navigation
+
+Implement a responsive shell layout:
+
+App toolbar with title, search input (optional), color-mode toggle.
+
+Collapsible side nav with icons + labels, using Material mat-sidenav + mat-nav-list.
+
+Content area uses a responsive mat-grid-list or CSS grid.
+
+Persist side nav state (opened/collapsed) in localStorage.
+
+Cards & Components
+
+Replace plain blocks with mat-card components (rounded corners, elevation).
+
+Add hover animations on cards (slight scale/elevation; 150–200ms).
+
+For lists/tables:
+
+Use MatTable with MatPaginator, MatSort, sticky header, and dense row option.
+
+Add row hover feedback and clickable rows when relevant.
+
+Add reusable “KPI Stat Card” component (title, value, delta %, small sparkline).
+
+Charts
+
+Add charts with Chart.js (ng2-charts) or ngx-charts (pick one and standardize).
+
+Create a ChartsModule with:
+
+Line chart (with gradient fill),
+
+Bar chart,
+
+Donut chart.
+
+Provide a ChartCardComponent wrapping a mat-card + chart + header actions.
+
+Animations
+
+Enable Angular animations globally.
+
+Add route-transition fade/slide (200–300ms).
+
+Add hover transitions for buttons/cards/links.
+
+Use IntersectionObserver or Angular animation triggers to gently reveal sections on scroll.
+
+Responsive Rules
+
+Desktop: multi-column grid (3–4 cols).
+
+Tablet: 2 cols.
+
+Mobile: 1 col; side nav becomes modal drawer.
+
+Ensure charts resize; tables get horizontal scroll on small screens.
+
+Forms & Buttons
+
+Convert forms to mat-form-field with appearance="outline".
+
+Add helpful hints, validation messages, and icons where useful.
+
+Use mat-button/mat-raised-button with clear hierarchy (primary/secondary).
+
+Accessibility
+
+Minimum 4.5:1 contrast for body text; 3:1 for large text.
+
+Keyboard focus states visible on all interactive elements.
+
+aria-labels for icon-only buttons and nav items.
+
+Theming
+
+Implement dark mode toggle (persisted).
+
+Make charts adapt to theme (text/grid/tooltip colors).
+
+All custom components must consume CSS variables from the theme.
+
+Performance & Hygiene
+
+Remove unused CSS; prefer component-scoped styles.
+
+Lazy-load heavy feature modules and chart libs if possible.
+
+Keep lint passing; no TODOs or dead code.
+
+Non-breaking
+
+Do NOT change existing service logic or API contracts.
+
+Preserve all data bindings, route params, and guard logic.
+
+Deliverables
+
+Updated layout (toolbar + responsive sidenav) and dashboard landing with example KPI stat cards + 3 chart cards + recent table.
+
+A theme/ folder (or similar) with SCSS variables and mixins.
+
+A shared/ui/ folder with reusable Card, ChartCard, KpiCard.
+
+Dark mode working and persisted.
+
+Demo data for charts (if no API yet), behind a USE_DEMO_DATA flag.
+
+Concrete Implementation Steps
+
+Install
+
+@angular/material, @angular/cdk, @angular/animations
+
+chart.js + ng2-charts (or @swimlane/ngx-charts)
+
+Material Icons
+
+App Shell
+
+Create ShellComponent with mat-sidenav-container.
+
+Toolbar: app name/logo, search, theme toggle, user menu.
+
+Sidenav: icon list with active state; collapse on small screens.
+
+Dashboard Page
+
+Grid of KpiCardComponent (e.g., Revenue, Users, Conversion, Tickets).
+
+Row with ChartCardComponent (line + bar + donut).
+
+MatTable for recent items (with sort/paginate/filter).
+
+Styling
+
+Global SCSS variables; set border-radius: 1rem for cards/buttons.
+
+Spacing utilities: m-1..m-6, p-1..p-6 classes mapped to CSS vars.
+
+Hover: transform: translateY(-2px) scale(1.01) + box-shadow increase.
+
+Animations
+
+Route fade/slide on router-outlet.
+
+:hover transitions on cards (200ms ease).
+
+Reveal on scroll for sections.
+
+Testing
+
+Verify responsiveness with breakpoints (≥1200px, 992–1199, 768–991, ≤767).
+
+Check light/dark contrast and chart readability.
+
+Ensure no console errors; all existing features still work.
+
+Acceptance Criteria
+
+UI looks like a modern analytics dashboard (clean, vibrant, airy).
+
+Consistent spacing, typography, and rounded cards with soft shadows.
+
+Smooth micro-interactions; nothing janky.
+
+Charts render responsively and match the theme (light/dark).
+
+No functional regressions.
+
+Notes
+
+If any legacy Bootstrap exists, keep it only where refactoring would break things. Prefer Material for new components.
+
+(Optional) Bootstrap Variant
+
+If I say “use Bootstrap instead of Material”, then:
+
+Use Bootstrap 5 + ng-bootstrap for components.
+
+Replace mat-card by custom .card with rounded-4 and shadow utilities.
+
+Use Chart.js via ng2-charts.
+
+Use Bootstrap grid for responsiveness; offcanvas for mobile nav.
+
+Keep the same theming approach via CSS variables and dark mode class on <body>.

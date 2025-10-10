@@ -2,7 +2,7 @@ using Pipelane.Domain.Enums;
 
 namespace Pipelane.Application.DTOs;
 
-public record ChannelSettingsDto(Channel Channel, Dictionary<string,string> Settings);
+public record ChannelSettingsDto(Channel Channel, Dictionary<string, string> Settings);
 
 public record SendMessageRequest(
     Guid? ContactId,
@@ -12,8 +12,8 @@ public record SendMessageRequest(
     string? Text,
     string? TemplateName,
     string? Lang,
-    Dictionary<string,string>? Variables,
-    Dictionary<string,string>? Meta);
+    Dictionary<string, string>? Variables,
+    Dictionary<string, string>? Meta);
 
 public record CreateCampaignRequest(
     string Name,

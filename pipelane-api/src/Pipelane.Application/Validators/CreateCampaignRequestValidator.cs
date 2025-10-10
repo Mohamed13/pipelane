@@ -1,4 +1,5 @@
 using FluentValidation;
+
 using Pipelane.Application.DTOs;
 
 namespace Pipelane.Application.Validators;

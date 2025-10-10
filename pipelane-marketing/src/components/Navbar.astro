@@ -1,0 +1,92 @@
+---
+import ThemeToggle from "./ThemeToggle.astro";
+
+const links = [
+  { href: "#hero", label: "Accueil" },
+  { href: "#product", label: "Produit" },
+  { href: "#benefits", label: "Bénéfices" },
+  { href: "#features", label: "Fonctionnalités" },
+  { href: "#pricing", label: "Prix" },
+  { href: "#faq", label: "FAQ" }
+];
+---
+<header class="pointer-events-none fixed inset-x-0 top-6 z-50 flex justify-center px-4">
+  <nav class="pointer-events-auto glass flex w-full max-w-5xl items-center justify-between gap-6 rounded-full border border-[var(--line)] px-6 py-3 text-sm shadow-soft">
+    <a href="#hero" class="flex items-center gap-2 font-semibold tracking-wide uppercase text-[var(--color-primary)]">
+      <span class="h-2 w-2 rounded-full bg-[var(--color-primary)]"></span>
+      Pipelane
+    </a>
+    <button
+      type="button"
+      class="btn-ghost inline-flex h-10 w-10 items-center justify-center rounded-full border border-[var(--line)] text-[var(--color-muted)] md:hidden"
+      data-nav-toggle
+      aria-label="Ouvrir la navigation"
+      aria-expanded="false"
+    >
+      ☰
+    </button>
+    <div class="hidden items-center gap-4 md:flex">
+      <ul class="flex items-center gap-1 rounded-full bg-[rgba(255,255,255,0.05)] p-1">
+        {links.map((link) => (
+          <li key={link.href}>
+            <a
+              href={link.href}
+              class="nav-link inline-flex items-center rounded-full px-3 py-2 text-xs font-medium uppercase tracking-[0.2em] text-[var(--color-muted)] transition hover:text-[var(--color-primary)]"
+              data-nav-link
+            >
+              {link.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+      <ThemeToggle />
+    </div>
+  </nav>
+  <div class="pointer-events-none fixed inset-x-0 top-[72px] z-40 px-4 md:hidden" data-nav-drawer hidden>
+    <div class="pointer-events-auto glass rounded-3xl border border-[var(--line)] p-6">
+      <ul class="grid gap-4 text-base">
+        {links.map((link) => (
+          <li key={link.href}>
+            <a href={link.href} class="block text-[var(--color-muted)]" data-nav-link>
+              {link.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+      <div class="mt-6">
+        <ThemeToggle />
+      </div>
+    </div>
+  </div>
+</header>
+<script is:inline>
+  (() => {
+    const toggle = document.querySelector("[data-nav-toggle]");
+    const drawer = document.querySelector("[data-nav-drawer]");
+    const links = Array.from(document.querySelectorAll("[data-nav-link]"));
+    if (!toggle || !drawer) return;
+
+    const close = () => {
+      drawer.hidden = true;
+      toggle.setAttribute("aria-expanded", "false");
+    };
+
+    toggle.addEventListener("click", () => {
+      const willOpen = drawer.hidden;
+      drawer.hidden = !willOpen;
+      toggle.setAttribute("aria-expanded", willOpen ? "true" : "false");
+    });
+
+    links.forEach((link) =>
+      link.addEventListener("click", () => {
+        close();
+      })
+    );
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        close();
+      }
+    });
+  })();
+</script>

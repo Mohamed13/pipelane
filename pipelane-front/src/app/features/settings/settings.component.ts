@@ -4,10 +4,9 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
   standalone: true,
   selector: 'pl-settings',
   template: `
-  <h2>Settings</h2>
-  <p class="muted">Tenant settings, quiet hours, default fallback policy (placeholder).</p>
+    <h2>Settings</h2>
+    <p class="muted">Tenant settings, quiet hours, default fallback policy (placeholder).</p>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SettingsComponent {}
-

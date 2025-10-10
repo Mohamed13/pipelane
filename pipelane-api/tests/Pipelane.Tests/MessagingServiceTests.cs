@@ -1,17 +1,21 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+
 using FluentAssertions;
+
 using Microsoft.EntityFrameworkCore;
+
+using Pipelane.Application.Abstractions;
 using Pipelane.Application.DTOs;
 using Pipelane.Application.Services;
 using Pipelane.Application.Storage;
-using Pipelane.Application.Abstractions;
 using Pipelane.Domain.Entities;
 using Pipelane.Domain.Enums;
+
 using Xunit;
 
 namespace Pipelane.Tests;
@@ -26,6 +30,7 @@ public class MessagingServiceTests
         public DbSet<Consent> Consents => Set<Consent>();
         public DbSet<Conversation> Conversations => Set<Conversation>();
         public DbSet<Message> Messages => Set<Message>();
+        public DbSet<MessageEvent> MessageEvents => Set<MessageEvent>();
         public DbSet<Template> Templates => Set<Template>();
         public DbSet<Campaign> Campaigns => Set<Campaign>();
         public DbSet<Event> Events => Set<Event>();
@@ -33,6 +38,8 @@ public class MessagingServiceTests
         public DbSet<LeadScore> LeadScores => Set<LeadScore>();
         public DbSet<ChannelSettings> ChannelSettings => Set<ChannelSettings>();
         public DbSet<OutboxMessage> Outbox => Set<OutboxMessage>();
+        public DbSet<User> Users => Set<User>();
+        public DbSet<FollowupTask> FollowupTasks => Set<FollowupTask>();
     }
 
     [Fact]
@@ -49,7 +56,7 @@ public class MessagingServiceTests
         await db.SaveChangesAsync();
 
         var svc = new MessagingService(db, new ChannelRegistry(Array.Empty<IMessageChannel>()), new ChannelRulesService(db), new OutboxService(db));
-        var res = await svc.SendAsync(new SendMessageRequest(contact.Id, null, Channel.Whatsapp, "template", null, "welcome", "en", new Dictionary<string,string>{{"name","Alice"}}, null), CancellationToken.None);
+        var res = await svc.SendAsync(new SendMessageRequest(contact.Id, null, Channel.Whatsapp, "template", null, "welcome", "en", new Dictionary<string, string> { { "name", "Alice" } }, null), CancellationToken.None);
 
         res.Success.Should().BeTrue();
         db.Outbox.Count().Should().Be(1);

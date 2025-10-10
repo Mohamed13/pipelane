@@ -7,7 +7,9 @@ export class I18nService {
   lang = signal<Lang>((localStorage.getItem('lang') as Lang) || 'en');
   dict = signal<Record<string, string>>({});
 
-  constructor() { this.load(this.lang()); }
+  constructor() {
+    this.load(this.lang());
+  }
 
   setLang(l: Lang) {
     localStorage.setItem('lang', l);
@@ -20,6 +22,7 @@ export class I18nService {
     this.dict.set(await res.json());
   }
 
-  t(key: string) { return this.dict()[key] ?? key; }
+  t(key: string) {
+    return this.dict()[key] ?? key;
+  }
 }
-

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+
 using Pipelane.Application.DTOs;
 using Pipelane.Application.Storage;
 using Pipelane.Domain.Entities;
@@ -7,7 +8,7 @@ namespace Pipelane.Api.Controllers;
 
 [ApiController]
 [Microsoft.AspNetCore.Authorization.Authorize]
-[Route("conversions")] 
+[Route("conversions")]
 public class ConversionsController : ControllerBase
 {
     private readonly IAppDbContext _db;

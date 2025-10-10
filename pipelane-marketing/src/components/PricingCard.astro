@@ -1,0 +1,36 @@
+---
+interface Props {
+  tier: string;
+  price: string;
+  description?: string;
+  features: string[];
+  highlight?: boolean;
+}
+
+const { tier, price, description, features, highlight = false } = Astro.props as Props;
+---
+<div class={`reveal relative flex h-full flex-col rounded-3xl border ${highlight ? "border-[var(--color-primary)]" : "border-[var(--line)]"} bg-[rgba(255,255,255,0.05)] p-8 backdrop-blur-lg transition-transform duration-300 hover:-translate-y-1`}>
+  {highlight && (
+    <span class="absolute right-8 top-8 rounded-full border border-[var(--color-primary)] bg-[rgba(117,240,255,0.12)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-primary)]">
+      Populaire
+    </span>
+  )}
+  <h3 class="text-2xl font-semibold">{tier}</h3>
+  <p class="mt-4 text-3xl font-bold">
+    {price}
+  </p>
+  {description && (
+    <p class="mt-2 text-sm text-[var(--color-muted)]">{description}</p>
+  )}
+  <ul class="mt-8 flex flex-1 flex-col gap-3 text-sm text-[var(--color-muted)]">
+    {features.map((feature) => (
+      <li class="flex items-start gap-3" key={feature}>
+        <span class="mt-1 inline-flex h-2 w-2 rounded-full bg-[var(--color-primary)]"></span>
+        <span>{feature}</span>
+      </li>
+    ))}
+  </ul>
+  <a href="#contact" class="btn-primary mt-8 w-full justify-center">
+    Demander une démo
+  </a>
+</div>

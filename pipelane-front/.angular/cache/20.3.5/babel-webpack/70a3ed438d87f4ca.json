@@ -1,0 +1,1 @@
+{"ast":null,"code":"import { API_BASE_URL } from './env.generated';\nexport const environment = {\n  API_BASE_URL,\n  USE_DEMO_DATA: false\n};","map":null,"metadata":{},"sourceType":"module","externalDependencies":[]}

@@ -12,7 +12,14 @@ public class Message : BaseEntity
     public string? Lang { get; set; }
     public string? PayloadJson { get; set; }
     public MessageStatus Status { get; set; }
+    public string? Provider { get; set; }
     public string? ProviderMessageId { get; set; }
+    public string? ErrorCode { get; set; }
+    public string? ErrorReason { get; set; }
+    public DateTime? DeliveredAt { get; set; }
+    public DateTime? OpenedAt { get; set; }
+    public DateTime? FailedAt { get; set; }
     public DateTime CreatedAt { get; set; }
-}
 
+    public ICollection<MessageEvent> Events { get; set; } = new List<MessageEvent>();
+}

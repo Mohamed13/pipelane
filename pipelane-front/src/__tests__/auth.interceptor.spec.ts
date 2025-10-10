@@ -11,8 +11,14 @@ describe('authInterceptor', () => {
       providers: [
         provideHttpClient(withInterceptors([authInterceptor])),
         provideHttpClientTesting(),
-        { provide: AuthService, useValue: { token: () => 'header.payload.sig', tenantId: () => '00000000-0000-0000-0000-000000000000' } }
-      ]
+        {
+          provide: AuthService,
+          useValue: {
+            token: () => 'header.payload.sig',
+            tenantId: () => '00000000-0000-0000-0000-000000000000',
+          },
+        },
+      ],
     });
     const http = TestBed.inject(HttpClient);
     const ctrl = TestBed.inject(HttpTestingController);
@@ -25,4 +31,3 @@ describe('authInterceptor', () => {
     ctrl.verify();
   });
 });
-

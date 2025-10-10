@@ -1,0 +1,37 @@
+name: Frontend CI
+
+on:
+  push:
+    paths:
+      - 'pipelane-front/**'
+      - '.github/workflows/ci-frontend.yml'
+  pull_request:
+    paths:
+      - 'pipelane-front/**'
+
+jobs:
+  build-test-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'pipelane-front/package-lock.json'
+      - name: Install
+        working-directory: pipelane-front
+        run: npm ci
+      - name: Lint
+        working-directory: pipelane-front
+        run: npm run lint
+      - name: Test
+        working-directory: pipelane-front
+        env:
+          CI: 'true'
+        run: npm test
+      - name: Build
+        working-directory: pipelane-front
+        run: npm run build
+

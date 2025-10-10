@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+
 using Pipelane.Application.Storage;
 using Pipelane.Domain.Entities;
 using Pipelane.Domain.Enums;
@@ -20,12 +21,12 @@ public sealed class ChannelRulesService : IChannelRulesService
     public async Task<bool> CanSendWhatsAppSessionAsync(Guid contactId, CancellationToken ct)
     {
         var list = await (from m in _db.Messages
-                           join c in _db.Conversations on m.ConversationId equals c.Id
-                           where c.ContactId == contactId
-                                 && m.Direction == MessageDirection.In
-                                 && m.Channel == Channel.Whatsapp
-                           orderby m.CreatedAt descending
-                           select (DateTime?)m.CreatedAt)
+                          join c in _db.Conversations on m.ConversationId equals c.Id
+                          where c.ContactId == contactId
+                                && m.Direction == MessageDirection.In
+                                && m.Channel == Channel.Whatsapp
+                          orderby m.CreatedAt descending
+                          select (DateTime?)m.CreatedAt)
                           .ToListAsync(ct);
         var lastInbound = list.FirstOrDefault();
         return lastInbound.HasValue && (DateTime.UtcNow - lastInbound.Value).TotalHours <= 24;

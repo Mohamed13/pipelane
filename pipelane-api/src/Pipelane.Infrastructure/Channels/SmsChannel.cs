@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+
 using Pipelane.Application.Abstractions;
 using Pipelane.Domain.Entities;
 using Pipelane.Domain.Enums;
@@ -16,7 +17,7 @@ public sealed class SmsChannel : IMessageChannel
         _httpFactory = httpFactory; _logger = logger;
     }
 
-    public Task<WebhookResult> HandleWebhookAsync(string body, IDictionary<string,string> headers, CancellationToken ct)
+    public Task<WebhookResult> HandleWebhookAsync(string body, IDictionary<string, string> headers, CancellationToken ct)
     {
         _logger.LogInformation("SMS webhook received");
         return Task.FromResult(new WebhookResult(true, null));

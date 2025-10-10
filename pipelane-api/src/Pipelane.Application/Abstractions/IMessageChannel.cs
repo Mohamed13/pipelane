@@ -11,7 +11,7 @@ public interface IMessageChannel
 {
     Channel Channel { get; }
     Task<SendResult> SendTextAsync(Contact c, string text, SendMeta meta, CancellationToken ct);
-    Task<SendResult> SendTemplateAsync(Contact c, Template t, IDictionary<string,string> vars, SendMeta meta, CancellationToken ct);
-    Task<WebhookResult> HandleWebhookAsync(string body, IDictionary<string,string> headers, CancellationToken ct);
+    Task<SendResult> SendTemplateAsync(Contact c, Template t, IDictionary<string, string> vars, SendMeta meta, CancellationToken ct);
+    Task<WebhookResult> HandleWebhookAsync(string body, IDictionary<string, string> headers, CancellationToken ct);
     Task<bool> ValidateTemplateAsync(Template t, CancellationToken ct);
 }
