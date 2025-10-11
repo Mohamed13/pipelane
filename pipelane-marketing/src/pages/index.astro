@@ -1,4 +1,4 @@
-﻿﻿﻿﻿---
+﻿﻿﻿﻿﻿---
 import BaseLayout from "@layouts/Base.astro";
 import Navbar from "@components/Navbar.astro";
 import NeonBadge from "@components/NeonBadge.astro";
@@ -320,7 +320,7 @@ const logos = ["NovaTech", "Velia", "QuantifyX", "Orbitline", "Bluehawk"];
       center
       contentClass="mt-12 grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] items-start"
     >
-      <div class="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+      <div class="grid gap-6 grid-cols-[repeat(auto-fit,minmax(260px,1fr))]">
         {benefits.map((benefit) => (
           <StatCard metric={benefit.metric} description={benefit.description} />
         ))}
