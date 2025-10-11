@@ -11,7 +11,7 @@ const { tier, price, description, features, highlight = false } = Astro.props as
 ---
 <div class={`reveal relative flex h-full flex-col rounded-3xl border ${highlight ? "border-primary/70" : "border-line/35"} glass-strong p-8 transition-transform duration-350 hover:-translate-y-1`}>
   {highlight && (
-    <span class="absolute right-8 top-8 inline-flex items-center gap-2 rounded-full border border-primary/60 bg-primary/18 px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+    <span class="absolute -top-5 left-1/2 inline-flex -translate-x-1/2 items-center gap-2 rounded-full border border-primary/60 bg-primary/18 px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-primary shadow-glow">
       Populaire
     </span>
   )}
@@ -34,3 +34,4 @@ const { tier, price, description, features, highlight = false } = Astro.props as
     Demander une démo
   </a>
 </div>
+
