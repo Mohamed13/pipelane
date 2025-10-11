@@ -1,5 +1,10 @@
 ---
 import NeonBadge from "./NeonBadge.astro";
+import Icon from "./Icon.astro";
+import type { ImageMetadata } from "astro";
+import { Image } from "astro:assets";
+
+type Variant = "plain" | "media" | "panel";
 
 interface Props {
   id: string;
@@ -7,29 +12,86 @@ interface Props {
   eyebrow?: string;
   description?: string;
   center?: boolean;
+  variant?: Variant;
+  image?: ImageMetadata;
+  imageAlt?: string;
+  icon?: string;
+  contentClass?: string;
 }
 
-const { id, title, eyebrow, description, center = false } = Astro.props as Props;
+const {
+  id,
+  title,
+  eyebrow,
+  description,
+  center = false,
+  variant = "plain",
+  image,
+  imageAlt = "",
+  icon,
+  contentClass
+} = Astro.props as Props;
+
+const baseSectionClasses = ["py-20", "lg:py-28", variant === "media" ? "relative" : ""].filter(Boolean).join(" ");
+const showIcon = Boolean(icon && variant !== "panel" && !center);
+
+const defaultSlotClass = (() => {
+  if (contentClass) return contentClass;
+  const classes = ["mt-12", "grid", "gap-10"];
+  if (center) classes.push("place-items-center");
+  if (variant === "panel") classes.push("glass-strong", "rounded-3xl", "p-10");
+  return classes.join(" ");
+})();
 ---
-<section id={id} class="py-20 lg:py-28" aria-labelledby={`${id}-title`}>
+<section id={id} class={baseSectionClasses} aria-labelledby={`${id}-title`}>
   <div class="container">
-    <div class={`max-w-3xl ${center ? "mx-auto text-center" : ""}`}>
-      {eyebrow && (
-        <div class="mb-6">
-          <NeonBadge text={eyebrow} />
+    {variant === "media" && image ? (
+      <div class="relative overflow-hidden rounded-3xl scrim border border-line/40">
+        <Image
+          src={image}
+          alt={imageAlt || title}
+          loading="lazy"
+          class="absolute inset-0 h-full w-full object-cover"
+          decoding="async"
+          formats={["webp", "avif"]}
+        />
+        <div class="relative z-10 space-y-6 px-8 py-14 text-onSurfaceStrong backdrop-blur">
+          {eyebrow && <NeonBadge text={eyebrow} />}
+          <h2 id={`${id}-title`} class="text-3xl font-semibold tracking-tight sm:text-4xl">
+            {title}
+          </h2>
+          {description && <p class="max-w-2xl text-lg leading-relaxed text-onSurface">{description}</p>}
+          <slot />
         </div>
-      )}
-      <h2 id={`${id}-title`} class="text-3xl font-semibold tracking-tight sm:text-4xl">
-        {title}
-      </h2>
-      {description && (
-        <p class={`mt-4 text-lg text-[var(--color-muted)] ${center ? "mx-auto" : ""}`}>
-          {description}
-        </p>
-      )}
-    </div>
-    <div class={`mt-12 grid gap-10 ${center ? "place-items-center" : ""}`}>
-      <slot />
-    </div>
+      </div>
+    ) : (
+      <div class={`max-w-5xl ${center ? "mx-auto text-center" : ""}`}>
+        {eyebrow && (
+          <div class="mb-6">
+            <NeonBadge text={eyebrow} />
+          </div>
+        )}
+        <div class={center ? "space-y-6" : "flex items-start gap-4"}>
+          {showIcon && (
+            <div class="mt-2 hidden h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/12 text-primary sm:flex">
+              <Icon name={icon!} size={28} />
+            </div>
+          )}
+          <div class={center ? "mx-auto" : "space-y-4"}>
+            <h2 id={`${id}-title`} class={`text-3xl font-semibold tracking-tight sm:text-4xl on-surface-strong ${center ? "" : ""}`}>
+              {title}
+            </h2>
+            {description && (
+              <p class={`text-lg leading-relaxed on-surface ${center ? "mx-auto max-w-2xl" : "max-w-2xl"}`}>
+                {description}
+              </p>
+            )}
+          </div>
+        </div>
+        <div class={defaultSlotClass}>
+          <slot />
+        </div>
+      </div>
+    )}
   </div>
 </section>

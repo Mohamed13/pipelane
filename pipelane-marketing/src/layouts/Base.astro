@@ -1,4 +1,5 @@
 ---
+import "@fontsource-variable/inter/index.css";
 import "@styles/globals.css";
 
 interface Props {
@@ -10,9 +11,11 @@ interface Props {
 const {
   title = "Pipelane — centralisez, automatisez, convertissez.",
   description =
-    "Pipelane est la plateforme d’automations omni-canales pour orchestrer WhatsApp, Email et SMS depuis une console unique.",
+    "Pipelane est la plateforme d'automations omni-canales pour orchestrer WhatsApp, Email et SMS depuis une console unique.",
   canonical = "https://www.pipelane.app"
 } = Astro.props as Props;
+
+const isDev = import.meta.env.DEV;
 ---
 <html lang="fr" class="dark">
   <head>
@@ -22,8 +25,8 @@ const {
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="theme-color" content="#0b0f17" media="(prefers-color-scheme: dark)" />
-    <meta name="theme-color" content="#f7f9ff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#060c1c" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f4f7ff" media="(prefers-color-scheme: light)" />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Pipelane" />
@@ -48,11 +51,11 @@ const {
       root.dataset.theme = useLight ? "light" : "dark";
     </script>
   </head>
-  <body class="min-h-screen bg-[var(--bg-base)] text-[var(--color-text)] bg-grid">
-    <div class="pointer-events-none fixed inset-0 -z-10 bg-hero-gradient opacity-90"></div>
+  <body class="min-h-screen bg-bg text-text">
+    <div class="pointer-events-none fixed inset-0 -z-10 bg-hero-gradient opacity-70"></div>
     <div class="pointer-events-none fixed inset-0 -z-20" aria-hidden="true">
-      <div class="absolute inset-0 translate-y-[-10%] bg-[radial-gradient(circle_at_20%_-10%,rgba(117,240,255,0.22),transparent_65%)]"></div>
-      <div class="absolute inset-0 translate-y-[15%] bg-[radial-gradient(circle_at_80%_120%,rgba(96,247,163,0.18),transparent_70%)]"></div>
+      <div class="absolute inset-0 translate-y-[-10%] bg-[radial-gradient(circle_at_20%_-10%,rgba(125,249,255,0.22),transparent_65%)]"></div>
+      <div class="absolute inset-0 translate-y-[15%] bg-[radial-gradient(circle_at_80%_120%,rgba(99,251,162,0.2),transparent_70%)]"></div>
     </div>
     <slot />
     <script is:inline>
@@ -205,5 +208,6 @@ const {
         activateParallax();
       })();
     </script>
+    {isDev && <script type="module" src="/src/scripts/contrast-check.ts"></script>}
   </body>
 </html>

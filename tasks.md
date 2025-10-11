@@ -1,135 +1,96 @@
-You are a senior front-end developer. Build a production-ready marketing site using Astro + Tailwind CSS for the product “Pipelane”.
+You are a senior front-end engineer. We have an Astro + Tailwind marketing site in `pipelane-marketing/`. 
+Do a global pass to FIX CONTRAST and ADD ILLUSTRATIVE MEDIA (images + icons) while preserving the futuristic aesthetic.
 
-### Goals
-- A futuristic, sleek, ergonomic landing page that sells a multi-tenant, omni-channel messaging & automation platform.
-- Smooth micro-interactions, glassmorphism, soft neon accents, subtle parallax, GPU-accelerated transforms. No heavy libs.
-- 95+ Lighthouse (Performance/Best Practices/SEO), responsive, dark by default with light mode toggle.
-- Clean, accessible, semantic HTML; focus on copy clarity and visual hierarchy.
+### Objectives
+1) Enforce WCAG 2.2 AA contrast:
+   - Body text ≥ 4.5:1, large text (≥ 18.66px/14pt or bold) ≥ 3:1.
+   - No white text on light/low-opacity surfaces; no dark text on dark backgrounds.
+2) Improve legibility on gradients, media, and glass panels with scrims/overlays.
+3) Add tasteful product- and feature-related images and icons to visually support the copy.
+4) Keep performance high: responsive images, lazy loading, minimal blocking.
 
-### Tech & Setup
-- Framework: Astro latest + TypeScript.
-- Styling: Tailwind + CSS variables for theme tokens. Add a tiny utility for glass panels & neon borders.
-- Animations: Use small vanilla intersection observers + CSS transitions (no GSAP/Framer); parallax via CSS perspective + transform on scroll; staggered reveals.
-- Assets: create simple SVG logos/placeholders where needed; use Iconify for icons (minimal).
-- Integrations: 
-  - Form CTA posts to `/api/demo-request` (Astro endpoint that logs to console for now, easily swappable to backend).
-  - OpenGraph & Twitter meta, sitemap, robots, canonical.
+### Tasks (exact)
+- In `src/styles/tokens.css` or Tailwind config, define explicit **foreground** tokens for each surface:
+  - `--bg`, `--surface`, `--surface-strong`, `--text`, `--text-muted`, `--primary`, `--primary-foreground`, `--on-surface`, `--on-surface-strong`.
+  - Dark theme by default; also ensure proper mappings for light theme.
+- Update `tailwind.config.*`:
+  - Extend `colors` with `bg`, `surface`, `surfaceStrong`, `text`, `textMuted`, `primary`, `primaryFg`, and `onSurface`, `onSurfaceStrong`.
+  - Provide utility classes `.on-surface`, `.on-surface-strong`, `.text-elevated` that map to the correct tokens.
+- Create a reusable **scrim** utility:
+  - CSS class `.scrim` applying a subtle linear-gradient overlay (e.g. `linear-gradient(180deg, rgba(0,0,0,.56), rgba(0,0,0,.24) 50%, rgba(0,0,0,0))`) for images/gradients to guarantee contrast under headings/buttons.
+  - Use `.scrim` on hero, section headers with imagery, and any glass panel that has text on top of imagery/gradient.
+- Replace semi-transparent “glass” panels that cause poor contrast:
+  - Increase backdrop blur and reduce transparency: surface backgrounds at least `rgba(255,255,255,0.06)` dark theme, or `rgba(0,0,0,0.06)` in light theme.
+  - Ensure text on those panels uses `.on-surface-strong`.
+- Add **text shadow** only for large hero headers if still borderline; avoid for body text.
+- Normalize headings and body:
+  - Headings use `text-onSurfaceStrong` equivalent.
+  - Body uses `text-onSurface`.
+  - Muted text uses `text-textMuted` only on sufficiently strong surfaces (not directly on media).
+- Buttons:
+  - Primary button: background = `primary`, text = `primaryFg`. On hover, slightly brighten/darken but keep contrast ≥ 3:1 for large text.
+  - Ghost/secondary buttons must sit on surfaces that guarantee ≥ 4.5:1.
 
-### Design System (tokens)
-- Base font: Inter.
-- Colors: 
-  - bg: #0b0f17 (dark), surface: rgba(255,255,255,0.06), lines: rgba(255,255,255,0.08)
-  - primary neon: #75F0FF, secondary: #9B8CFF, accent: #60F7A3
-  - gradient: linear-gradient(135deg, #75F0FF 0%, #9B8CFF 45%, #60F7A3 100%)
-- Effects: glass blur(12px), soft shadow, neon border on focus/hover, subtle grid background with animated radial gradient.
+### Images & Icons
+- Introduce `src/assets/img/` with 6–8 illustrative images (placeholders acceptable): 
+  - 2 “product/console” style mockups, 2 “automation/flow” illustrations, 2 “analytics/dashboards”, 1 “integrations” collage.
+  - Use Astro `<Image />` for responsive sizes and lazy loading; provide `alt` text and `width/height`.
+- Add an `Icon` component using Iconify (or built-in SVGs) with a consistent style (stroke=1.5, rounded caps).
+  - Replace plain bullets with icons in Features, Benefits, Integrations, FAQ toggles.
+- Where text sits on an image (hero, feature highlights), wrap in a container that includes `.scrim` and uses `.on-surface-strong`.
 
-### Site Map
-- `/` single-page landing with sections: 
-  1) Hero (value prop + product shots)
-  2) Social proof (logos + short quotes)
-  3) Product tour (cards + mini timeline of a message lifecycle)
-  4) Benefits (why it matters, quantified)
-  5) How it works (3 steps)
-  6) Features grid (omni-channel, rules, analytics, follow-ups, webhooks, multi-tenant)
-  7) Integrations (WhatsApp, Email, SMS, Resend, n8n, Meta Cloud, Slack)
-  8) Pricing teaser (simple tiers)
-  9) FAQ
-  10) Final CTA
-- `/api/demo-request` (Astro endpoint mock).
+### Component updates (concrete)
+- `src/components/Section.astro`: 
+  - Accept props: `variant: 'plain'|'media'|'panel'`, `image?: string`, `icon?: string`.
+  - If `variant==='media'`, render background image with `<Image />` + `.scrim`, then place content inside a padded container with `text-onSurfaceStrong`.
+- `src/components/FeatureCard.astro`:
+  - Add optional `icon` prop. Header row shows icon + title.
+  - Card background uses `surfaceStrong` with `on-surface` text; hover raises elevation but preserves contrast.
+- `src/components/PricingCard.astro`:
+  - Ensure copy uses `on-surface-strong` for titles and `on-surface` for body. Verify price figures have ≥ 4.5:1.
+- `src/components/CTA.astro`:
+  - Background gradient gets an overlay `.scrim`. Heading/subtitle use `on-surface-strong`.
 
-### Copy (FR) — use exactly but allow minor micro-edits for layout
-HERO:
-- Eyebrow: Plateforme d’automations omni-canales
-- H1: Pipelane — centralisez, automatisez, convertissez.
-- Sub: Une console unique pour capter, envoyer et suivre tous vos messages (WhatsApp, Email, SMS), avec règles intelligentes, analytics temps réel et suivi multi-tenant.
-- Primary CTA: Demander une démo
-- Secondary CTA: Voir le produit
-- Bullets: Multi-tenant • Automations no-code • Analytics temps réel
+### Theming & Modes
+- Dark as default, light mode toggle must remap tokens to keep AA contrast:
+  - In light mode, avoid low-opacity text on light surfaces; ensure buttons switch to darker hues with adequate foreground.
+- Respect `prefers-color-scheme`; store preference and recalc token classes.
 
-SOCIAL PROOF:
-- Title: Déjà adoptée par des équipes orientées résultats
-- Logos: (placeholders) NovaTech, Velia, QuantifyX, Orbitline, Bluehawk
-- Quotes (short): “Mise en prod en 48h”, “+22% de réponses”, “On a enfin une vision claire”
+### QA & Automation
+- Add `npm script` `test:a11y` that runs `@axe-core/cli` or `pa11y-ci` against local preview for key routes (/, sections hash anchors).
+- Add `npm script` `test:lighthouse` to check Lighthouse scores; fail if `accessibility < 95` or any contrast audit fails.
+- Add a lightweight unit visual check: ensure all `h1/h2/p/button` elements compute to colors with compliant contrast vs their immediate background.
+  (A simple DOM script in `src/scripts/contrast-check.ts` can measure computed styles & log offenders to console during dev.)
 
-PRODUCT TOUR:
-- Title: Votre pipeline de messages, de A à Z
-- Steps (with mini timeline visuals):
-  1) Capture & import (formulaires, webhooks, CSV)
-  2) Orchestration & règles (fenêtre WhatsApp, séquences, quiet hours)
-  3) Envoi & suivi (statuts Sent/Delivered/Open/Failed)
-  4) Analytics & conversions (sources, templates, ROI)
+### Acceptance Criteria (must pass)
+- No Lighthouse “Contrast” failures. Accessibility score ≥ 95.
+- All headings/body/buttons meet AA thresholds.
+- Hero, Product Tour, Features, Benefits, Integrations, Pricing, FAQ, Final CTA each includes at least one icon; at least 4 sections include an illustrative image with `.scrim`.
+- Largest text on media has legible foreground in both dark & light modes.
+- CLS unaffected; images lazy; total image payload under 350KB on initial viewport (use responsive sizes).
 
-BENEFITS (3 blocks, quantify):
-- “+20–35% de taux de réponse” grâce aux séquences et relances intelligentes.
-- “Jusqu’à 2h gagnées/jour” par opérateur via automatisations & templates.
-- “Vue consolidée” pour prioriser ce qui convertit vraiment.
-
-HOW IT WORKS (3 steps):
-1) Connectez vos canaux (WhatsApp, Email, SMS)
-2) Créez vos règles (si/alors) et séquences
-3) Lancez vos campagnes et suivez les conversions
-
-FEATURES GRID (6):
-- Omni-canal: WhatsApp, Email, SMS dans une seule timeline.
-- Règles & séquences: triggers, conditions, actions, fenêtres horaires.
-- Analytics avancées: sent/delivered/open/failed, par template/canal.
-- Follow-ups intelligents: relances auto si pas de réponse.
-- Webhooks & intégrations: n8n, Resend, Slack, Meta Cloud.
-- Multi-tenant & rôles: ségrégation stricte, audit, sécurité.
-
-INTEGRATIONS:
-- Petites cards icônes: WhatsApp Cloud, Resend, n8n, Slack, SMTP, Webhooks.
-
-PRICING:
-- Starter: 49€/mois — 1 tenant, 3 utilisateurs, 10k events
-- Growth: 149€/mois — 5 tenants, 15 utilisateurs, 100k events
-- Scale: Sur mesure — SSO, SLA, support dédié
-- Note: “Aucun frais caché. Annulable à tout moment.”
-
-FAQ (6):
-- Puis-je utiliser uniquement l’email ? — Oui, chaque canal est optionnel.
-- Gérez-vous la fenêtre WhatsApp 24h ? — Oui, règles automatiques intégrées.
-- Puis-je brancher mes webhooks entrants ? — Oui, endpoints dédiés par canal.
-- Données & sécurité ? — Multi-tenant, chiffrage des secrets, audit & RBAC.
-- Essai gratuit ? — Démo guidée + sandbox possible.
-- Migration depuis mon outil actuel ? — Import CSV + APIs.
-
-FINAL CTA:
-- Title: Prêt à centraliser vos messages et accélérer la conversion ?
-- Primary: Demander une démo
-- Secondary: Voir la documentation
-
-FOOTER:
-- Liens: Produit, Prix, Docs, Sécurité, Contact
-- Mentions: © Pipelane. Tous droits réservés.
-
-### Implementation details
-- Create components under `src/components`: 
-  - `NeonBadge.astro`, `Section.astro`, `FeatureCard.astro`, `IntegrationCard.astro`, `PricingCard.astro`, `FAQItem.astro`, `CTA.astro`.
-- Create `src/layouts/Base.astro` with full SEO (title, description, og:image placeholder, theme-color).
-- Background: animated radial gradient + subtle grid SVG; parallax layers for hero orbs (pure CSS).
-- Add a floating “glass” nav with active underline hover effect; sticky; scroll spy for section links.
-- Add a theme toggle (dark/light) storing preference in localStorage.
-- Add IntersectionObserver utility to add `.reveal-in` class (translateY(12px) → 0, opacity 0 → 1).
-- Ensure reduced motion preference is honored.
-- Optimize images with Astro `<Image />` where applicable.
-
-### Forms & Endpoint
-- In hero & final CTA, add a simple form (name, email, company, message volume dropdown). POST to `/api/demo-request`.
-- Implement `/src/pages/api/demo-request.ts` to validate payload server-side, log to console, and return 200 JSON `{ok:true}`.
-
-### Tailwind config
-- Enable JIT, add custom colors, shadows, neon ring utilities, container padding, and font Inter.
-- Create utility classes: `.glass`, `.neon`, `.btn-primary`, `.btn-ghost`, `.chip`.
-
-### Build & Quality
-- Add ESLint + Prettier basic config.
-- Add `pnpm` scripts: dev, build, preview.
-- Provide a README with setup steps.
+### Implementation Hints (Tailwind)
+- Colors (example, adjust to project brand):
+  - dark: 
+    - bg `#0b0f17`, surface `#121826`, surface-strong `#0e1524`,
+    - text `#E6EAF2`, textMuted `#A6B0C3`,
+    - primary `#75F0FF`, primaryFg `#07141A`,
+    - onSurface `#DDE3EE`, onSurfaceStrong `#FFFFFF`.
+  - light:
+    - bg `#F7FAFF`, surface `#FFFFFF`, surface-strong `#F2F6FF`,
+    - text `#0E1A2B`, textMuted `#3C4B66`,
+    - primary `#0EA5E9`, primaryFg `#FFFFFF`,
+    - onSurface `#243142`, onSurfaceStrong `#0E1A2B`.
+- Example utility classes:
+  - `.on-surface { @apply text-onSurface; }`
+  - `.on-surface-strong { @apply text-onSurfaceStrong; }`
+  - `.scrim { background: linear-gradient(180deg, rgba(0,0,0,.56), rgba(0,0,0,.24) 50%, rgba(0,0,0,0)); }`
 
 ### Deliverables
-- Full Astro project with the landing page live at `/`.
-- Clean, commented code, easily customizable, no dead CSS.
-- LCP under 1.8s on mid-range mobile.
+- Updated Tailwind config & tokens with safe foreground/background pairs.
+- Media-ready sections using `<Image />` + `.scrim`.
+- Icons added across features/benefits/integrations/FAQ.
+- A11y and Lighthouse scripts added and passing.
 
-Now generate the complete project files.
+Refactor the code accordingly, update components, wire images/icons, and commit with message: 
+"feat(marketing): enforce AA contrast + add images/icons with scrim overlays; add a11y checks"

@@ -1,26 +1,30 @@
 ---
-import { Icon } from "@astrojs/icon/components";
+import Icon from "./Icon.astro";
 
 interface Props {
-  icon: string;
+  icon?: string;
   title: string;
   description: string;
   index?: number;
 }
 
-const { icon, title, description, index = 0 } = Astro.props as Props;
+const { icon = "spark", title, description, index = 0 } = Astro.props as Props;
 ---
 <article
-  class="reveal rounded-3xl border border-[var(--line)] bg-[rgba(255,255,255,0.04)] p-8 backdrop-blur-xl transition-transform duration-500 hover:-translate-y-1 hover:border-[var(--color-primary)]"
+  class="reveal glass-strong transition-transform duration-350 rounded-3xl border border-line/30 p-8 hover:-translate-y-1 hover:border-primary/60"
   style={`transition-delay: ${index * 70}ms;`}
 >
-  <div class="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-[rgba(117,240,255,0.14)] text-[var(--color-primary)]">
-    <Icon name={icon} width="26" height="26" />
+  <div class="flex items-start gap-4">
+    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/18 text-primary">
+      <Icon name={icon} size={26} />
+    </div>
+    <div>
+      <h3 class="text-xl font-semibold on-surface-strong">
+        {title}
+      </h3>
+      <p class="mt-4 text-base leading-relaxed on-surface">
+        {description}
+      </p>
+    </div>
   </div>
-  <h3 class="text-xl font-semibold text-white">
-    {title}
-  </h3>
-  <p class="mt-4 text-base text-[var(--color-muted)]">
-    {description}
-  </p>
 </article>

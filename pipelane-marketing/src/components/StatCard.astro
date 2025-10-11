@@ -1,12 +1,24 @@
 ---
+import Icon from "./Icon.astro";
+
 interface Props {
   metric: string;
   description: string;
+  icon?: string;
 }
 
-const { metric, description } = Astro.props as Props;
+const { metric, description, icon } = Astro.props as Props;
 ---
-<div class="reveal rounded-3xl border border-[var(--line)] bg-[rgba(255,255,255,0.05)] p-6 text-left">
-  <p class="text-3xl font-semibold text-[var(--color-primary)]">{metric}</p>
-  <p class="mt-4 text-base text-[var(--color-muted)]">{description}</p>
+<div class="reveal glass rounded-3xl border border-line/30 p-6 text-left">
+  <div class="flex items-start gap-3">
+    {icon && (
+      <span class="mt-1 text-primary">
+        <Icon name={icon} size={26} />
+      </span>
+    )}
+    <div>
+      <p class="text-3xl font-semibold text-primary">{metric}</p>
+      <p class="mt-3 text-sm leading-relaxed on-surface">{description}</p>
+    </div>
+  </div>
 </div>

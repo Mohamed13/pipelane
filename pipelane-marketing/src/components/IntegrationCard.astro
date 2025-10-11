@@ -1,5 +1,5 @@
 ---
-import { Icon } from "@astrojs/icon/components";
+import Icon from "./Icon.astro";
 
 interface Props {
   icon: string;
@@ -8,9 +8,9 @@ interface Props {
 
 const { icon, label } = Astro.props as Props;
 ---
-<div class="reveal glass flex items-center gap-3 rounded-2xl border border-[rgba(255,255,255,0.08)] px-5 py-4 transition-transform duration-300 hover:-translate-y-1 hover:border-[var(--color-primary)]">
-  <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[rgba(117,240,255,0.12)] text-[var(--color-primary)]">
-    <Icon name={icon} width="22" height="22" />
+<div class="reveal glass flex items-center gap-3 rounded-2xl border border-line/25 px-5 py-4 transition-transform duration-300 hover:-translate-y-1 hover:border-primary/50">
+  <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/16 text-primary">
+    <Icon name={icon} size={22} />
   </div>
-  <span class="text-sm font-medium tracking-wide">{label}</span>
+  <span class="text-sm font-medium tracking-wide on-surface-strong">{label}</span>
 </div>

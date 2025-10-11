@@ -6,11 +6,12 @@ interface Props {
 }
 
 const { number, title, description } = Astro.props as Props;
+const stepLabel = number.toString().padStart(2, "0");
 ---
-<div class="reveal relative rounded-3xl border border-[var(--line)] bg-[rgba(255,255,255,0.04)] p-6 pl-8 backdrop-blur-xl">
-  <div class="absolute -left-5 top-6 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-primary)] text-[var(--bg-base)] font-semibold shadow-glow">
-    0{number}
+<div class="reveal relative rounded-3xl glass border border-line/30 p-6 pl-10">
+  <div class="absolute -left-5 top-6 flex h-11 w-11 items-center justify-center rounded-full bg-primary text-primaryFg font-semibold shadow-glow">
+    {stepLabel}
   </div>
-  <h3 class="text-lg font-semibold">{title}</h3>
-  <p class="mt-3 text-sm text-[var(--color-muted)]">{description}</p>
+  <h3 class="text-lg font-semibold on-surface-strong">{title}</h3>
+  <p class="mt-3 text-sm leading-relaxed on-surface">{description}</p>
 </div>

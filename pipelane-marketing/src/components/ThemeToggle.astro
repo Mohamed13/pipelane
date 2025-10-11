@@ -1,14 +1,14 @@
 ---
-import { Icon } from "@astrojs/icon/components";
+import Icon from "./Icon.astro";
 ---
 <button
   type="button"
-  class="btn-ghost w-12 justify-center rounded-full border border-transparent bg-[rgba(255,255,255,0.06)] p-0"
+  class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-line/40 bg-surfaceOverlay text-onSurface hover:border-primary/60"
   data-theme-toggle
   aria-label="Basculer le thème"
 >
-  <Icon name="ph:moon-stars-duotone" width="22" height="22" class="toggle-icon toggle-icon--dark" />
-  <Icon name="ph:sun-duotone" width="22" height="22" class="toggle-icon toggle-icon--light hidden" />
+  <Icon name="moon" size={22} class="toggle-icon toggle-icon--dark" />
+  <Icon name="sun" size={22} class="toggle-icon toggle-icon--light hidden" />
 </button>
 <script is:inline>
   (() => {
@@ -46,7 +46,8 @@ import { Icon } from "@astrojs/icon/components";
       applyTheme(next);
     });
 
-    window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", (event) => {
+    const media = window.matchMedia("(prefers-color-scheme: light)");
+    media.addEventListener?.("change", (event) => {
       if (localStorage.getItem("theme")) return;
       applyTheme(event.matches ? "light" : "dark");
     });

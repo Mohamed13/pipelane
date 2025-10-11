@@ -17,23 +17,36 @@ module.exports = {
         sans: ["'Inter'", ...defaultTheme.fontFamily.sans]
       },
       colors: {
-        base: "#0b0f17",
-        surface: "rgba(255,255,255,0.06)",
-        line: "rgba(255,255,255,0.08)",
-        primary: "#75F0FF",
-        secondary: "#9B8CFF",
-        accent: "#60F7A3"
+        bg: "var(--bg)",
+        surface: "var(--surface)",
+        surfaceStrong: "var(--surface-strong)",
+        surfaceOverlay: "var(--surface-overlay)",
+        text: "var(--text)",
+        textMuted: "var(--text-muted)",
+        primary: "var(--primary)",
+        primaryFg: "var(--primary-foreground)",
+        secondary: "var(--secondary)",
+        accent: "var(--accent)",
+        line: "var(--line)",
+        onSurface: "var(--on-surface)",
+        onSurfaceStrong: "var(--on-surface-strong)",
+        badgeBg: "var(--badge-bg)",
+        badgeText: "var(--badge-text)"
       },
       backgroundImage: {
-        "hero-gradient": "radial-gradient(circle at top left, rgba(117,240,255,0.25), transparent 55%), radial-gradient(circle at bottom right, rgba(155,140,255,0.3), transparent 60%)",
-        "brand-gradient": "linear-gradient(135deg, #75F0FF 0%, #9B8CFF 45%, #60F7A3 100%)"
+        "hero-gradient": "radial-gradient(circle at top left, rgba(125,249,255,0.28), transparent 55%), radial-gradient(circle at bottom right, rgba(181,168,255,0.32), transparent 60%)",
+        "brand-gradient": "linear-gradient(135deg, #7DF9FF 0%, #B5A8FF 45%, #63FBA2 100%)"
       },
       boxShadow: {
-        glow: "0 0 30px rgba(117,240,255,0.35)",
-        soft: "0 20px 45px rgba(0,0,0,0.45)"
+        glow: "0 0 24px rgba(125,249,255,0.45)",
+        soft: "0 24px 48px rgba(4,8,21,0.5)",
+        raised: "0 32px 64px rgba(4, 12, 32, 0.55)"
       },
-      blur: {
-        12: "12px"
+      borderRadius: {
+        xl2: "1.75rem"
+      },
+      transitionDuration: {
+        350: "350ms"
       }
     }
   },
@@ -41,23 +54,37 @@ module.exports = {
     plugin(function ({ addUtilities, addComponents, theme }) {
       addUtilities({
         ".glass": {
-          backgroundColor: "rgba(255,255,255,0.07)",
-          backdropFilter: "blur(12px)",
+          backgroundColor: "var(--surface)",
+          backdropFilter: "blur(22px)",
           border: `1px solid ${theme("colors.line")}`,
           boxShadow: theme("boxShadow.soft")
         },
-        ".neon": {
-          boxShadow: `0 0 12px ${theme("colors.primary")}`,
-          border: `1px solid ${theme("colors.primary")}`
-        },
-        ".chip": {
-          display: "inline-flex",
-          alignItems: "center",
-          gap: "0.375rem",
-          borderRadius: "9999px",
-          padding: "0.35rem 0.75rem",
+        ".glass-strong": {
+          backgroundColor: "var(--surface-strong)",
+          backdropFilter: "blur(28px)",
           border: `1px solid ${theme("colors.line")}`,
-          backgroundColor: "rgba(255,255,255,0.06)"
+          boxShadow: theme("boxShadow.raised")
+        },
+        ".on-surface": {
+          color: theme("colors.onSurface")
+        },
+        ".on-surface-strong": {
+          color: theme("colors.onSurfaceStrong")
+        },
+        ".text-elevated": {
+          color: theme("colors.text")
+        },
+        ".scrim": {
+          position: "relative",
+          isolation: "isolate"
+        },
+        ".scrim::before": {
+          content: '""',
+          position: "absolute",
+          inset: "0",
+          background: "var(--scrim)",
+          zIndex: "0",
+          pointerEvents: "none"
         }
       });
 
@@ -67,34 +94,49 @@ module.exports = {
           alignItems: "center",
           justifyContent: "center",
           gap: "0.5rem",
-          padding: "0.75rem 1.5rem",
+          padding: "0.75rem 1.75rem",
           borderRadius: "9999px",
           fontWeight: "600",
-          backgroundImage: theme("backgroundImage.brand-gradient"),
-          color: "#020205",
-          transition: "transform 150ms ease, box-shadow 150ms ease",
-          boxShadow: `0 10px 30px rgba(117,240,255,0.35)`
+          backgroundColor: theme("colors.primary"),
+          color: theme("colors.primaryFg"),
+          transition: "transform 150ms ease, box-shadow 150ms ease, filter 150ms ease",
+          boxShadow: "0 18px 36px rgba(125,249,255,0.35)"
         },
         ".btn-primary:hover": {
-          transform: "translateY(-1px)",
-          boxShadow: `0 12px 40px rgba(117,240,255,0.45)`
+          transform: "translateY(-2px)",
+          filter: "brightness(1.05)",
+          boxShadow: "0 22px 44px rgba(125,249,255,0.45)"
+        },
+        ".btn-primary:focus-visible": {
+          outline: `2px solid ${theme("colors.primary")}`,
+          outlineOffset: "3px"
         },
         ".btn-ghost": {
           display: "inline-flex",
           alignItems: "center",
           justifyContent: "center",
           gap: "0.5rem",
-          padding: "0.75rem 1.5rem",
+          padding: "0.75rem 1.75rem",
           borderRadius: "9999px",
           fontWeight: "600",
           border: `1px solid ${theme("colors.line")}`,
-          backgroundColor: "rgba(255,255,255,0.04)",
-          color: "#f7f9ff",
+          backgroundColor: "var(--surface-overlay)",
+          color: theme("colors.onSurfaceStrong"),
           transition: "border-color 150ms ease, background-color 150ms ease"
         },
         ".btn-ghost:hover": {
           borderColor: theme("colors.primary"),
-          backgroundColor: "rgba(117,240,255,0.1)"
+          backgroundColor: "rgba(125,249,255,0.18)"
+        },
+        ".chip": {
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "0.375rem",
+          borderRadius: "9999px",
+          padding: "0.35rem 0.75rem",
+          border: `1px solid ${theme("colors.line")}`,
+          backgroundColor: theme("colors.badgeBg"),
+          color: theme("colors.badgeText")
         }
       });
     })

@@ -60,7 +60,7 @@ export const post: APIRoute = async ({ request }) => {
   });
 };
 
-export const all: APIRoute = () =>
+export const ALL: APIRoute = () =>
   new Response(JSON.stringify({ ok: false, error: "Méthode non autorisée" }), {
     status: 405,
     headers: { "Allow": "POST", "Content-Type": "application/json" }

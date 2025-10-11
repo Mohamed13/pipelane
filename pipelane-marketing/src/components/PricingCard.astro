@@ -9,24 +9,24 @@ interface Props {
 
 const { tier, price, description, features, highlight = false } = Astro.props as Props;
 ---
-<div class={`reveal relative flex h-full flex-col rounded-3xl border ${highlight ? "border-[var(--color-primary)]" : "border-[var(--line)]"} bg-[rgba(255,255,255,0.05)] p-8 backdrop-blur-lg transition-transform duration-300 hover:-translate-y-1`}>
+<div class={`reveal relative flex h-full flex-col rounded-3xl border ${highlight ? "border-primary/70" : "border-line/35"} glass-strong p-8 transition-transform duration-350 hover:-translate-y-1`}>
   {highlight && (
-    <span class="absolute right-8 top-8 rounded-full border border-[var(--color-primary)] bg-[rgba(117,240,255,0.12)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-primary)]">
+    <span class="absolute right-8 top-8 inline-flex items-center gap-2 rounded-full border border-primary/60 bg-primary/18 px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
       Populaire
     </span>
   )}
-  <h3 class="text-2xl font-semibold">{tier}</h3>
-  <p class="mt-4 text-3xl font-bold">
+  <h3 class="text-2xl font-semibold on-surface-strong">{tier}</h3>
+  <p class="mt-4 text-3xl font-bold text-primary">
     {price}
   </p>
   {description && (
-    <p class="mt-2 text-sm text-[var(--color-muted)]">{description}</p>
+    <p class="mt-2 text-sm on-surface max-w-xs">{description}</p>
   )}
-  <ul class="mt-8 flex flex-1 flex-col gap-3 text-sm text-[var(--color-muted)]">
+  <ul class="mt-8 flex flex-1 flex-col gap-3 text-sm on-surface">
     {features.map((feature) => (
       <li class="flex items-start gap-3" key={feature}>
-        <span class="mt-1 inline-flex h-2 w-2 rounded-full bg-[var(--color-primary)]"></span>
-        <span>{feature}</span>
+        <span class="mt-1 inline-flex h-2 w-2 rounded-full bg-primary"></span>
+        <span class="leading-relaxed">{feature}</span>
       </li>
     ))}
   </ul>

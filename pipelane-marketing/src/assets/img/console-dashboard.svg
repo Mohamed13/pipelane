@@ -1,0 +1,36 @@
+<svg width="1280" height="720" viewBox="0 0 1280 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1280" y2="720" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0A1730"/>
+      <stop offset="0.48" stop-color="#13294E"/>
+      <stop offset="1" stop-color="#1B365F"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="180" y1="80" x2="980" y2="560" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7DF9FF" stop-opacity="0.58"/>
+      <stop offset="0.42" stop-color="#B5A8FF" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#63FBA2" stop-opacity="0.42"/>
+    </linearGradient>
+    <linearGradient id="bar" x1="0" y1="0" x2="620" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7DF9FF"/>
+      <stop offset="1" stop-color="#63FBA2"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="720" rx="36" fill="url(#bg)"/>
+  <rect x="120" y="120" width="1040" height="520" rx="32" fill="#081225" stroke="#7DF9FF" stroke-opacity="0.2" stroke-width="2"/>
+  <rect x="180" y="190" width="360" height="260" rx="24" fill="#0D1A33" stroke="#7DF9FF" stroke-opacity="0.15"/>
+  <rect x="580" y="190" width="480" height="120" rx="20" fill="#0D1A33" stroke="#7DF9FF" stroke-opacity="0.15"/>
+  <rect x="580" y="340" width="480" height="220" rx="20" fill="#0D1A33" stroke="#7DF9FF" stroke-opacity="0.12"/>
+  <path d="M220 280C270 220 360 320 420 250" stroke="url(#glow)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M618 380H1020" stroke="url(#bar)" stroke-width="18" stroke-linecap="round" stroke-opacity="0.85"/>
+  <g opacity="0.68">
+    <circle cx="746" cy="284" r="24" fill="#63FBA2" fill-opacity="0.22" stroke="#63FBA2" stroke-width="3"/>
+    <path d="M738 286l6 6 14-14" stroke="#63FBA2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g opacity="0.52">
+    <rect x="640" y="400" width="300" height="16" rx="8" fill="#7DF9FF" fill-opacity="0.4"/>
+    <rect x="640" y="432" width="380" height="16" rx="8" fill="#B5A8FF" fill-opacity="0.35"/>
+    <rect x="640" y="464" width="220" height="16" rx="8" fill="#63FBA2" fill-opacity="0.4"/>
+  </g>
+  <circle cx="1080" cy="160" r="64" fill="#7DF9FF" fill-opacity="0.08"/>
+  <circle cx="200" cy="540" r="48" fill="#B5A8FF" fill-opacity="0.12"/>
+</svg>

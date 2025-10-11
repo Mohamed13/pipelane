@@ -1,0 +1,41 @@
+:root {
+  --bg: #060c1c;
+  --surface: rgba(16, 26, 46, 0.72);
+  --surface-strong: rgba(12, 20, 38, 0.92);
+  --surface-overlay: rgba(12, 20, 38, 0.82);
+  --line: rgba(125, 249, 255, 0.36);
+  --primary: #7df9ff;
+  --primary-foreground: #04111f;
+  --secondary: #b5a8ff;
+  --accent: #63fba2;
+  --text: #f4f7ff;
+  --text-muted: rgba(211, 222, 245, 0.76);
+  --on-surface: #d8e2f5;
+  --on-surface-strong: #ffffff;
+  --scrim: linear-gradient(180deg, rgba(0,0,0,0.62) 0%, rgba(0,0,0,0.32) 55%, rgba(0,0,0,0) 100%);
+  --badge-bg: rgba(125, 249, 255, 0.24);
+  --badge-text: #061225;
+  --grid-color: rgba(125, 249, 255, 0.08);
+  color-scheme: dark;
+}
+
+:root.light {
+  --bg: #f4f7ff;
+  --surface: rgba(255, 255, 255, 0.95);
+  --surface-strong: #ffffff;
+  --surface-overlay: rgba(11, 24, 46, 0.08);
+  --line: rgba(11, 24, 46, 0.14);
+  --primary: #0ea5e9;
+  --primary-foreground: #ffffff;
+  --secondary: #5a4cff;
+  --accent: #0a9b63;
+  --text: #0d162a;
+  --text-muted: rgba(21, 34, 56, 0.72);
+  --on-surface: #1f2f45;
+  --on-surface-strong: #0d162a;
+  --scrim: linear-gradient(180deg, rgba(6, 14, 26, 0.54) 0%, rgba(6, 14, 26, 0.32) 55%, rgba(6, 14, 26, 0) 100%);
+  --badge-bg: rgba(14, 165, 233, 0.12);
+  --badge-text: #04203a;
+  --grid-color: rgba(14, 25, 48, 0.08);
+  color-scheme: light;
+}
