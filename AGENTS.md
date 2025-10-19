@@ -1,59 +1,63 @@
-# Repository Guidelines
+# Agent Handbook
 
-Standards for contributing to this repository. Keep changes focused, documented, and verified locally before opening a pull request.
+Guidance for agents working in the Pipelane monorepo. Keep changes scoped, documented, and validated locally before handing work back.
 
-## Project Structure
-- `pipelane-api/` — .NET 8 backend (Api, Application, Infrastructure, Domain)
-  - `src/` — projects by layer
-  - `tests/` — unit tests (`Pipelane.Tests`)
-  - `scripts/` — PowerShell and bash helpers for build/test/dev
-- `pipelane-front/` — Angular 17 frontend
-  - `src/` — standalone components/services
-  - `tools/` — helpers (env injection, swagger fetch)
-  - `jest.config.js`, `setup-jest.ts` — unit test config
-- `.github/workflows/` — CI (if present)
+## Repository Map
+- `pipelane-api/`: .NET 8 multi-tenant API (SQL Server). Key pieces: background services (`OutboxProcessor`, `CampaignRunner`, Quartz `FollowupScheduler`), channel adapters (WhatsApp/Email/SMS), webhook plumbing, xUnit tests in `tests/`.
+- `pipelane-front/`: Angular 20 operator console (standalone components, Angular Material, chart.js). Helpers live in `tools/` (`inject-env.mjs`, `fetch-swagger.mjs`).
+- `pipelane-marketing/`: Astro + Tailwind marketing site with pa11y/Lighthouse scripts and `/api/demo-request` endpoint.
+- `.github/workflows/`: CI definitions that must stay aligned with script and tooling changes.
 
-Root configs recommended: `.editorconfig`, pre-commit, linters. Node and .NET artifacts are already ignored in `.gitignore`.
+## Getting Started
+- Backend
+  - `dotnet restore` inside `pipelane-api`.
+  - Build via `./scripts/build.ps1` (or `.sh`), run tests with `./scripts/test.ps1`.
+  - Local DB: `docker compose up sqlserver` at repo root; the API auto-applies migrations/seeding on startup.
+  - Required env vars: `DB_CONNECTION`, `ENCRYPTION_KEY`, `JWT_KEY`, `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET`.
+- Frontend
+  - `npm ci` inside `pipelane-front`.
+  - `npm start`/`npm run build`; `tools/inject-env.mjs` writes `src/app/core/env.generated.ts` (do not commit it).
+  - Quality commands: `npm test`, `npm run lint`, `npm run e2e`, `npm run gen:api` (Swagger fetch + TS types; API must be running).
+- Marketing
+  - `npm install` or `pnpm install` then `npm run dev|build|test:a11y|test:lighthouse`.
+- Always execute the relevant build/test commands before pushing or opening a PR.
 
-## Build, Test, and Dev
-Backend (.NET):
-- Setup: `cd pipelane-api` then `dotnet restore`
-- Build: `./pipelane-api/scripts/build.(ps1|sh)`
-- Test: `./pipelane-api/scripts/test.(ps1|sh)`
-- Dev:  `./pipelane-api/scripts/dev.(ps1|sh)` (serves on `http://localhost:5000` by default)
- - Lint (analyzers): `./pipelane-api/scripts/lint.(ps1|sh)`
- - Format: `./pipelane-api/scripts/format.(ps1|sh)`
+## Backend Highlights
+- Multi-tenancy enforced via `HttpTenantProvider`; every request and test needs `X-Tenant-Id`.
+- Messaging flow: `MessagingService` routes text vs template, enqueues templates into the `Outbox`, and honours the WhatsApp 24h session rule via `ChannelRulesService`.
+- Background workers:
+  - `OutboxProcessor` locks batches, retries with exponential backoff, persists `Message` + `MessageEvent`.
+  - `CampaignRunner` promotes due campaigns and enqueues up to 100 contacts (segment JSON still rudimentary).
+  - `FollowupScheduler` (Quartz) creates `FollowupTask` items after 24h without reply and schedules `nudge-1` template nudges at 48h.
+- Integrations: email uses Resend (`EmailChannel`, dedicated HTTP client). `ResendWebhookVerifier` (HMAC) and `ResendWebhookProcessor` (idempotent status mapping) are already covered by unit tests. WhatsApp/SMS adapters are stubbed for now.
+- Analytics: `AnalyticsService.GetDeliveryAsync` powers `/analytics/delivery` with totals, per-channel, and per-template breakdowns.
+- Auth/security: `AuthController` supports register/login/me, JWT signing with configurable key, PBKDF2 password hashing, AES-GCM encryption service, Serilog + OpenTelemetry (console exporter).
+- Extend channels or analytics? Update the swagger snapshot (`pipelane-api/swagger.json`) and document any new env vars.
 
-Frontend (Angular):
-- Setup: `cd pipelane-front && npm ci`
-- Env: `tools/inject-env.mjs` generates `src/app/core/env.generated.ts` from `.env` (`API_BASE_URL`, defaults to `http://localhost:5000`)
-- Build: `npm run build`
-- Test: `npm test`
- - Lint: `npm run lint` (Angular ESLint)
- - Format: `npm run format` (Prettier)
-- Optional: Generate API types — `npm run gen:api` (starts API, fetches Swagger, generates TS types)
+## Frontend Highlights
+- Standalone Angular 20 setup with Angular Material theming (`ThemeService`) and route guards in `app.routes.ts`.
+- `ApiService` centralises HTTP calls, injects `X-Tenant-Id`, and surfaces toast errors.
+- `AnalyticsOverviewComponent` renders KPI cards, Chart.js visualisations (line/bar/doughnut), and a sortable table from `/analytics/delivery`.
+- `ConversationThreadComponent` handles WhatsApp-style messaging, template fallback, provider/status chips, and 5-second polling until messages reach a terminal state.
+- `CampaignBuilderComponent` guides multi-channel campaign creation (fallback order, batch size, schedule, follow-up preview through `/followups/preview`).
+- Test debt: only a couple of Jest specs (auth interceptor, policy service). Add specs/Cypress coverage when touching critical flows.
+- Regenerate API types (`npm run gen:api`) whenever backend DTOs evolve.
 
-Security/Audit (manual for now):
-- Backend: `cd pipelane-api && dotnet list package --vulnerable`
-- Frontend: `cd pipelane-front && npm audit`
+## Marketing Site Notes
+- Astro components compose the landing page sections (hero, product tour, pricing, FAQ, CTA, etc.) with Tailwind design tokens and glassmorphism utilities.
+- Dark/light toggle honours `prefers-reduced-motion`; contrast checking runs in dev via `src/scripts/contrast-check.ts`.
+- `/api/demo-request` validates submissions and logs them (no persistence yet). Coordinate with growth/CRM before wiring storage.
+- Quality tooling: `npm run test:a11y` (pa11y-ci) and `npm run test:lighthouse` (fails <95). Keep assets optimised when adding visuals.
 
-## Coding Style
-- .NET: conventional C# style, nullable enabled, `PascalCase` for public APIs.
-- Angular: `camelCase` for variables/functions, `PascalCase` for classes; standalone components with `OnPush` change detection preferred.
-- Formatting: use IDE formatters or project linters; keep diffs minimal.
+## Quality, Docs, CI
+- Use the provided scripts for build/test/lint/format per project; report results when handing off work.
+- OpenTelemetry currently exports to console; plan exporters if observability requirements grow.
+- Reference `tasks.md`, `TODO-net8.md`, and `TODO-angular.md` for backlog context before introducing new tasks.
+- Keep `AGENTS.md`, `COMPTE_RENDU.md`, and swagger/types docs accurate when behaviour changes.
+- The repo may contain unrelated local changes—never revert work you did not author; sync with maintainers if conflicts arise.
 
-## Testing
-- Backend: xUnit tests in `pipelane-api/tests`; run via the scripts above.
-- Frontend: Jest tests under `pipelane-front/src/__tests__`; CI-friendly by default.
-
-## Commits & PRs
-- Conventional Commits: `feat:`, `fix:`, `docs:`, `refactor:`, `chore:` (e.g., `feat(api): add campaign endpoints`).
-- PRs describe rationale, link issues (e.g., `Closes #123`), include tests/docs as applicable, and pass CI.
-
-## Secrets & Config
-- Do not commit secrets. Frontend reads `.env` (local only). Backend reads env vars (`DB_CONNECTION`, `ENCRYPTION_KEY`, `JWT_KEY`). Provide `.env.example` when adding new variables.
-
-## Agent-Specific Instructions
-- Keep patches minimal and localized; prefer small, reviewable diffs.
-- Align with this file for any new code, tests, or scripts.
-- When adding tools, expose them through `scripts/` or npm/dotnet scripts and document usage here.
+## Practical Tips
+- Stick to ASCII in new files/diffs unless the existing file relies on Unicode.
+- Update `.env.example` files whenever new configuration is required.
+- When modifying channels/back-office flows, extend existing xUnit coverage (`Pipelane.Tests`) and document secrets/scripts.
+- Before merging: run backend tests (`./scripts/test`), frontend checks (`npm test`, `npm run lint`), and marketing audits where relevant; mention outcomes in review notes.

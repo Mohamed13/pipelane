@@ -4,8 +4,8 @@
   --surface-strong: rgba(12, 20, 38, 0.92);
   --surface-overlay: rgba(12, 20, 38, 0.82);
   --line: rgba(125, 249, 255, 0.36);
-  --primary: #7df9ff;
-  --primary-foreground: #04111f;
+  --primary: #0ea5e9;
+  --primary-foreground: #021b2d;
   --secondary: #b5a8ff;
   --accent: #63fba2;
   --text: #f4f7ff;
@@ -25,7 +25,7 @@
   --surface-strong: #ffffff;
   --surface-overlay: rgba(11, 24, 46, 0.08);
   --line: rgba(11, 24, 46, 0.14);
-  --primary: #0ea5e9;
+  --primary: #0058b0;
   --primary-foreground: #ffffff;
   --secondary: #5a4cff;
   --accent: #0a9b63;

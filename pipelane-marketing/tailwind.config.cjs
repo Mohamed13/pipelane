@@ -34,11 +34,11 @@ module.exports = {
         badgeText: "var(--badge-text)"
       },
       backgroundImage: {
-        "hero-gradient": "radial-gradient(circle at top left, rgba(125,249,255,0.28), transparent 55%), radial-gradient(circle at bottom right, rgba(181,168,255,0.32), transparent 60%)",
-        "brand-gradient": "linear-gradient(135deg, #7DF9FF 0%, #B5A8FF 45%, #63FBA2 100%)"
+        "hero-gradient": "radial-gradient(circle at top left, rgba(14,165,233,0.28), transparent 55%), radial-gradient(circle at bottom right, rgba(181,168,255,0.32), transparent 60%)",
+        "brand-gradient": "linear-gradient(135deg, #0EA5E9 0%, #B5A8FF 45%, #63FBA2 100%)"
       },
       boxShadow: {
-        glow: "0 0 24px rgba(125,249,255,0.45)",
+        glow: "0 0 24px rgba(14,165,233,0.42)",
         soft: "0 24px 48px rgba(4,8,21,0.5)",
         raised: "0 32px 64px rgba(4, 12, 32, 0.55)"
       },
@@ -100,12 +100,12 @@ module.exports = {
           backgroundColor: theme("colors.primary"),
           color: theme("colors.primaryFg"),
           transition: "transform 150ms ease, box-shadow 150ms ease, filter 150ms ease",
-          boxShadow: "0 18px 36px rgba(125,249,255,0.35)"
+          boxShadow: "0 18px 36px rgba(14,165,233,0.35)"
         },
         ".btn-primary:hover": {
           transform: "translateY(-2px)",
           filter: "brightness(1.05)",
-          boxShadow: "0 22px 44px rgba(125,249,255,0.45)"
+          boxShadow: "0 22px 44px rgba(14,165,233,0.45)"
         },
         ".btn-primary:focus-visible": {
           outline: `2px solid ${theme("colors.primary")}`,

@@ -1,76 +1,66 @@
 # Compte rendu du projet Pipelane
 
 ## Vue d'ensemble
-- Monorepo structure autour de trois axes :
-  - `pipelane-api/` : backend .NET 8 (Api/Application/Infrastructure/Domain + tests).
-  - `pipelane-front/` : console operateur Angular 20.
-  - `pipelane-marketing/` : nouveau site marketing Astro + Tailwind.
-- Objectif global : plateforme omni-canale multi-tenant (contacts, conversations, campagnes, analytics, suivis automatises) avec adaptateurs WhatsApp/Email/SMS.
-- Codebase active mais non stabilisee : nombreuses evolutions recentes (migrations, canaux, analytics, marketing). Revue approfondie recommandee avant merge/pull request.
+- Monorepo articule autour de trois applications : `pipelane-api` (.NET 8), `pipelane-front` (Angular 20) et `pipelane-marketing` (Astro + Tailwind).
+- Positionnement produit : plateforme omni-canal multi-tenant pour orchestrer contacts, conversations, campagnes et analytics avec adaptateurs WhatsApp, Email et SMS.
+- Infrastructure locale : SQL Server (docker-compose) + API + front. L'API applique migrations/seeding au demarrage et expose Swagger /health.
+- Le code a recemment evolue sur l'orchestration (Outbox, Followups), l'analytics (`/analytics/delivery`) et l'integration email Resend.
 
 ## Backend (.NET 8)
-### Realisations marquantes
-- Modele enrichi : `Message` integre provider/status detailles et horodatages, `MessageEvent` historise les evenements par provider (migrations SQL ajoutees et index uniques sur `TenantId` + `ProviderMessageId`).
-- Pipelines asynchrones revisites :
-  - `OutboxProcessor` applique desormais 5 tentatives maximum avec backoff exponentiel, mise a jour des statuts/timestamps et journalisation des erreurs.
-  - `FollowupScheduler` (Quartz) planifie des taches de relance (task "Follow up" + envoi template `nudge-1`) selon absence d'activite 24 h / 48 h.
-- Services : `AnalyticsService.GetDelivery(from,to)` execute des regroupements SQL pour totaux et ventilations par canal/template ; expose via `GET /api/analytics/delivery`.
-- Email : canal Resend implemente (envoi template -> `ProviderMessageId`), webhook `POST /api/webhooks/email/resend` avec verification HMAC (`IProviderWebhookVerifier`) et idempotence ; stockage des evenements/statuts alimente `Message` et `MessageEvent`.
-- Outillage : scripts lint/format/migrate, `Directory.Build.props`, `.editorconfig`, nouveaux controleurs (followups, webhook email, users).
+### Realisations
+- Architecture clean (Api/Application/Infrastructure/Domain) avec enregistrement Serilog + OpenTelemetry console. `Program.cs` configure JWT, CORS `localhost:4200/8080`, migrations auto et seeding demo.
+- `MessagingService` gere l'envoi texte vs template, applique la regle WhatsApp 24h (`ChannelRulesService`) et enfile les templates dans l'`Outbox`.
+- `OutboxProcessor` traite les jobs par lot (lock 30 s), tente jusqu'a 5 envois avec backoff exponentiel, puis cree `Message` + `MessageEvent` avec statut, provider, horodatages.
+- `CampaignRunner` promeut les campagnes `pending/running`, prend jusqu'a 100 contacts et insere les messages dans l'Outbox; `CampaignStatus` passe a `Done` en fin de lot.
+- `FollowupScheduler` (Quartz toutes 15 min) genere des `FollowupTask` 24 h apres lecture sans reponse et re-enfile un template `nudge-1` apres 48 h sans inbound.
+- Canal email complet : `EmailChannel` s'appuie sur Resend (HTTP client dedie), `ResendWebhookVerifier` (HMAC) et `ResendWebhookProcessor` (mapping events -> statuts, idempotence). Tests xUnit couvrent verifier et processor.
+- `AnalyticsController` expose `/analytics/overview` et `/analytics/delivery`; `AnalyticsService.GetDeliveryAsync` agrege totaux, breakdown par canal et par template.
+- Authentification : `AuthController` offre register/login/me (JWT HMAC, PBKDF2), `HttpTenantProvider` extrait `X-Tenant-Id`, encryption AES-GCM pour secrets.
+- Tests existants (`Pipelane.Tests`) couvrent MessagingService, regles WhatsApp et pipelines Resend.
 
-### Points restants / risques
-- Verifications incompletes :
-  - Pas de tests couvrant `ResendWebhookVerifier`, `AnalyticsService` ou `FollowupScheduler` (TODO ouverts).
-  - Scenarios d'echec Outbox partiellement couverts (tests unitaires/integration a ajouter sur les nouvelles branches de code).
-- Integrations : adaptateurs WhatsApp/SMS toujours relies a des stubs (pas de calls providers, pas de verification signature Meta/Twilio).
-- Donnees : segmentation campagne, preview contacts, regles quiet hours ou STOP SMS restent rudimentaires.
-- Observabilite : Serilog/Otel en place mais pipeline CI et supervision non verifies.
-- Securite : cles JWT/RESEND par defaut, RBAC partiel, validations d'entrees a approfondir.
+### Points a surveiller
+- Adaptateurs WhatsApp et SMS restent largement stubs (pas d'appel providers, pas de verification signature) -> a finaliser avant production.
+- `CampaignRunner`/`Outbox` n'appliquent pas de segmentation avancee, pas de dedupe par contact, pas de rate limiting multi-tenant.
+- `FollowupScheduler` et `AnalyticsService` n'ont pas de tests automatises; risque de regressions sur les requetes SQL complexes.
+- Securite : clefs par defaut dans docker-compose, RBAC limite a une chaine `role`, validations DTO a elargir.
+- Observabilite : OTel exporte sur la console uniquement, pas de pipeline centralise pour traces/metrics.
 
 ## Frontend (Angular 20)
-### Realisations marquantes
-- Migration Angular 20 terminee (CLI/Material/CDK) avec build `npm run build` concluant. Charts et theming alignes.
-- Fonctionnalites :
-  - Dashboard analytics consomme `GET /api/analytics/delivery`, rend totaux + charts line/donut avec fallback demo.
-  - ConversationThread : badges statut (Queued/Sent/Delivered/Opened/Failed), badge provider, polling 5 s jusqu'a statut terminal.
-  - Onboarding : bouton "Envoyer un email de test" via `/api/messages/send`.
-  - Campaign builder : champs `ScheduleAt` + `BatchSize`, appel `/api/followups/preview` affichant le volume cible.
-  - `ApiService` ajoute `X-Tenant-Id` et publie des toasts d'erreur detailles.
-- Tooling : script `inject-env.mjs` mis a jour, build Angular propre.
+### Realisations
+- Application standalone Angular 20 avec Angular Material, theming geres par `ThemeService`, routes protegees (`authGuard`) definies dans `app.routes.ts`.
+- `ApiService` centralise tous les appels, injecte `X-Tenant-Id`, gere les toasts d'erreur et reconstruit les messages a partir de `HttpErrorResponse`.
+- `AnalyticsOverviewComponent` affiche KPIs, tableaux sortables et graphiques Chart.js (line/bar/donut) relies a `/analytics/delivery` avec theming dynamique.
+- `ConversationThreadComponent` gere la timeline messages, badges statut/provider, composer WhatsApp (texte vs template), et un polling 5 s jusqu'a statut terminal.
+- `CampaignBuilderComponent` (stepper Material) gere fallback channels, batch size, schedule UTC, segment JSON et preview via `/api/followups/preview`.
+- Scripts outillage : `tools/inject-env.mjs` (env), `tools/fetch-swagger.mjs` + `npm run gen:api` pour regenerer les DTOs a partir du swagger.
 
-### Points restants / risques
-- Tests unitaires absents sur `ApiService`, preview campagne et polling conversation.
-- UX : gestion erreurs/offline a ameliorer, consolidation des toasts.
-- Alignement API : certaines vues reposent encore sur des reponses stub (templates, analytics avancees) -> prevoir garde-fous UI si backend incomplet.
+### Points a surveiller
+- Couverture de tests tres faible (interceptor/policy uniquement). Manquent des specs sur `ApiService`, analytics, conversation polling, campaign builder; aucune e2e Cypress lancee.
+- Plusieurs vues dependent de comportements backend encore basiques (followups preview, conversation status) -> prevoir garde-fous UI et etats de chargement.
+- Gestion erreurs/offline dispersee; uniformiser les toasts/snackbars et la detection tenant manquant.
+- Verifier que `env.generated.ts` reste hors VCS et documenter toute nouvelle cle `.env`.
 
-## Site marketing (Astro + Tailwind)
-### Realisations marquantes
-- Nouveau projet `pipelane-marketing/` : landing page complete (hero, social proof, produit, benefices, how-it-works, features, integrations, pricing, FAQ, CTA final) avec animations scroll/parallax et dark mode toggle persistant.
-- Composants reutilisables (`Section`, `FeatureCard`, `PricingCard`, `CTA`, `Icon`, etc.) et design system Tailwind (tokens, utilities glass/neon/chip).
-- Endpoint `/api/demo-request` valide le formulaire (name/email/company/volume), journalise et renvoie JSON `{ ok: true }`; assets SEO (favicon, OG, sitemap, robots) ajoutes.
-- Build `npm run build` OK, README documente l'installation et les scripts.
+## Site marketing (Astro)
+### Realisations
+- Landing page riche couvrant hero, social proof, parcours produit, features, timeline, integrations, pricing, FAQ, success stories et CTA final, avec dark/light toggle et effets parallax soft.
+- Design system Tailwind (`tokens`, utilitaires `glass`/`scrim`), composants modulaire (`Section`, `FeatureCard`, `PricingCard`, `CTA`, etc.).
+- Endpoint `/api/demo-request` valide les champs (name/email/company/volume), journalise et repond JSON `{ ok: true }`. Scripts `npm run test:a11y` (pa11y-ci) et `npm run test:lighthouse`.
 
-### Points restants / risques
-- Objectif Lighthouse 95+ non verifie (tests performance/accessibilite a lancer).
-- Formulaire demo : aucune persistence/CRM -> integration a planifier.
-- QA : pas de tests e2e ou verifications accessibilite automatisee.
+### Points a surveiller
+- Pas de persistence pour les demandes demo -> prevoir integration CRM ou file queue.
+- Plusieurs assets lourds (SVG) + animations : surveiller le score Lighthouse (>95) et optimiser si nouveaux visuels.
+- Les fichiers contiennent des caracteres `?` a la place d'accents (encodage a verifier/normaliser en UTF-8 ou ASCII propre).
 
-## DevOps et qualite
-- Builds locaux verifies :
-  - `pipelane-marketing`: `npm run build` -> OK.
-  - `pipelane-front`: `npm run build` -> OK (env genere automatiquement).
-  - `pipelane-api`: scripts build/test non executes durant cette passe (a rejouer pour valider les changements importants et migrations).
-- CI : workflows GitHub presents (`.github/workflows/ci-backend.yml`, etc.) mais non executes/valides recemment.
-- Couverture de tests insuffisante (backend et frontend) au regard des nouvelles fonctionnalites.
+## Qualite et operations
+- Scripts standards par couche (`scripts/*.ps1|sh`, `npm run lint/test`, `pnpm test:a11y`...). A executer avant toute PR.
+- Couverture tests backend partielle : Outbox/Followup/Analytics manquent encore de specs; Angular quasi vide; marketing sans e2e.
+- `docker-compose.yml` lance SQL Server + API + front; ajuster secrets avant prod.
+- Swagger (`pipelane-api/swagger.json`) est versionne : le regenerer quand de nouveaux endpoints sont exposes et relancer `npm run gen:api`.
+- OpenTelemetry et Serilog sont en place mais aucun exporter/collecteur distant configure.
 
 ## Priorites recommandees
-1. Stabiliser le backend : rejouer build/tests, ajouter tests unitaires/integration pour Outbox, FollowupScheduler, webhook Resend, analytics. Valider les migrations (indexes uniques) sur une base locale.
-2. Finaliser les integrations providers : WhatsApp/SMS reels, verification signatures, gestion STOP/unsubscribe, quiet hours, erreurs reseau.
-3. Renforcer les tests frontend : unitaire (ApiService, campaign preview) et e2e (Cypress) pour scenarios critiques.
-4. Verifier l'alignement front/back : garantir que les DTOs exposes par l'API correspondent aux attentes du front (analytics delivery, followups preview, statuts messages).
-5. Relancer la chaine Ops : workflows CI, audit securite (dependances, secrets), observabilite (Serilog/Otel), readiness pour deployment (containers, variables d'env).
-6. Site marketing : connecter le formulaire demo a une persistence externe et executer tests performance/accessibilite.
-
-## Notes complementaires
-- Arbre Git tres modifie : coordonner avec les autres contributeurs avant merge (nombreuses modifs preexistantes non liees).
-- Documenter davantage (schemas BDD, flux Slack/Email/SMS, contrats API) pour faciliter l'onboarding equipe.
+1. Finaliser les integrations providers (WhatsApp Cloud, SMS) avec verifications signatures, gestion erreurs reseau et secrets separes par tenant.
+2. Durcir le pipeline campagne/outbox : segmentation avancee, dedupe contact, throttling, tests sur CampaignRunner/FollowupScheduler/AnalyticsService.
+3. Etendre la couverture de tests : xUnit (analytics, followups, adapters), Jest/Cypress (ApiService, analytics, conversation, campagnes), pa11y/Lighthouse dans la CI marketing.
+4. Normaliser la documentation/encodage (marketing), mettre a jour swagger/types, documenter les nouvelles variables dans `.env.example`.
+5. Renforcer l'Ops : secrets non par defaut, workflows CI actifs pour build/test, exporter OTel vers une stack d'observabilite et surveiller les jobs background.
