@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -7,14 +8,18 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { ApiService } from '../../core/api.service';
 import { Channel, ChannelLabels, ChannelSettingsPayload } from '../../core/models';
+
+type ChannelStatus = 'connected' | 'pending';
 
 @Component({
   standalone: true,
   selector: 'pl-onboarding',
   imports: [
+    CommonModule,
     ReactiveFormsModule,
     MatCardModule,
     MatFormFieldModule,
@@ -23,100 +28,10 @@ import { Channel, ChannelLabels, ChannelSettingsPayload } from '../../core/model
     MatIconModule,
     MatSnackBarModule,
     MatDividerModule,
+    MatTooltipModule,
   ],
-  template: `
-    <div class="grid-responsive">
-      <mat-card class="surface-card">
-        <header>
-          <h2>WhatsApp</h2>
-          <p class="body-text-muted">Configure Meta WhatsApp Cloud credentials.</p>
-        </header>
-        <form [formGroup]="whatsappForm" (ngSubmit)="save('whatsapp')" class="form-grid">
-          <mat-form-field appearance="outline">
-            <mat-label>Phone number ID</mat-label>
-            <input matInput formControlName="phone_number_id" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Access token</mat-label>
-            <input matInput formControlName="access_token" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Verify token</mat-label>
-            <input matInput formControlName="verify_token" />
-          </mat-form-field>
-          <button mat-raised-button color="primary" type="submit" [disabled]="whatsappForm.invalid || saving()">
-            <mat-icon>save</mat-icon>
-            Save WhatsApp settings
-          </button>
-        </form>
-      </mat-card>
-
-      <mat-card class="surface-card">
-        <header>
-          <h2>Email ESP</h2>
-          <p class="body-text-muted">Setup your transactional email provider.</p>
-        </header>
-        <form [formGroup]="emailForm" (ngSubmit)="save('email')" class="form-grid">
-          <mat-form-field appearance="outline">
-            <mat-label>API key</mat-label>
-            <input matInput formControlName="apiKey" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Domain</mat-label>
-            <input matInput formControlName="domain" />
-          </mat-form-field>
-          <button mat-raised-button color="primary" type="submit" [disabled]="emailForm.invalid || saving()">
-            <mat-icon>save</mat-icon>
-            Save email settings
-          </button>
-        </form>
-        <mat-divider></mat-divider>
-        <section class="test-block">
-          <h3>Test delivery</h3>
-          <p class="body-text-muted">Send a quick test message to an existing contact.</p>
-          <form [formGroup]="emailTestForm" (ngSubmit)="sendTestEmail()" class="form-grid">
-            <mat-form-field appearance="outline">
-              <mat-label>Contact ID</mat-label>
-              <input matInput formControlName="contactId" placeholder="Contact GUID" />
-            </mat-form-field>
-            <mat-form-field appearance="outline">
-              <mat-label>Message</mat-label>
-              <textarea matInput rows="3" formControlName="message"></textarea>
-            </mat-form-field>
-            <button mat-raised-button color="accent" type="submit" [disabled]="emailTestForm.invalid || testingEmail()">
-              <mat-icon>email</mat-icon>
-              Send test email
-            </button>
-          </form>
-        </section>
-      </mat-card>
-
-      <mat-card class="surface-card">
-        <header>
-          <h2>SMS</h2>
-          <p class="body-text-muted">Link your SMS provider credentials.</p>
-        </header>
-        <form [formGroup]="smsForm" (ngSubmit)="save('sms')" class="form-grid">
-          <mat-form-field appearance="outline">
-            <mat-label>API key</mat-label>
-            <input matInput formControlName="apiKey" />
-          </mat-form-field>
-          <button mat-raised-button color="primary" type="submit" [disabled]="smsForm.invalid || saving()">
-            <mat-icon>save</mat-icon>
-            Save SMS settings
-          </button>
-        </form>
-      </mat-card>
-    </div>
-  `,
-  styles: [
-    `
-      header { margin-bottom: var(--space-3); }
-      .form-grid { display:flex; flex-direction:column; gap:var(--space-3); }
-      mat-card { display:flex; flex-direction:column; gap:var(--space-3); }
-      .test-block { display:flex; flex-direction:column; gap:var(--space-3); }
-    `,
-  ],
+  templateUrl: './onboarding.component.html',
+  styleUrls: ['./onboarding.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OnboardingComponent {
@@ -124,13 +39,17 @@ export class OnboardingComponent {
   private readonly fb = inject(FormBuilder);
   private readonly snackbar = inject(MatSnackBar);
 
+  readonly ChannelLabels = ChannelLabels;
   saving = signal(false);
   testingEmail = signal(false);
+  whatsappSecretVisible = signal(false);
+  emailSecretVisible = signal(false);
+  smsSecretVisible = signal(false);
 
   whatsappForm: FormGroup = this.fb.group({
-    phone_number_id: this.fb.control<string>(''),
-    access_token: this.fb.control<string>(''),
-    verify_token: this.fb.control<string>(''),
+    phone_number_id: this.fb.control<string>('', Validators.required),
+    access_token: this.fb.control<string>('', Validators.required),
+    verify_token: this.fb.control<string>('', Validators.required),
   });
 
   emailForm: FormGroup = this.fb.group({
@@ -147,6 +66,16 @@ export class OnboardingComponent {
     apiKey: this.fb.control<string>('', Validators.required),
   });
 
+  whatsappStatus = computed<ChannelStatus>(() =>
+    this.isConnected(this.whatsappForm) ? 'connected' : 'pending',
+  );
+  emailStatus = computed<ChannelStatus>(() =>
+    this.isConnected(this.emailForm) ? 'connected' : 'pending',
+  );
+  smsStatus = computed<ChannelStatus>(() =>
+    this.isConnected(this.smsForm) ? 'connected' : 'pending',
+  );
+
   save(channel: Channel): void {
     const form = this.getForm(channel);
     if (form.invalid) {
@@ -154,10 +83,9 @@ export class OnboardingComponent {
       return;
     }
 
-    const value = form.value as Record<string, unknown>;
     const payload: ChannelSettingsPayload = {
       channel,
-      settings: this.toSettingsRecord(value),
+      settings: this.toSettingsRecord(form.value as Record<string, unknown>),
     };
 
     this.saving.set(true);
@@ -168,20 +96,51 @@ export class OnboardingComponent {
       },
       error: () => {
         this.saving.set(false);
-        this.snackbar.open(`Failed to save ${ChannelLabels[channel]} settings`, 'Dismiss', { duration: 4000 });
+        this.snackbar.open(`Failed to save ${ChannelLabels[channel]} settings`, 'Dismiss', {
+          duration: 4000,
+        });
       },
     });
   }
 
-  sendTestEmail(): void {
+  sendQuickTest(channel: Channel): void {
+    if (channel === 'email') {
+      this.sendTestEmail();
+      return;
+    }
+
+    this.snackbar.open(`Test messages for ${ChannelLabels[channel]} coming soon.`, 'Close', {
+      duration: 3000,
+    });
+  }
+
+  toggleSecret(channel: Channel): void {
+    switch (channel) {
+      case 'whatsapp':
+        this.whatsappSecretVisible.update((v) => !v);
+        break;
+      case 'email':
+        this.emailSecretVisible.update((v) => !v);
+        break;
+      case 'sms':
+        this.smsSecretVisible.update((v) => !v);
+        break;
+    }
+  }
+
+  private sendTestEmail(): void {
     if (this.emailTestForm.invalid) {
       this.emailTestForm.markAllAsTouched();
       return;
     }
 
-    const { contactId, message } = this.emailTestForm.value as { contactId: string; message: string };
-    if (!contactId)
+    const { contactId, message } = this.emailTestForm.value as {
+      contactId: string;
+      message: string;
+    };
+    if (!contactId) {
       return;
+    }
 
     this.testingEmail.set(true);
     this.api
@@ -215,11 +174,18 @@ export class OnboardingComponent {
     }
   }
 
+  private isConnected(form: FormGroup): boolean {
+    return Object.values(form.controls).every((control) => {
+      const value = control.value;
+      return typeof value === 'string' ? value.trim().length > 0 : !!value;
+    });
+  }
+
   private toSettingsRecord(value: Record<string, unknown>): Record<string, string> {
     return Object.entries(value)
-      .filter(([, val]) => typeof val === 'string' && val !== '')
+      .filter(([, val]) => typeof val === 'string' && val.trim() !== '')
       .reduce<Record<string, string>>((acc, [key, val]) => {
-        acc[key] = val as string;
+        acc[key] = (val as string).trim();
         return acc;
       }, {});
   }

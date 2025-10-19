@@ -1,0 +1,221 @@
+<div class="onboarding-grid">
+  <mat-card class="channel-card glass" data-tour="onboarding-whatsapp">
+    <header class="channel-card__header">
+      <div>
+        <h2>WhatsApp Cloud</h2>
+        <p class="muted">
+          Connect Meta WhatsApp Cloud credentials to unlock real-time conversations.
+        </p>
+      </div>
+      <span class="status-chip" [ngClass]="whatsappStatus()">
+        <mat-icon>{{ whatsappStatus() === 'connected' ? 'task_alt' : 'hourglass_empty' }}</mat-icon>
+        {{ whatsappStatus() === 'connected' ? 'Connected' : 'Not connected' }}
+      </span>
+    </header>
+
+    <form [formGroup]="whatsappForm" (ngSubmit)="save('whatsapp')" class="form-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Phone number ID</mat-label>
+        <input matInput formControlName="phone_number_id" placeholder="123456789" />
+        <mat-error *ngIf="whatsappForm.get('phone_number_id')?.invalid">Required</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Access token</mat-label>
+        <input
+          matInput
+          [type]="whatsappSecretVisible() ? 'text' : 'password'"
+          formControlName="access_token"
+          placeholder="EAAG..."
+        />
+        <button
+          mat-icon-button
+          matTooltip="{{ whatsappSecretVisible() ? 'Hide token' : 'Show token' }}"
+          matSuffix
+          type="button"
+          (click)="toggleSecret('whatsapp')"
+        >
+          <mat-icon>{{ whatsappSecretVisible() ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        <mat-hint>Paste the permanent access token from Meta</mat-hint>
+        <mat-error *ngIf="whatsappForm.get('access_token')?.invalid">Required</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Verify token</mat-label>
+        <input
+          matInput
+          formControlName="verify_token"
+          [type]="whatsappSecretVisible() ? 'text' : 'password'"
+          placeholder="secure-string"
+        />
+        <mat-error *ngIf="whatsappForm.get('verify_token')?.invalid">Required</mat-error>
+      </mat-form-field>
+
+      <div class="card-actions">
+        <button
+          mat-stroked-button
+          color="accent"
+          type="button"
+          (click)="sendQuickTest('whatsapp')"
+          matTooltip="Send a template to your own WhatsApp account"
+        >
+          <mat-icon>chat_bubble</mat-icon>
+          Send test
+        </button>
+        <span class="muted"> Tip: use a template with sample variables before going live. </span>
+      </div>
+
+      <div class="card-footer">
+        <button mat-raised-button color="primary" type="submit" [disabled]="saving()">
+          <mat-icon>save</mat-icon>
+          Save credentials
+        </button>
+      </div>
+    </form>
+  </mat-card>
+
+  <mat-card class="channel-card glass" data-tour="onboarding-email">
+    <header class="channel-card__header">
+      <div>
+        <h2>Email ESP</h2>
+        <p class="muted">Configure your transactional ESP to deliver branded emails.</p>
+      </div>
+      <span class="status-chip" [ngClass]="emailStatus()">
+        <mat-icon>{{ emailStatus() === 'connected' ? 'task_alt' : 'hourglass_empty' }}</mat-icon>
+        {{ emailStatus() === 'connected' ? 'Connected' : 'Not connected' }}
+      </span>
+    </header>
+
+    <form [formGroup]="emailForm" (ngSubmit)="save('email')" class="form-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>API key</mat-label>
+        <input
+          matInput
+          [type]="emailSecretVisible() ? 'text' : 'password'"
+          formControlName="apiKey"
+          placeholder="resend_123..."
+        />
+        <button
+          mat-icon-button
+          matSuffix
+          type="button"
+          (click)="toggleSecret('email')"
+          matTooltip="{{ emailSecretVisible() ? 'Hide key' : 'Show key' }}"
+        >
+          <mat-icon>{{ emailSecretVisible() ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        <mat-error *ngIf="emailForm.get('apiKey')?.invalid">API key required</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Sending domain</mat-label>
+        <input matInput formControlName="domain" placeholder="hello@pipelane.dev" />
+        <mat-error *ngIf="emailForm.get('domain')?.invalid">Domain required</mat-error>
+      </mat-form-field>
+
+      <div class="card-footer">
+        <button mat-raised-button color="primary" type="submit" [disabled]="saving()">
+          <mat-icon>save</mat-icon>
+          Save credentials
+        </button>
+        <button
+          mat-stroked-button
+          color="accent"
+          type="button"
+          (click)="sendQuickTest('email')"
+          [disabled]="testingEmail()"
+        >
+          <mat-icon>{{ testingEmail() ? 'hourglass_top' : 'email' }}</mat-icon>
+          {{ testingEmail() ? 'Sending…' : 'Send test' }}
+        </button>
+      </div>
+    </form>
+
+    <mat-divider></mat-divider>
+
+    <section class="test-form">
+      <header>
+        <h3>Send a test email</h3>
+        <p class="muted">Pick an internal contact to validate deliverability.</p>
+      </header>
+      <form
+        [formGroup]="emailTestForm"
+        (ngSubmit)="sendQuickTest('email')"
+        class="form-grid form-grid--compact"
+      >
+        <mat-form-field appearance="outline">
+          <mat-label>Contact ID</mat-label>
+          <input matInput formControlName="contactId" placeholder="Contact GUID" />
+          <mat-error *ngIf="emailTestForm.get('contactId')?.invalid">Contact ID required</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Message</mat-label>
+          <textarea matInput formControlName="message" rows="3"></textarea>
+        </mat-form-field>
+
+        <button
+          mat-raised-button
+          color="accent"
+          type="submit"
+          class="full-width"
+          [disabled]="testingEmail()"
+        >
+          <mat-icon>{{ testingEmail() ? 'hourglass_top' : 'forward_to_inbox' }}</mat-icon>
+          {{ testingEmail() ? 'Sending…' : 'Send test email' }}
+        </button>
+      </form>
+    </section>
+  </mat-card>
+
+  <mat-card class="channel-card glass" data-tour="onboarding-sms">
+    <header class="channel-card__header">
+      <div>
+        <h2>SMS Provider</h2>
+        <p class="muted">Link your SMS provider API key for fail-safe outreach.</p>
+      </div>
+      <span class="status-chip" [ngClass]="smsStatus()">
+        <mat-icon>{{ smsStatus() === 'connected' ? 'task_alt' : 'hourglass_empty' }}</mat-icon>
+        {{ smsStatus() === 'connected' ? 'Connected' : 'Not connected' }}
+      </span>
+    </header>
+
+    <form [formGroup]="smsForm" (ngSubmit)="save('sms')" class="form-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>API key</mat-label>
+        <input
+          matInput
+          [type]="smsSecretVisible() ? 'text' : 'password'"
+          formControlName="apiKey"
+          placeholder="twilio_sk_..."
+        />
+        <button
+          mat-icon-button
+          type="button"
+          matSuffix
+          (click)="toggleSecret('sms')"
+          matTooltip="{{ smsSecretVisible() ? 'Hide key' : 'Show key' }}"
+        >
+          <mat-icon>{{ smsSecretVisible() ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        <mat-error *ngIf="smsForm.get('apiKey')?.invalid">API key required</mat-error>
+      </mat-form-field>
+
+      <div class="card-actions">
+        <button mat-stroked-button color="accent" type="button" (click)="sendQuickTest('sms')">
+          <mat-icon>textsms</mat-icon>
+          Send test
+        </button>
+        <span class="muted"> Use a compliant sender ID and test with opted-in contacts. </span>
+      </div>
+
+      <div class="card-footer">
+        <button mat-raised-button color="primary" type="submit" [disabled]="saving()">
+          <mat-icon>save</mat-icon>
+          Save credentials
+        </button>
+      </div>
+    </form>
+  </mat-card>
+</div>
