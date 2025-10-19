@@ -93,6 +93,12 @@ export interface SendMessageRequestPayload {
   meta?: Record<string, string> | null;
 }
 
+export interface SendMessageResponse {
+  success: boolean;
+  providerMessageId?: string | null;
+  error?: string | null;
+}
+
 export interface CampaignCreatePayload {
   name: string;
   primaryChannel: Channel;

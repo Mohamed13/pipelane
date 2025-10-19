@@ -15,6 +15,7 @@ import {
   FollowupPreviewResponse,
   PagedContactsResponse,
   SendMessageRequestPayload,
+  SendMessageResponse,
   TemplateSummary,
 } from './models';
 
@@ -44,7 +45,8 @@ export class ApiService {
         return error.error;
       }
       if (typeof error.error === 'object') {
-        const candidate = error.error.detail ?? error.error.message ?? error.error.error ?? error.error.title;
+        const candidate =
+          error.error.detail ?? error.error.message ?? error.error.error ?? error.error.title;
         if (candidate) {
           return candidate;
         }
@@ -79,16 +81,22 @@ export class ApiService {
 
   refreshTemplates(tenantId?: string): Observable<{ updated: number }> {
     return this.http
-      .post<{ updated: number }>(
-        `${this.base}/templates/refresh`,
-        {},
-        { headers: this.headers(tenantId) },
-      )
+      .post<{
+        updated: number;
+      }>(`${this.base}/templates/refresh`, {}, { headers: this.headers(tenantId) })
       .pipe(catchError(this.handleError('Refreshing templates')));
   }
 
-  searchContacts(q: string, page = 1, size = 20, tenantId?: string): Observable<PagedContactsResponse> {
-    const params = new HttpParams().set('search', q).set('page', page.toString()).set('size', size.toString());
+  searchContacts(
+    q: string,
+    page = 1,
+    size = 20,
+    tenantId?: string,
+  ): Observable<PagedContactsResponse> {
+    const params = new HttpParams()
+      .set('search', q)
+      .set('page', page.toString())
+      .set('size', size.toString());
     return this.http
       .get<PagedContactsResponse>(`${this.base}/contacts`, {
         params,
@@ -97,7 +105,11 @@ export class ApiService {
       .pipe(catchError(this.handleError('Searching contacts')));
   }
 
-  getConversation(contactId: string, last = 50, tenantId?: string): Observable<ConversationResponse> {
+  getConversation(
+    contactId: string,
+    last = 50,
+    tenantId?: string,
+  ): Observable<ConversationResponse> {
     const params = new HttpParams().set('last', last.toString());
     return this.http
       .get<ConversationResponse>(`${this.base}/conversations/${contactId}`, {
@@ -107,9 +119,9 @@ export class ApiService {
       .pipe(catchError(this.handleError('Loading conversation')));
   }
 
-  sendMessage(body: SendMessageRequestPayload, tenantId?: string): Observable<unknown> {
+  sendMessage(body: SendMessageRequestPayload, tenantId?: string): Observable<SendMessageResponse> {
     return this.http
-      .post(`${this.base}/messages/send`, body, {
+      .post<SendMessageResponse>(`${this.base}/messages/send`, body, {
         headers: this.headers(tenantId),
       })
       .pipe(catchError(this.handleError('Sending message')));
@@ -131,7 +143,11 @@ export class ApiService {
       .pipe(catchError(this.handleError('Loading campaign')));
   }
 
-  getDeliveryAnalytics(from?: string, to?: string, tenantId?: string): Observable<DeliveryAnalyticsResponse> {
+  getDeliveryAnalytics(
+    from?: string,
+    to?: string,
+    tenantId?: string,
+  ): Observable<DeliveryAnalyticsResponse> {
     const params = new HttpParams({
       fromObject: {
         from: from ?? '',

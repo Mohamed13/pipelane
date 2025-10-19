@@ -33,6 +33,7 @@ import {
   ConversationResponse,
   Message,
   MessageStatus,
+  SendMessageResponse,
 } from '../../core/models';
 
 type ComposerMode = 'text' | 'template';
@@ -60,6 +61,12 @@ interface RecentEvent {
 interface ProviderBadge {
   label: string;
   className: string;
+}
+
+interface PendingMessageTracking {
+  providerMessageId: string | null;
+  sentAtIso: string;
+  messageId?: string;
 }
 
 @Component({
@@ -128,6 +135,7 @@ export class ConversationThreadComponent {
   private pendingFetchTimeout: ReturnType<typeof setTimeout> | null = null;
   private awaitingTerminal = false;
   private pendingAutoPoll = false;
+  private pendingTracking: PendingMessageTracking | null = null;
 
   canText = computed(() => {
     const convo = this.conversation();
@@ -281,9 +289,7 @@ export class ConversationThreadComponent {
       this.textControl.markAsTouched();
       return;
     }
-    this.awaitingTerminal = true;
-    this.pendingAutoPoll = true;
-    this.sending.set(true);
+    const tracking = this.beginMessageSend();
     this.api
       .sendMessage({
         contactId: this.contactId,
@@ -292,7 +298,8 @@ export class ConversationThreadComponent {
         text: this.textControl.value.trim(),
       })
       .subscribe({
-        next: () => {
+        next: (result) => {
+          this.applySendResult(tracking, result);
           this.textControl.reset('');
           this.fetchConversation();
         },
@@ -305,9 +312,7 @@ export class ConversationThreadComponent {
       this.templateControl.markAsTouched();
       return;
     }
-    this.awaitingTerminal = true;
-    this.pendingAutoPoll = true;
-    this.sending.set(true);
+    const tracking = this.beginMessageSend();
     this.api
       .sendMessage({
         contactId: this.contactId,
@@ -316,7 +321,8 @@ export class ConversationThreadComponent {
         templateName: this.templateControl.value.trim(),
       })
       .subscribe({
-        next: () => {
+        next: (result) => {
+          this.applySendResult(tracking, result);
           this.templateControl.reset('');
           this.fetchConversation();
         },
@@ -400,6 +406,30 @@ export class ConversationThreadComponent {
     }
   }
 
+  private beginMessageSend(): PendingMessageTracking {
+    const tracking: PendingMessageTracking = {
+      providerMessageId: null,
+      sentAtIso: new Date().toISOString(),
+    };
+    this.awaitingTerminal = true;
+    this.pendingAutoPoll = true;
+    this.sending.set(true);
+    this.pendingTracking = tracking;
+    return tracking;
+  }
+
+  private applySendResult(
+    tracking: PendingMessageTracking,
+    result: SendMessageResponse | undefined,
+  ): void {
+    if (this.pendingTracking !== tracking) {
+      return;
+    }
+    if (result?.providerMessageId) {
+      this.pendingTracking.providerMessageId = result.providerMessageId;
+    }
+  }
+
   private fetchConversation(options: { skipSendingReset?: boolean } = {}): void {
     this.api.getConversation(this.contactId).subscribe({
       next: (response) => {
@@ -409,15 +439,19 @@ export class ConversationThreadComponent {
           messages,
         });
 
-        const latestOutbound = this.findLatestOutbound(messages);
-        if (this.pendingAutoPoll && latestOutbound) {
-          this.pendingAutoPoll = false;
-          if (this.isTerminal(latestOutbound.status)) {
-            this.stopPolling();
+        const trackedMessage = this.findTrackedOutbound(messages);
+        if (this.pendingAutoPoll) {
+          if (trackedMessage) {
+            this.pendingAutoPoll = false;
+            if (this.isTerminal(trackedMessage.status)) {
+              this.stopPolling();
+            } else {
+              this.startPolling(trackedMessage.id);
+            }
           } else {
-            this.startPolling(latestOutbound.id);
+            this.schedulePendingFetch();
           }
-        } else if (this.pendingAutoPoll && !latestOutbound) {
+        } else if (this.awaitingTerminal && !trackedMessage) {
           this.schedulePendingFetch();
         }
 
@@ -443,16 +477,18 @@ export class ConversationThreadComponent {
   }
 
   private startPolling(messageId: string): void {
-    if (this.pollingMessageId === messageId) {
+    if (this.pollingMessageId === messageId && this.pollingTimer) {
       return;
     }
-    this.stopPolling();
+    if (this.pollingTimer) {
+      clearInterval(this.pollingTimer);
+    }
     this.pollingMessageId = messageId;
     this.pollingTimer = setInterval(() => this.fetchConversation({ skipSendingReset: true }), 5000);
   }
 
   private schedulePendingFetch(): void {
-    if (this.pendingFetchTimeout) {
+    if (this.pendingFetchTimeout || this.pollingTimer) {
       return;
     }
     this.pendingFetchTimeout = setTimeout(() => {
@@ -473,11 +509,56 @@ export class ConversationThreadComponent {
     this.pollingMessageId = null;
     this.awaitingTerminal = false;
     this.pendingAutoPoll = false;
+    this.pendingTracking = null;
     this.sending.set(false);
   }
 
-  private findLatestOutbound(messages: Message[]): Message | undefined {
-    return [...messages].filter((m) => m.direction === 'out').slice(-1)[0];
+  private findTrackedOutbound(messages: Message[]): Message | undefined {
+    if (!this.pendingTracking) {
+      return undefined;
+    }
+
+    if (this.pendingTracking.messageId) {
+      const existing = messages.find(
+        (m) => m.id === this.pendingTracking?.messageId && m.direction === 'out',
+      );
+      if (existing) {
+        return existing;
+      }
+    }
+
+    const outbound = messages.filter((m) => m.direction === 'out');
+    if (!outbound.length) {
+      return undefined;
+    }
+
+    if (this.pendingTracking.providerMessageId) {
+      const byProvider = outbound.find(
+        (m) => m.providerMessageId === this.pendingTracking?.providerMessageId,
+      );
+      if (byProvider) {
+        this.pendingTracking.messageId = byProvider.id;
+        return byProvider;
+      }
+    }
+
+    const sentThreshold = Date.parse(this.pendingTracking.sentAtIso);
+    if (!Number.isNaN(sentThreshold)) {
+      const cutoff = sentThreshold - 1000; // allow minimal clock drift
+      const recent = outbound
+        .filter((m) => {
+          const created = Date.parse(m.createdAt);
+          return !Number.isNaN(created) && created >= cutoff;
+        })
+        .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt));
+      const pick = recent.at(-1);
+      if (pick) {
+        this.pendingTracking.messageId = pick.id;
+        return pick;
+      }
+    }
+
+    return undefined;
   }
 
   private isTerminal(status: MessageStatus): boolean {
