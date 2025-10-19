@@ -1,0 +1,24 @@
+[
+  {
+    "id": "tmpl-1",
+    "tenantId": "tenant-123",
+    "name": "welcome_series",
+    "channel": "email",
+    "lang": "en",
+    "category": "marketing",
+    "coreSchemaJson": "{}",
+    "isActive": true,
+    "updatedAtUtc": "2025-09-01T10:00:00.000Z"
+  },
+  {
+    "id": "tmpl-2",
+    "tenantId": "tenant-123",
+    "name": "whatsapp_reengage",
+    "channel": "whatsapp",
+    "lang": "en",
+    "category": "followup",
+    "coreSchemaJson": "{}",
+    "isActive": true,
+    "updatedAtUtc": "2025-09-05T08:00:00.000Z"
+  }
+]

@@ -17,7 +17,10 @@
     "lint": "eslint . --ext .ts,.html",
     "lint:fix": "eslint . --ext .ts,.html --fix",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "ui:check": "npm run lint && npm run format:check",
+    "ui:test": "npm test",
+    "ui:e2e": "npm run e2e"
   },
   "dependencies": {
     "@angular/animations": "^20.3.4",
@@ -30,7 +33,10 @@
     "@angular/platform-browser": "^20.3.4",
     "@angular/platform-browser-dynamic": "^20.3.4",
     "@angular/router": "^20.3.4",
+    "angular-shepherd": "^20.0.0",
+    "apexcharts": "^5.3.5",
     "chart.js": "^4.4.0",
+    "ng-apexcharts": "^2.0.3",
     "ng2-charts": "^5.0.0",
     "rxjs": "^7.8.0",
     "zone.js": "~0.15.1"

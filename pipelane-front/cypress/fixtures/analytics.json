@@ -1,0 +1,52 @@
+{
+  "totals": {
+    "queued": 1,
+    "sent": 10,
+    "delivered": 8,
+    "opened": 5,
+    "failed": 1,
+    "bounced": 1
+  },
+  "byChannel": [
+    {
+      "channel": "email",
+      "queued": 0,
+      "sent": 4,
+      "delivered": 3,
+      "opened": 1,
+      "failed": 1,
+      "bounced": 0
+    },
+    {
+      "channel": "whatsapp",
+      "queued": 0,
+      "sent": 6,
+      "delivered": 5,
+      "opened": 4,
+      "failed": 0,
+      "bounced": 1
+    }
+  ],
+  "byTemplate": [
+    {
+      "template": "welcome_series",
+      "channel": "email",
+      "queued": 0,
+      "sent": 4,
+      "delivered": 3,
+      "opened": 2,
+      "failed": 1,
+      "bounced": 0
+    },
+    {
+      "template": "nudge_whatsapp",
+      "channel": "whatsapp",
+      "queued": 0,
+      "sent": 6,
+      "delivered": 5,
+      "opened": 3,
+      "failed": 0,
+      "bounced": 1
+    }
+  ]
+}
