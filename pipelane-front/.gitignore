@@ -2,4 +2,5 @@
 dist
 node_modules
 coverage
-
+.angular
+src/app/core/env.generated.ts

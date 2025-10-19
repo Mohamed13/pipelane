@@ -10,6 +10,8 @@ pipelane-front/node_modules/
 pipelane-front/dist/
 pipelane-front/coverage/
 pipelane-front/.env
+pipelane-front/.angular/
+pipelane-front/src/app/core/env.generated.ts
 
 # Dotnet
 **/bin/
@@ -17,6 +19,7 @@ pipelane-front/.env
 *.user
 *.suo
 *.swp
+launchSettings.json
 
 # Logs
 *.log
@@ -25,4 +28,3 @@ pipelane-front/.env
 .vs/
 .vscode/
 *.tgz
-
