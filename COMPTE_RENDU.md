@@ -29,13 +29,15 @@
 ### Realisations
 - Application standalone Angular 20 avec Angular Material, theming geres par `ThemeService`, routes protegees (`authGuard`) definies dans `app.routes.ts`.
 - `ApiService` centralise tous les appels, injecte `X-Tenant-Id`, gere les toasts d'erreur et reconstruit les messages a partir de `HttpErrorResponse`.
-- `AnalyticsOverviewComponent` affiche KPIs, tableaux sortables et graphiques Chart.js (line/bar/donut) relies a `/analytics/delivery` avec theming dynamique.
-- `ConversationThreadComponent` gere la timeline messages, badges statut/provider, composer WhatsApp (texte vs template), et un polling 5 s jusqu'a statut terminal.
-- `CampaignBuilderComponent` (stepper Material) gere fallback channels, batch size, schedule UTC, segment JSON et preview via `/api/followups/preview`.
-- Scripts outillage : `tools/inject-env.mjs` (env), `tools/fetch-swagger.mjs` + `npm run gen:api` pour regenerer les DTOs a partir du swagger.
+- `src/theme/_tokens.scss` sert de design tokens (dark glass, gradients, motions) et nourrit les composants partages `kpi-card` (sparkline) et `chart-card` (ng-apexcharts).
+- `AnalyticsOverviewComponent` exploite désormais ng-apexcharts (area/donut/bar) + KPI sparklines et MatTable sur `/analytics/delivery`.
+- `ConversationThreadComponent` propose bulles vitrées, badges provider/statut, insight panel repliable et composer texte/template avec helpers variables.
+- `CampaignBuilderComponent` devient un wizard 4 étapes (audience, message, schedule, review) avec preview dynamique via `/api/followups/preview`.
+- Scripts : `npm run ui:check`, `npm run ui:test`, `npm run ui:e2e` complètent lint/tests (Cypress nécessite le front servi localement).
+- `TourService` (ngx-shepherd) déclenche un onboarding guidé (flag `localStorage`, replay dans le menu Aide).
 
 ### Points a surveiller
-- Couverture de tests tres faible (interceptor/policy uniquement). Manquent des specs sur `ApiService`, analytics, conversation polling, campaign builder; aucune e2e Cypress lancee.
+- Tests front renforcés : Jest couvre `ApiService`, `tour.service`, mapping analytics, tooltips. Cypress dispose d'un socle (tour, analytics, campaign builder, onboarding) — prévoir de lancer `npm run ui:e2e` avec `npm start` actif.
 - Plusieurs vues dependent de comportements backend encore basiques (followups preview, conversation status) -> prevoir garde-fous UI et etats de chargement.
 - Gestion erreurs/offline dispersee; uniformiser les toasts/snackbars et la detection tenant manquant.
 - Verifier que `env.generated.ts` reste hors VCS et documenter toute nouvelle cle `.env`.

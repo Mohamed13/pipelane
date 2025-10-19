@@ -37,10 +37,12 @@ Guidance for agents working in the Pipelane monorepo. Keep changes scoped, docum
 ## Frontend Highlights
 - Standalone Angular 20 setup with Angular Material theming (`ThemeService`) and route guards in `app.routes.ts`.
 - `ApiService` centralises HTTP calls, injects `X-Tenant-Id`, and surfaces toast errors.
-- `AnalyticsOverviewComponent` renders KPI cards, Chart.js visualisations (line/bar/doughnut), and a sortable table from `/analytics/delivery`.
-- `ConversationThreadComponent` handles WhatsApp-style messaging, template fallback, provider/status chips, and 5-second polling until messages reach a terminal state.
-- `CampaignBuilderComponent` guides multi-channel campaign creation (fallback order, batch size, schedule, follow-up preview through `/followups/preview`).
-- Test debt: only a couple of Jest specs (auth interceptor, policy service). Add specs/Cypress coverage when touching critical flows.
+- Design tokens & composants partagés : `src/theme/_tokens.scss` centralise couleurs/gradients/motion; `kpi-card` et `chart-card` enveloppent Material + ng-apexcharts.
+- `AnalyticsOverviewComponent` s'appuie sur ng-apexcharts (area/donut/bar), KPI sparklines et MatTable reliés à `/analytics/delivery`.
+- `ConversationThreadComponent` affiche bulles vitrées, badges provider/statut, panneau insight repliable et composer texte/template avec helpers variables.
+- `CampaignBuilderComponent` devient un wizard 4 étapes (audience, message, schedule, review) avec preview dynamique (`/api/followups/preview`).
+- `TourService` embarque ngx-shepherd pour un onboarding guidé (flag localStorage + replay via menu Aide).
+- Tests front : nouvelles specs Jest (`app.component` tooltips, `tour.service`, `analytics` mapping) et specs Cypress (`analytics`, `campaign_builder`, `onboarding`, `tour`). Lancer `npm run ui:e2e` une fois le front servi (`npm start` ou serveur statique sur `dist/`).
 - Regenerate API types (`npm run gen:api`) whenever backend DTOs evolve.
 
 ## Marketing Site Notes
