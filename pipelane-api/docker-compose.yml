@@ -1,15 +1,14 @@
 version: '3.9'
 services:
-  postgres:
-    image: postgres:16
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: pipelane
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "Your_strong_password123!"
     ports:
-      - "5432:5432"
+      - "1433:1433"
     volumes:
-      - pgdata:/var/lib/postgresql/data
-volumes:
-  pgdata:
+      - mssqldata:/var/opt/mssql
 
+volumes:
+  mssqldata:

@@ -1,6 +1,6 @@
 YOU ARE a senior .NET 8 engineer. Build a production-grade, channel-agnostic backend for an
 “Omni-Channel Revenue Engine” (rename to the project’s brand if provided: e.g., Relay).
-Stack: ASP.NET Core (.NET 8), EF Core (Npgsql/PostgreSQL), BackgroundServices (Quartz or HostedServices),
+Stack: ASP.NET Core (.NET 8), EF Core (SqlClient/SQL Server), BackgroundServices (Quartz or HostedServices),
 Serilog, OpenTelemetry, FluentValidation, Polly. Clean architecture (Api/Application/Infrastructure).
 
 GOAL
@@ -14,10 +14,10 @@ A secure, multi-tenant API that:
 ARCHITECTURE (projects)
 - Project.Api           (controllers, DI, middlewares, health, Swagger)
 - Project.Application   (DTOs, validators, services, rules/orchestrator, interfaces)
-- Project.Infrastructure(DbContext, EF configs, repositories, Npgsql, Channel adapters, external clients, crypto)
+- Project.Infrastructure(DbContext, EF configs, repositories, SqlClient, Channel adapters, external clients, crypto)
 - Project.Domain        (entities, value objects, enums)
 
-DATA MODEL (schema "public")
+DATA MODEL (schema "dbo")
 Tables (with created_at/updated_at, tenant_id everywhere):
 - tenants(id, name)
 - contacts(id, tenant_id, phone, email, first_name, last_name, lang, tags_json, created_at, updated_at)
@@ -108,6 +108,6 @@ DELIVERABLES
 - Full solution (Api/Application/Infrastructure/Domain), EF Core migrations, DI setup,
 - Channel adapters (WhatsApp/Email/SMS) with config stubs and real HTTP calls behind interfaces,
 - Background services (Outbox, CampaignRunner, FollowupScheduler),
-- Controllers/DTOs/Validators, Swagger/OpenAPI + README (docker-compose for Postgres; how to set WhatsApp/ESP/SMS creds),
+- Controllers/DTOs/Validators, Swagger/OpenAPI + README (docker-compose for SQL Server; how to set WhatsApp/ESP/SMS creds),
 - Code compiles and first end-to-end “send template” works when credentials are valid.
 Generate the complete implementation now.
