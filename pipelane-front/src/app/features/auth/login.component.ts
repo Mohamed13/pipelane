@@ -6,10 +6,10 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 
 @Component({
-    standalone: true,
-    selector: 'pl-login',
-    imports: [FormsModule, MatFormFieldModule, MatInputModule, MatButtonModule],
-    template: `
+  standalone: true,
+  selector: 'pl-login',
+  imports: [FormsModule, MatFormFieldModule, MatInputModule, MatButtonModule],
+  template: `
     <div class="login-wrap">
       <h2>Login</h2>
       <form (ngSubmit)="login()" class="login-form">
@@ -25,7 +25,7 @@ import { MatButtonModule } from '@angular/material/button';
       </form>
     </div>
   `,
-    changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LoginComponent {
   private auth = inject(AuthService);

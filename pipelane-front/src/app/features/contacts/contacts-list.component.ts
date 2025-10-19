@@ -1,5 +1,12 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { AfterViewInit, ChangeDetectionStrategy, Component, ViewChild, inject, signal } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  ViewChild,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
@@ -18,23 +25,23 @@ import { ApiService } from '../../core/api.service';
 import { Contact, PagedContactsResponse } from '../../core/models';
 
 @Component({
-    standalone: true,
-    selector: 'pl-contacts-list',
-    imports: [
-        CommonModule,
-        ReactiveFormsModule,
-        DatePipe,
-        MatTableModule,
-        MatCardModule,
-        MatFormFieldModule,
-        MatInputModule,
-        MatButtonModule,
-        MatIconModule,
-        MatPaginatorModule,
-        MatSortModule,
-        MatProgressBarModule,
-    ],
-    template: `
+  standalone: true,
+  selector: 'pl-contacts-list',
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    DatePipe,
+    MatTableModule,
+    MatCardModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+    MatIconModule,
+    MatPaginatorModule,
+    MatSortModule,
+    MatProgressBarModule,
+  ],
+  template: `
     <mat-card class="surface-card">
       <div class="header">
         <div>
@@ -49,7 +56,11 @@ import { Contact, PagedContactsResponse } from '../../core/models';
 
       <mat-form-field appearance="outline" class="search-field">
         <mat-icon matPrefix>search</mat-icon>
-        <input matInput [formControl]="searchControl" placeholder="Search by name, phone or email" />
+        <input
+          matInput
+          [formControl]="searchControl"
+          placeholder="Search by name, phone or email"
+        />
         <button mat-icon-button matSuffix (click)="clearSearch()" *ngIf="searchControl.value">
           <mat-icon>close</mat-icon>
         </button>
@@ -93,7 +104,8 @@ import { Contact, PagedContactsResponse } from '../../core/models';
           [length]="total()"
           [pageSize]="pageSize"
           [pageSizeOptions]="[10, 20, 50]"
-          (page)="onPage($event)">
+          (page)="onPage($event)"
+        >
         </mat-paginator>
       </div>
       <ng-template #emptyState>
@@ -104,8 +116,8 @@ import { Contact, PagedContactsResponse } from '../../core/models';
       </ng-template>
     </mat-card>
   `,
-    styles: [
-        `
+  styles: [
+    `
       .header {
         display: flex;
         align-items: center;
@@ -113,18 +125,46 @@ import { Contact, PagedContactsResponse } from '../../core/models';
         gap: var(--space-3);
         margin-bottom: var(--space-4);
       }
-      .search-field { width: 100%; margin-bottom: var(--space-4); }
-      .table-wrapper { overflow-x: auto; }
-      .table-row { cursor: pointer; transition: background var(--transition-fast); }
-      .table-row:hover { background: var(--color-surface-alt); }
-      .actions { text-align: right; }
-      .empty { text-align: center; padding: var(--space-6) 0; color: var(--color-text-muted); display:flex; flex-direction:column; gap:var(--space-3); align-items:center; }
-      .empty mat-icon { font-size: 3rem; height: auto; width: auto; }
-      .contact-name { font-weight: 600; }
-      .small { font-size: 0.85rem; }
-    `
-    ],
-    changeDetection: ChangeDetectionStrategy.OnPush
+      .search-field {
+        width: 100%;
+        margin-bottom: var(--space-4);
+      }
+      .table-wrapper {
+        overflow-x: auto;
+      }
+      .table-row {
+        cursor: pointer;
+        transition: background var(--transition-fast);
+      }
+      .table-row:hover {
+        background: var(--color-surface-alt);
+      }
+      .actions {
+        text-align: right;
+      }
+      .empty {
+        text-align: center;
+        padding: var(--space-6) 0;
+        color: var(--color-text-muted);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+        align-items: center;
+      }
+      .empty mat-icon {
+        font-size: 3rem;
+        height: auto;
+        width: auto;
+      }
+      .contact-name {
+        font-weight: 600;
+      }
+      .small {
+        font-size: 0.85rem;
+      }
+    `,
+  ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ContactsListComponent implements AfterViewInit {
   private readonly api = inject(ApiService);
@@ -132,7 +172,12 @@ export class ContactsListComponent implements AfterViewInit {
 
   searchControl = new FormControl<string>('');
   dataSource = new MatTableDataSource<Contact>([]);
-  displayedColumns: (keyof Contact | 'actions' | 'created' | 'name')[] = ['name', 'lang', 'created', 'actions'];
+  displayedColumns: (keyof Contact | 'actions' | 'created' | 'name')[] = [
+    'name',
+    'lang',
+    'created',
+    'actions',
+  ];
   total = signal(0);
   isLoading = signal(false);
   pageIndex = 0;
@@ -181,22 +226,17 @@ export class ContactsListComponent implements AfterViewInit {
 
   private loadContacts(query: string): void {
     this.isLoading.set(true);
-    this.api
-      .searchContacts(query, this.pageIndex + 1, this.pageSize)
-      .subscribe({
-        next: (response: PagedContactsResponse) => {
-          this.dataSource.data = response.items;
-          this.total.set(response.total);
-          this.isLoading.set(false);
-        },
-        error: () => {
-          this.dataSource.data = [];
-          this.total.set(0);
-          this.isLoading.set(false);
-        },
-      });
+    this.api.searchContacts(query, this.pageIndex + 1, this.pageSize).subscribe({
+      next: (response: PagedContactsResponse) => {
+        this.dataSource.data = response.items;
+        this.total.set(response.total);
+        this.isLoading.set(false);
+      },
+      error: () => {
+        this.dataSource.data = [];
+        this.total.set(0);
+        this.isLoading.set(false);
+      },
+    });
   }
 }
-
-
-

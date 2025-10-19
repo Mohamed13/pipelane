@@ -27,7 +27,7 @@ export class AuthService {
         },
         error: () => {
           // no-op minimal; UI can add feedback later
-        }
+        },
       });
   }
 

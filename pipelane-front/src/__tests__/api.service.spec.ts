@@ -5,7 +5,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { ApiService } from '../app/core/api.service';
 import { AuthService } from '../app/core/auth.service';
-import { Channel, ChannelSettingsPayload } from '../app/core/models';
+import { ChannelSettingsPayload } from '../app/core/models';
 
 describe('ApiService', () => {
   let service: ApiService;

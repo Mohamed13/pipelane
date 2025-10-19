@@ -1,96 +1,136 @@
-You are a senior front-end engineer. We have an Astro + Tailwind marketing site in `pipelane-marketing/`. 
-Do a global pass to FIX CONTRAST and ADD ILLUSTRATIVE MEDIA (images + icons) while preserving the futuristic aesthetic.
+You are a senior Angular 20 UX engineer. 
+Open this file, summarize all steps, then execute them one by one across the codebase `pipelane-front/`. 
+Produce small, reviewable commits per section with clear messages.
 
-### Objectives
-1) Enforce WCAG 2.2 AA contrast:
-   - Body text ≥ 4.5:1, large text (≥ 18.66px/14pt or bold) ≥ 3:1.
-   - No white text on light/low-opacity surfaces; no dark text on dark backgrounds.
-2) Improve legibility on gradients, media, and glass panels with scrims/overlays.
-3) Add tasteful product- and feature-related images and icons to visually support the copy.
-4) Keep performance high: responsive images, lazy loading, minimal blocking.
+GOAL
+- Transform the current console into a **futuristic, modern, ergonomic** UI.
+- Rich color palette, glass/neo gradients, smooth micro-interactions, accessible contrast.
+- Nicer charts, contextual **tooltips** everywhere, and a **guided onboarding tutorial** (didacticiel) on first run.
 
-### Tasks (exact)
-- In `src/styles/tokens.css` or Tailwind config, define explicit **foreground** tokens for each surface:
-  - `--bg`, `--surface`, `--surface-strong`, `--text`, `--text-muted`, `--primary`, `--primary-foreground`, `--on-surface`, `--on-surface-strong`.
-  - Dark theme by default; also ensure proper mappings for light theme.
-- Update `tailwind.config.*`:
-  - Extend `colors` with `bg`, `surface`, `surfaceStrong`, `text`, `textMuted`, `primary`, `primaryFg`, and `onSurface`, `onSurfaceStrong`.
-  - Provide utility classes `.on-surface`, `.on-surface-strong`, `.text-elevated` that map to the correct tokens.
-- Create a reusable **scrim** utility:
-  - CSS class `.scrim` applying a subtle linear-gradient overlay (e.g. `linear-gradient(180deg, rgba(0,0,0,.56), rgba(0,0,0,.24) 50%, rgba(0,0,0,0))`) for images/gradients to guarantee contrast under headings/buttons.
-  - Use `.scrim` on hero, section headers with imagery, and any glass panel that has text on top of imagery/gradient.
-- Replace semi-transparent “glass” panels that cause poor contrast:
-  - Increase backdrop blur and reduce transparency: surface backgrounds at least `rgba(255,255,255,0.06)` dark theme, or `rgba(0,0,0,0.06)` in light theme.
-  - Ensure text on those panels uses `.on-surface-strong`.
-- Add **text shadow** only for large hero headers if still borderline; avoid for body text.
-- Normalize headings and body:
-  - Headings use `text-onSurfaceStrong` equivalent.
-  - Body uses `text-onSurface`.
-  - Muted text uses `text-textMuted` only on sufficiently strong surfaces (not directly on media).
-- Buttons:
-  - Primary button: background = `primary`, text = `primaryFg`. On hover, slightly brighten/darken but keep contrast ≥ 3:1 for large text.
-  - Ghost/secondary buttons must sit on surfaces that guarantee ≥ 4.5:1.
+LIBRARIES (install if missing)
+- Angular Material (preferred) + CDK; (Bootstrap optional only for grid utilities if really needed).
+- Charts: **ng-apexcharts** (preferred) or Chart.js with better theming.
+- Tour/didacticiel: **ngx-shepherd** (Shepherd.js) or **driver.js** wrapper.
+- Icons: **@angular/material/icon** + Material Symbols (fallback: lucide-angular).
+- Tooltips: **MatTooltip**.
+- Animations: Angular animations + CSS transforms (no heavy GSAP).
 
-### Images & Icons
-- Introduce `src/assets/img/` with 6–8 illustrative images (placeholders acceptable): 
-  - 2 “product/console” style mockups, 2 “automation/flow” illustrations, 2 “analytics/dashboards”, 1 “integrations” collage.
-  - Use Astro `<Image />` for responsive sizes and lazy loading; provide `alt` text and `width/height`.
-- Add an `Icon` component using Iconify (or built-in SVGs) with a consistent style (stroke=1.5, rounded caps).
-  - Replace plain bullets with icons in Features, Benefits, Integrations, FAQ toggles.
-- Where text sits on an image (hero, feature highlights), wrap in a container that includes `.scrim` and uses `.on-surface-strong`.
+THEME & DESIGN SYSTEM
+1) Create a design tokens file (SCSS): `src/theme/_tokens.scss`
+   - Colors (dark default):
+     - bg: #0b0f17
+     - surface: #101726
+     - surface-strong: #0e1524
+     - primary: #75F0FF
+     - secondary: #9B8CFF
+     - accent: #60F7A3
+     - text: #E6EAF2
+     - text-muted: #A6B0C3
+   - Gradients:
+     - `--grad-main: linear-gradient(135deg,#75F0FF 0%,#9B8CFF 45%,#60F7A3 100%)`
+   - Radii, spacing, shadows, elevation.
+2) Material theming:
+   - Define **Mat** theme (dark & light) mapping the tokens; enable density="comfortable".
+   - Global glass utility: `.glass { backdrop-filter: blur(12px); background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); }`
+   - Add `.scrim` overlay for text on images/gradients to guarantee contrast (WCAG AA).
+3) Typography:
+   - Inter or Outfit; set responsive scale (h1→h6, body-1/2).
+4) Motion:
+   - Build simple animation utilities: fade-up, scale-in, stagger reveal via IntersectionObserver directive.
 
-### Component updates (concrete)
-- `src/components/Section.astro`: 
-  - Accept props: `variant: 'plain'|'media'|'panel'`, `image?: string`, `icon?: string`.
-  - If `variant==='media'`, render background image with `<Image />` + `.scrim`, then place content inside a padded container with `text-onSurfaceStrong`.
-- `src/components/FeatureCard.astro`:
-  - Add optional `icon` prop. Header row shows icon + title.
-  - Card background uses `surfaceStrong` with `on-surface` text; hover raises elevation but preserves contrast.
-- `src/components/PricingCard.astro`:
-  - Ensure copy uses `on-surface-strong` for titles and `on-surface` for body. Verify price figures have ≥ 4.5:1.
-- `src/components/CTA.astro`:
-  - Background gradient gets an overlay `.scrim`. Heading/subtitle use `on-surface-strong`.
+LAYOUT & NAV
+5) Refactor `AppComponent` shell:
+   - Top app bar (glass), left rail for primary nav (icons + labels), responsive collapse.
+   - Add quick actions: “Send test”, “Create campaign”, “Import contacts”, “Docs”.
+   - Persistent theme toggle.
+6) Route highlights with animated underline; breadcrumb under header area.
 
-### Theming & Modes
-- Dark as default, light mode toggle must remap tokens to keep AA contrast:
-  - In light mode, avoid low-opacity text on light surfaces; ensure buttons switch to darker hues with adequate foreground.
-- Respect `prefers-color-scheme`; store preference and recalc token classes.
+PAGES TO BEAUTIFY
+7) **AnalyticsOverviewComponent**
+   - Replace charts with **ng-apexcharts**:
+     - KPI strip cards (glass) with micro-sparkline.
+     - Area chart (Sent/Delivered/Opened/Failed by day) with gradient fill & smooth curve.
+     - Donut “by channel”, bar “top templates”.
+   - Add time range selector (Today / 7d / 30d / Custom) + MatDateRangePicker.
+   - Tooltips on every KPI and axis (MatTooltip).
+   - Empty states with nice illustrations.
+8) **ConversationThreadComponent**
+   - Chat bubbles with provider badges (WhatsAppCloud/Resend/TwilioSMS).
+   - Status chips (Queued/Sent/Delivered/Opened/Failed) with icons + tooltips.
+   - Composer: segmented control (Text / Template); template variable helper popover.
+   - Right info panel (collapsible): contact profile, tags, last activity, consent flags.
+9) **CampaignBuilderComponent**
+   - Stepper with visual progress:
+     1) Audience (segment builder mini-UI: tags, channels, last activity),
+     2) Message (template/preview),
+     3) Schedule & Throttle (BatchSize, ScheduleAt, Quiet hours),
+     4) Review summary.
+   - Live “Recipients preview count”; tooltips explaining each option.
+10) **Onboarding/Settings**
+    - Channel cards (WhatsApp/Email/SMS) with status chip (Connected/Not connected), “Send test” actions.
+    - Secrets inputs with visibility toggle and helper texts.
 
-### QA & Automation
-- Add `npm script` `test:a11y` that runs `@axe-core/cli` or `pa11y-ci` against local preview for key routes (/, sections hash anchors).
-- Add `npm script` `test:lighthouse` to check Lighthouse scores; fail if `accessibility < 95` or any contrast audit fails.
-- Add a lightweight unit visual check: ensure all `h1/h2/p/button` elements compute to colors with compliant contrast vs their immediate background.
-  (A simple DOM script in `src/scripts/contrast-check.ts` can measure computed styles & log offenders to console during dev.)
+TOOLTIPS & HELP
+11) Add **MatTooltip** systematically:
+    - Buttons, inputs, badges, filters, charts legends.
+    - Use i18n keys (en/fr), file `src/i18n/ui.json`.
+    - Provide concise helpful copy (what/why).
 
-### Acceptance Criteria (must pass)
-- No Lighthouse “Contrast” failures. Accessibility score ≥ 95.
-- All headings/body/buttons meet AA thresholds.
-- Hero, Product Tour, Features, Benefits, Integrations, Pricing, FAQ, Final CTA each includes at least one icon; at least 4 sections include an illustrative image with `.scrim`.
-- Largest text on media has legible foreground in both dark & light modes.
-- CLS unaffected; images lazy; total image payload under 350KB on initial viewport (use responsive sizes).
+GUIDED TUTORIAL (DIDACTICIEL)
+12) Integrate **ngx-shepherd**:
+    - On first app launch (localStorage flag `pipelane_tour_done=false`), start a guided tour that walks through:
+      Step 1: “Connect your channels” → highlight Settings/Onboarding.
+      Step 2: “Add templates” → Templates page.
+      Step 3: “Import contacts” → Contacts page (CSV or API).
+      Step 4: “Send yourself a test” → Onboarding buttons.
+      Step 5: “Create your first campaign” → Campaign builder start.
+      Step 6: “Enable follow-ups” → Followups config section.
+      Step 7: “View analytics” → Analytics dashboard with explanation of charts.
+    - Each step: title, text, Next/Back/Finish, and a “Skip tour” option.
+    - Add “Help → Replay tutorial” menu item.
+    - Ensure focus-trap and accessibility (tab/esc) are OK.
 
-### Implementation Hints (Tailwind)
-- Colors (example, adjust to project brand):
-  - dark: 
-    - bg `#0b0f17`, surface `#121826`, surface-strong `#0e1524`,
-    - text `#E6EAF2`, textMuted `#A6B0C3`,
-    - primary `#75F0FF`, primaryFg `#07141A`,
-    - onSurface `#DDE3EE`, onSurfaceStrong `#FFFFFF`.
-  - light:
-    - bg `#F7FAFF`, surface `#FFFFFF`, surface-strong `#F2F6FF`,
-    - text `#0E1A2B`, textMuted `#3C4B66`,
-    - primary `#0EA5E9`, primaryFg `#FFFFFF`,
-    - onSurface `#243142`, onSurfaceStrong `#0E1A2B`.
-- Example utility classes:
-  - `.on-surface { @apply text-onSurface; }`
-  - `.on-surface-strong { @apply text-onSurfaceStrong; }`
-  - `.scrim { background: linear-gradient(180deg, rgba(0,0,0,.56), rgba(0,0,0,.24) 50%, rgba(0,0,0,0)); }`
+ACCESSIBILITY & CONTRAST
+13) Pass Lighthouse/axe for contrast AA:
+    - Ensure text on surfaces meets 4.5:1 (use `.on-surface` / `.on-surface-strong` classes).
+    - Add focus outlines consistent with brand (neon ring).
+    - Respect prefers-reduced-motion.
 
-### Deliverables
-- Updated Tailwind config & tokens with safe foreground/background pairs.
-- Media-ready sections using `<Image />` + `.scrim`.
-- Icons added across features/benefits/integrations/FAQ.
-- A11y and Lighthouse scripts added and passing.
+DATA INTEGRATION
+14) Ensure all charts load real data from `/api/analytics/delivery` with live DTOs.
+    - Fallback skeletons/empty state when no data.
+    - Poll minimal where needed; stop when terminal states reached.
 
-Refactor the code accordingly, update components, wire images/icons, and commit with message: 
-"feat(marketing): enforce AA contrast + add images/icons with scrim overlays; add a11y checks"
+TESTS & QUALITY
+15) Unit tests (Jest):
+    - Tooltips presence on key controls.
+    - Tour service flag logic; start-on-first-run; replay.
+    - Analytics service DTO mapping to ApexCharts options.
+16) E2E (Cypress):
+    - `tour.spec`: runs tutorial, checks step titles and highlights.
+    - `analytics.spec`: change date range, charts update.
+    - `campaign_builder.spec`: fill steps, preview recipients, review summary visible.
+17) Add `npm scripts`:
+    - `npm run ui:check` (lint + stylelint if present)
+    - `npm run ui:test` (jest) 
+    - `npm run ui:e2e` (cypress run headless)
+
+IMPLEMENTATION NOTES
+- Prefer Angular Material components; avoid mixing Bootstrap unless necessary for utilities.
+- Encapsulate charts in `ChartCardComponent` with a single `@Input() config`.
+- Create `TooltipDirective` helper if repeated tooltip text logic.
+- Keep bundles light: lazy-load tour library and chart modules; import Apex modules selectively.
+- Keep all colors via tokens; one source of truth for theming.
+
+ACCEPTANCE CRITERIA
+- New shell + navigation with futuristic style and smooth micro-interactions.
+- Analytics page shows Apex area + donut + bar with legends and tooltips.
+- Conversation thread uses styled bubbles, provider/status chips, and tooltips.
+- Campaign builder 4 steps with preview; all controls have descriptive tooltips.
+- Guided tour appears on first load (and is replayable), fully keyboard-accessible.
+- Lighthouse Accessibility ≥ 95; Performance not regressed.
+- 6–10 unit tests green; 3 Cypress e2e green.
+
+DELIVERABLES
+- All code changes in `pipelane-front/` with incremental commits.
+- README snippet in `pipelane-front/README.md` describing theme tokens, how to run the tour, and how to update charts.
