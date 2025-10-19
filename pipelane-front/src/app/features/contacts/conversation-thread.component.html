@@ -1,0 +1,276 @@
+<ng-container *ngIf="conversation(); else loading">
+  <div class="conversation-layout">
+    <mat-card class="thread-card glass" data-tour="conversation-thread">
+      <header class="thread-header">
+        <div class="thread-header__title">
+          <span class="channel-icon" [ngClass]="primaryChannel()">
+            {{ channelIcon(primaryChannel()) }}
+          </span>
+          <div>
+            <h2 class="thread-title">
+              {{ primaryChannelLabel() }}
+            </h2>
+            <p class="muted">
+              {{ stats().incoming }} inbound · {{ stats().outgoing }} outbound ·
+              <ng-container *ngIf="stats().lastInboundAt as inbound">
+                last inbound {{ inbound | date: 'short' }}
+              </ng-container>
+            </p>
+          </div>
+        </div>
+        <div class="thread-header__status">
+          <mat-chip-set>
+            <mat-chip
+              color="primary"
+              selected
+              matTooltip="Text window active thanks to a message within 24h"
+            >
+              <mat-icon>schedule_send</mat-icon>
+              Session live
+            </mat-chip>
+            <mat-chip
+              *ngFor="let provider of providersUsed()"
+              [ngClass]="provider.className"
+              matTooltip="Provider used recently for this thread"
+              selected
+            >
+              <mat-icon>hub</mat-icon>
+              {{ provider.label }}
+            </mat-chip>
+          </mat-chip-set>
+        </div>
+      </header>
+
+      <div class="quick-actions" data-tour="conversation-quick-actions">
+        <button
+          mat-stroked-button
+          color="accent"
+          *ngFor="let action of quickActions"
+          (click)="triggerQuickAction(action.key)"
+          [matTooltip]="action.tooltip"
+        >
+          <mat-icon>{{ action.icon }}</mat-icon>
+          {{ action.label }}
+        </button>
+      </div>
+
+      <section class="messages-section" *ngIf="conversation()?.messages?.length; else emptyState">
+        <div
+          *ngFor="let message of conversation()?.messages"
+          class="message"
+          [class.message--outgoing]="message.direction === 'out'"
+          [class.message--incoming]="message.direction === 'in'"
+          [matTooltip]="messageTooltip(message)"
+        >
+          <div class="message__meta">
+            <span class="message__meta-badge">{{
+              message.direction === 'in' ? 'Inbound' : 'Outbound'
+            }}</span>
+            <span class="message__meta-time">{{ message.createdAt | date: 'short' }}</span>
+          </div>
+          <div class="message__bubble glass">
+            <div class="message__header">
+              <span class="message__channel">{{ ChannelLabels[message.channel] }}</span>
+              <div class="message__status" [ngClass]="statusAccent(message.status)">
+                <mat-icon>{{ statusIcon(message.status) }}</mat-icon>
+                {{ statusLabel(message.status) }}
+              </div>
+            </div>
+
+            <pre *ngIf="message.type !== 'text'; else plainText" class="message__payload"
+              >{{ renderPayload(message) }}
+            </pre>
+            <ng-template #plainText>
+              <p class="message__text">{{ renderPayload(message) }}</p>
+            </ng-template>
+
+            <footer class="message__footer">
+              <div
+                class="message__provider"
+                *ngIf="providerBadge(message.provider) as badge"
+                [ngClass]="badge.className"
+              >
+                <mat-icon>integration_instructions</mat-icon>
+                {{ badge.label }}
+              </div>
+              <div class="message__error" *ngIf="message.errorReason">
+                <mat-icon>error_outline</mat-icon>
+                {{ message.errorReason }}
+              </div>
+            </footer>
+          </div>
+        </div>
+      </section>
+
+      <mat-divider></mat-divider>
+
+      <section class="composer-section glass">
+        <div class="composer-section__controls">
+          <mat-button-toggle-group
+            class="composer-toggle"
+            [value]="composerMode()"
+            (change)="onComposerModeChange($event.value)"
+          >
+            <mat-button-toggle value="text" [disabled]="!canText()">
+              <mat-icon>chat</mat-icon>
+              Text reply
+            </mat-button-toggle>
+            <mat-button-toggle value="template">
+              <mat-icon>schema</mat-icon>
+              Template
+            </mat-button-toggle>
+          </mat-button-toggle-group>
+          <span class="muted" *ngIf="!canText()"
+            >24h session closed · send a template to re-engage</span
+          >
+        </div>
+
+        <form *ngIf="composerMode() === 'text'" class="composer-form" (ngSubmit)="sendText()">
+          <mat-form-field appearance="outline" class="composer-field">
+            <mat-label>Reply</mat-label>
+            <textarea
+              #textComposer
+              matInput
+              rows="3"
+              [formControl]="textControl"
+              placeholder="Type a personal follow-up..."
+            ></textarea>
+            <mat-error *ngIf="textControl.invalid">Add at least 2 characters</mat-error>
+          </mat-form-field>
+          <button mat-raised-button color="primary" type="submit" [disabled]="sending()">
+            <mat-icon>send</mat-icon>
+            Send now
+          </button>
+        </form>
+
+        <form
+          *ngIf="composerMode() === 'template'"
+          class="composer-form"
+          (ngSubmit)="sendTemplate()"
+        >
+          <mat-form-field appearance="outline" class="composer-field">
+            <mat-label>Template name</mat-label>
+            <input
+              #templateComposer
+              matInput
+              [formControl]="templateControl"
+              placeholder="welcome_reactivation"
+              autocomplete="off"
+            />
+            <button
+              mat-icon-button
+              matSuffix
+              type="button"
+              [matMenuTriggerFor]="variableMenu"
+              matTooltip="Insert template variable"
+            >
+              <mat-icon>data_object</mat-icon>
+            </button>
+            <mat-error *ngIf="templateControl.invalid">Template name required</mat-error>
+          </mat-form-field>
+          <mat-menu #variableMenu="matMenu">
+            <button
+              mat-menu-item
+              *ngFor="let variable of templateVariables"
+              (click)="insertTemplateVariable(variable)"
+            >
+              <mat-icon>add_circle</mat-icon>
+              <span>{{ variable }}</span>
+            </button>
+          </mat-menu>
+          <button mat-raised-button color="accent" type="submit" [disabled]="sending()">
+            <mat-icon>rocket_launch</mat-icon>
+            Send template
+          </button>
+        </form>
+      </section>
+    </mat-card>
+
+    <aside class="info-panel" [class.info-panel--collapsed]="!infoPanelOpen()">
+      <div class="info-panel__header">
+        <h3>Thread insights</h3>
+        <button
+          mat-icon-button
+          (click)="toggleInfoPanel()"
+          [matTooltip]="infoPanelOpen() ? 'Collapse insights' : 'Expand insights'"
+        >
+          <mat-icon>{{ infoPanelOpen() ? 'chevron_right' : 'chevron_left' }}</mat-icon>
+        </button>
+      </div>
+
+      <section class="info-card glass">
+        <header>
+          <h4>Contact</h4>
+        </header>
+        <p class="muted">ID: {{ conversation()?.conversationId || contactId }}</p>
+        <div class="badge-row">
+          <span class="badge badge--accent" matTooltip="Primary channel for this conversation">
+            <mat-icon>alternate_email</mat-icon>
+            {{ primaryChannelLabel() }}
+          </span>
+          <span
+            class="badge badge--primary"
+            matTooltip="{{ stats().incoming }} inbound / {{ stats().outgoing }} outbound messages"
+          >
+            <mat-icon>swap_vert</mat-icon>
+            {{ stats().incoming }} in · {{ stats().outgoing }} out
+          </span>
+        </div>
+      </section>
+
+      <section class="info-card glass">
+        <header>
+          <h4>Delivery health</h4>
+        </header>
+        <div class="stat-grid">
+          <div>
+            <span class="stat-label">Delivered</span>
+            <span class="stat-value">{{ stats().delivered }}</span>
+          </div>
+          <div>
+            <span class="stat-label">Failed</span>
+            <span class="stat-value warn">{{ stats().failed }}</span>
+          </div>
+          <div>
+            <span class="stat-label">Total</span>
+            <span class="stat-value">{{ stats().total }}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="info-card glass">
+        <header>
+          <h4>Recent activity</h4>
+        </header>
+        <ul class="timeline">
+          <li *ngFor="let event of recentEvents()">
+            <span class="timeline-dot" [ngClass]="statusAccent(event.status)"></span>
+            <div>
+              <p class="timeline-title">
+                {{ statusLabel(event.status) }} · {{ ChannelLabels[event.channel] }}
+              </p>
+              <p class="muted">{{ event.createdAt | date: 'short' }}</p>
+            </div>
+          </li>
+        </ul>
+      </section>
+    </aside>
+  </div>
+</ng-container>
+
+<ng-template #loading>
+  <div class="loading-state glass">
+    <mat-progress-spinner diameter="48" mode="indeterminate"></mat-progress-spinner>
+    <p>Syncing conversation…</p>
+  </div>
+</ng-template>
+
+<ng-template #emptyState>
+  <div class="empty-state glass">
+    <mat-icon>chat_bubble_outline</mat-icon>
+    <h3>No messages yet</h3>
+    <p class="muted">
+      Kick off the conversation with a template or wait for your contact to reply.
+    </p>
+  </div>
+</ng-template>
