@@ -149,7 +149,7 @@ export class ApiService {
   previewFollowups(segmentJson?: string, tenantId?: string): Observable<FollowupPreviewResponse> {
     return this.http
       .post<FollowupPreviewResponse>(
-        `${this.base}/followups/preview`,
+        `${this.base}/api/followups/preview`,
         { segmentJson: segmentJson ?? '{}' },
         { headers: this.headers(tenantId) },
       )

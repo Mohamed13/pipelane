@@ -63,4 +63,12 @@ describe('ApiService', () => {
       duration: 6000,
     });
   });
+
+  it('calls followup preview with /api prefix', () => {
+    service.previewFollowups('{}').subscribe();
+
+    const req = http.expectOne('http://localhost:5000/api/followups/preview');
+    expect(req.request.method).toBe('POST');
+    req.flush({ count: 0 });
+  });
 });
