@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 
 using Pipelane.Application.Storage;
 using Pipelane.Domain.Entities;
+using Pipelane.Domain.Entities.Prospecting;
 
 namespace Pipelane.Infrastructure.Persistence;
 
@@ -29,6 +30,13 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<OutboxMessage> Outbox => Set<OutboxMessage>();
     public DbSet<User> Users => Set<User>();
     public DbSet<FollowupTask> FollowupTasks => Set<FollowupTask>();
+    public DbSet<Prospect> Prospects => Set<Prospect>();
+    public DbSet<ProspectingSequence> ProspectingSequences => Set<ProspectingSequence>();
+    public DbSet<ProspectingSequenceStep> ProspectingSequenceSteps => Set<ProspectingSequenceStep>();
+    public DbSet<ProspectingCampaign> ProspectingCampaigns => Set<ProspectingCampaign>();
+    public DbSet<EmailGeneration> EmailGenerations => Set<EmailGeneration>();
+    public DbSet<SendLog> ProspectingSendLogs => Set<SendLog>();
+    public DbSet<ProspectReply> ProspectReplies => Set<ProspectReply>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -119,7 +127,14 @@ public class AppDbContext : DbContext, IAppDbContext
 
         modelBuilder.Entity<LeadScore>()
             .HasIndex(l => new { l.TenantId, l.ContactId })
-            .IsUnique();
+            .IsUnique()
+            .HasFilter("[ContactId] IS NOT NULL")
+            .HasDatabaseName("IX_LeadScores_Tenant_Contact");
+        modelBuilder.Entity<LeadScore>()
+            .HasIndex(l => new { l.TenantId, l.ProspectId })
+            .IsUnique()
+            .HasFilter("[ProspectId] IS NOT NULL")
+            .HasDatabaseName("IX_LeadScores_Tenant_Prospect");
 
         modelBuilder.Entity<Conversion>()
             .Property(c => c.Amount)
@@ -137,6 +152,143 @@ public class AppDbContext : DbContext, IAppDbContext
             .IsUnique();
         modelBuilder.Entity<User>()
             .HasIndex(u => u.Email);
+
+        modelBuilder.Entity<Prospect>()
+            .Property(p => p.Email)
+            .HasMaxLength(320);
+        modelBuilder.Entity<Prospect>()
+            .HasIndex(p => new { p.TenantId, p.Email })
+            .IsUnique()
+            .HasDatabaseName("IX_Prospects_Tenant_Email");
+        modelBuilder.Entity<Prospect>()
+            .HasIndex(p => new { p.TenantId, p.Status })
+            .HasDatabaseName("IX_Prospects_Tenant_Status");
+        modelBuilder.Entity<Prospect>()
+            .HasIndex(p => new { p.TenantId, p.OwnerUserId })
+            .HasDatabaseName("IX_Prospects_Tenant_Owner");
+        modelBuilder.Entity<Prospect>()
+            .HasOne(p => p.Sequence)
+            .WithMany(s => s.Prospects)
+            .HasForeignKey(p => p.SequenceId)
+            .OnDelete(DeleteBehavior.SetNull);
+        modelBuilder.Entity<Prospect>()
+            .HasOne(p => p.Campaign)
+            .WithMany(c => c.Prospects)
+            .HasForeignKey(p => p.CampaignId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<ProspectingSequence>()
+            .HasIndex(s => new { s.TenantId, s.Name })
+            .IsUnique()
+            .HasDatabaseName("IX_ProspectingSequences_Tenant_Name");
+
+        modelBuilder.Entity<ProspectingSequenceStep>()
+            .HasIndex(s => new { s.TenantId, s.SequenceId, s.Order })
+            .IsUnique()
+            .HasDatabaseName("IX_ProspectingSteps_Sequence_Order");
+        modelBuilder.Entity<ProspectingSequenceStep>()
+            .HasOne(s => s.Sequence)
+            .WithMany(seq => seq.Steps)
+            .HasForeignKey(s => s.SequenceId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ProspectingCampaign>()
+            .HasIndex(c => new { c.TenantId, c.Status })
+            .HasDatabaseName("IX_ProspectingCampaigns_Tenant_Status");
+        modelBuilder.Entity<ProspectingCampaign>()
+            .HasOne(c => c.Sequence)
+            .WithMany(s => s.Campaigns)
+            .HasForeignKey(c => c.SequenceId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<EmailGeneration>()
+            .HasIndex(g => new { g.TenantId, g.ProspectId, g.StepId, g.CreatedAtUtc })
+            .HasDatabaseName("IX_EmailGenerations_Prospect_Step_Created");
+        modelBuilder.Entity<EmailGeneration>()
+            .Property(g => g.Variant)
+            .HasMaxLength(16);
+        modelBuilder.Entity<EmailGeneration>()
+            .Property(g => g.Temperature)
+            .HasPrecision(4, 3);
+        modelBuilder.Entity<EmailGeneration>()
+            .Property(g => g.CostUsd)
+            .HasPrecision(18, 6);
+        modelBuilder.Entity<EmailGeneration>()
+            .HasOne(g => g.Prospect)
+            .WithMany(p => p.Generations)
+            .HasForeignKey(g => g.ProspectId)
+            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<EmailGeneration>()
+            .HasOne(g => g.Step)
+            .WithMany(s => s.Generations)
+            .HasForeignKey(g => g.StepId)
+            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<EmailGeneration>()
+            .HasOne(g => g.Campaign)
+            .WithMany(c => c.Generations)
+            .HasForeignKey(g => g.CampaignId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<SendLog>()
+            .HasIndex(s => new { s.TenantId, s.ProspectId, s.Status, s.ScheduledAtUtc })
+            .HasDatabaseName("IX_SendLogs_Tenant_Prospect_Status_Scheduled");
+        modelBuilder.Entity<SendLog>()
+            .Property(s => s.Provider)
+            .HasMaxLength(128);
+        modelBuilder.Entity<SendLog>()
+            .HasIndex(s => new { s.TenantId, s.Provider, s.ProviderMessageId })
+            .IsUnique()
+            .HasFilter("[ProviderMessageId] IS NOT NULL")
+            .HasDatabaseName("IX_SendLogs_ProviderMessage");
+        modelBuilder.Entity<SendLog>()
+            .HasOne(s => s.Prospect)
+            .WithMany(p => p.Sends)
+            .HasForeignKey(s => s.ProspectId)
+            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<SendLog>()
+            .HasOne(s => s.Campaign)
+            .WithMany(c => c.Sends)
+            .HasForeignKey(s => s.CampaignId)
+            .OnDelete(DeleteBehavior.SetNull);
+        modelBuilder.Entity<SendLog>()
+            .HasOne(s => s.Step)
+            .WithMany(step => step.Sends)
+            .HasForeignKey(s => s.StepId)
+            .OnDelete(DeleteBehavior.SetNull);
+        modelBuilder.Entity<SendLog>()
+            .HasOne(s => s.Generation)
+            .WithMany(g => g.Sends)
+            .HasForeignKey(s => s.GenerationId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<ProspectReply>()
+            .HasIndex(r => new { r.TenantId, r.ProspectId, r.ReceivedAtUtc })
+            .HasDatabaseName("IX_ProspectReplies_Tenant_Prospect_Received");
+        modelBuilder.Entity<ProspectReply>()
+            .HasOne(r => r.Prospect)
+            .WithMany(p => p.Replies)
+            .HasForeignKey(r => r.ProspectId)
+            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<ProspectReply>()
+            .HasOne(r => r.Campaign)
+            .WithMany(c => c.Replies)
+            .HasForeignKey(r => r.CampaignId)
+            .OnDelete(DeleteBehavior.SetNull);
+        modelBuilder.Entity<ProspectReply>()
+            .HasOne(r => r.SendLog)
+            .WithMany(s => s.Replies)
+            .HasForeignKey(r => r.SendLogId)
+            .OnDelete(DeleteBehavior.SetNull);
+        modelBuilder.Entity<ProspectReply>()
+            .HasOne(r => r.Step)
+            .WithMany(s => s.Replies)
+            .HasForeignKey(r => r.StepId)
+            .OnDelete(DeleteBehavior.SetNull);
+        modelBuilder.Entity<ProspectReply>()
+            .HasOne(r => r.AutoReplyGeneration)
+            .WithMany()
+            .HasForeignKey(r => r.AutoReplyGenerationId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 
     private void ApplyTenantFilter<TEntity>(ModelBuilder modelBuilder) where TEntity : BaseEntity

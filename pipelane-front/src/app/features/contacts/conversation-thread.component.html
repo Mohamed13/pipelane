@@ -54,6 +54,138 @@
         </button>
       </div>
 
+      <div class="ai-actions glass" data-tour="conversation-ai-actions">
+        <div class="ai-actions__buttons">
+          <button
+            mat-raised-button
+            color="primary"
+            (click)="onGenerateAiMessage()"
+            [disabled]="aiGenerating()"
+            matTooltip="L'IA propose un message court et pro. Relis et envoie en un clic."
+          >
+            <mat-icon>auto_fix_high</mat-icon>
+            Générer un message (IA)
+            <mat-progress-spinner
+              *ngIf="aiGenerating()"
+              class="ai-actions__spinner"
+              diameter="18"
+              mode="indeterminate"
+            ></mat-progress-spinner>
+          </button>
+          <button
+            mat-stroked-button
+            color="accent"
+            (click)="onClassifyReply()"
+            [disabled]="classifying() || !hasInboundMessages()"
+            matTooltip="Classe la réponse: intéressé, à revoir plus tard, etc."
+          >
+            <mat-icon>insights</mat-icon>
+            Classer la réponse (IA)
+          </button>
+        </div>
+        <div class="ai-actions__meta">
+          <mat-chip *ngIf="classification() as insight" color="accent" selected>
+            <mat-icon>emoji_objects</mat-icon>
+            {{ insight.intent }}
+            <span class="ai-actions__confidence">
+              {{ (insight.confidence || 0) | percent: '1.0-0' }}
+            </span>
+          </mat-chip>
+          <mat-slide-toggle
+            color="primary"
+            [checked]="smartFollowupEnabled()"
+            (change)="onToggleSmartFollowup($event.checked)"
+            matTooltip="La relance intelligente choisit le bon moment et un angle adapté."
+          >
+            Relance intelligente
+          </mat-slide-toggle>
+        </div>
+      </div>
+
+      <mat-card class="pitch-card glass" data-tour="conversation-pitch">
+        <mat-card-header>
+          <mat-card-title>Votre pitch</mat-card-title>
+          <mat-card-subtitle>Personnalisez le contexte IA partagé avec chaque message.</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <mat-form-field appearance="outline" class="pitch-card__field">
+            <mat-label>Résumé de votre proposition</mat-label>
+            <textarea
+              matInput
+              [formControl]="pitchControl"
+              rows="3"
+              placeholder="Nous aidons les équipes à accélérer leur prospection avec un copilote IA."
+            ></textarea>
+          </mat-form-field>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="ai-preview glass" *ngIf="aiMessagePreview() as preview">
+        <mat-card-header>
+          <div>
+            <mat-card-title>Aperçu IA</mat-card-title>
+            <mat-card-subtitle *ngIf="preview.languageDetected">
+              Langue détectée : {{ preview.languageDetected | uppercase }}
+            </mat-card-subtitle>
+          </div>
+          <button mat-icon-button type="button" (click)="clearGeneratedMessage()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </mat-card-header>
+        <mat-card-content>
+          <p *ngIf="preview.subject" class="ai-preview__subject">
+            {{ preview.subject }}
+          </p>
+          <p class="ai-preview__text">
+            {{ preview.text }}
+          </p>
+        </mat-card-content>
+        <mat-card-actions>
+          <button mat-raised-button color="primary" type="button" (click)="sendGeneratedMessage()">
+            Insérer dans le composeur
+          </button>
+          <button mat-button type="button" (click)="clearGeneratedMessage()">Ignorer</button>
+        </mat-card-actions>
+      </mat-card>
+
+      <section class="smart-followup glass" *ngIf="smartFollowupEnabled()">
+        <header class="smart-followup__header">
+          <h3>Prochaine relance</h3>
+          <mat-chip *ngIf="followupPreview() as preview" color="primary" selected>
+            {{ preview.angle }}
+          </mat-chip>
+        </header>
+        <div class="smart-followup__body" *ngIf="followupLoading(); else followupReady">
+          <mat-progress-spinner diameter="28" mode="indeterminate"></mat-progress-spinner>
+          <span class="muted">Calcul de la meilleure relance...</span>
+        </div>
+        <ng-template #followupReady>
+          <div class="smart-followup__body" *ngIf="followupPreview() as preview; else followupEmpty">
+            <p class="smart-followup__when">
+              {{ preview.scheduledAtIso | date: 'fullDate' }}
+              &middot;
+              {{ preview.scheduledAtIso | date: 'shortTime' }}
+            </p>
+            <p class="smart-followup__preview">
+              {{ preview.previewText }}
+            </p>
+            <div class="smart-followup__actions">
+              <button mat-raised-button color="primary" type="button" (click)="onValidateFollowup()">
+                Valider
+              </button>
+              <button mat-button type="button" (click)="onModifyFollowup()">Modifier</button>
+              <button mat-button type="button" (click)="onDeferFollowup()">Reporter</button>
+              <button mat-button color="warn" type="button" (click)="onStopFollowup()">Stop</button>
+            </div>
+          </div>
+          <ng-template #followupEmpty>
+            <div class="smart-followup__body">
+              <span class="muted">Aucune suggestion disponible pour l'instant.</span>
+            </div>
+          </ng-template>
+        </ng-template>
+      </section>
+
       <section class="messages-section" *ngIf="conversation()?.messages?.length; else emptyState">
         <div
           *ngFor="let message of conversation()?.messages"

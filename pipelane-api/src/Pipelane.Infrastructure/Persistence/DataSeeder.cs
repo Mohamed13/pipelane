@@ -1,6 +1,8 @@
 using Pipelane.Application.Storage;
 using Pipelane.Domain.Entities;
+using Pipelane.Domain.Entities.Prospecting;
 using Pipelane.Domain.Enums;
+using Pipelane.Domain.Enums.Prospecting;
 using Pipelane.Infrastructure.Security;
 
 namespace Pipelane.Infrastructure.Persistence;
@@ -41,25 +43,112 @@ public class DataSeeder
         var hasContacts = _db.Contacts.Any(c => c.TenantId == tenantId);
         if (!hasContacts)
         {
-            var r = new Random(42);
-            for (int i = 0; i < 10; i++)
+            var random = new Random(42);
+            var now = DateTime.UtcNow;
+            var channels = new[] { Channel.Email, Channel.Whatsapp, Channel.Sms };
+
+            for (var i = 0; i < 20; i++)
             {
-                var c = new Contact
+                var language = i % 3 == 0 ? "fr" : "en";
+                var createdAt = now.AddDays(-random.Next(1, 20));
+                var contact = new Contact
                 {
                     Id = Guid.NewGuid(),
                     TenantId = tenantId,
-                    Phone = $"+1555000{i:D3}",
-                    Email = $"user{i}@example.com",
-                    FirstName = "User",
-                    LastName = i.ToString(),
-                    Lang = i % 2 == 0 ? "en" : "fr",
-                    CreatedAt = DateTime.UtcNow.AddDays(-r.Next(1, 10)),
-                    UpdatedAt = DateTime.UtcNow
+                    Phone = $"+1555123{i:0000}",
+                    Email = $"contact{i}@demo.co",
+                    FirstName = i % 2 == 0 ? "Alex" : "Charlie",
+                    LastName = $"Demo{i}",
+                    Lang = language,
+                    TagsJson = "[\"segment:demo\",\"tz:" + (i % 2 == 0 ? "Europe/Paris" : "America/New_York") + "\"]",
+                    CreatedAt = createdAt,
+                    UpdatedAt = now
                 };
-                _db.Contacts.Add(c);
-                var convo = new Conversation { Id = Guid.NewGuid(), TenantId = tenantId, ContactId = c.Id, PrimaryChannel = Channel.Whatsapp, CreatedAt = DateTime.UtcNow.AddDays(-1) };
-                _db.Conversations.Add(convo);
-                _db.Messages.Add(new Message { Id = Guid.NewGuid(), TenantId = tenantId, ConversationId = convo.Id, Channel = Channel.Whatsapp, Direction = MessageDirection.In, Type = MessageType.Text, PayloadJson = "{\"text\":\"Hello\"}", Status = MessageStatus.Delivered, CreatedAt = DateTime.UtcNow.AddHours(-r.Next(1, 48)) });
+                _db.Contacts.Add(contact);
+
+                var conversation = new Conversation
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = tenantId,
+                    ContactId = contact.Id,
+                    PrimaryChannel = channels[i % channels.Length],
+                    CreatedAt = createdAt.AddDays(1)
+                };
+                _db.Conversations.Add(conversation);
+
+                if (i < 3)
+                {
+                    var outbound = new Message
+                    {
+                        Id = Guid.NewGuid(),
+                        TenantId = tenantId,
+                        ConversationId = conversation.Id,
+                        Channel = conversation.PrimaryChannel,
+                        Direction = MessageDirection.Out,
+                        Type = MessageType.Text,
+                        PayloadJson = "{\"text\":\"Hi there, just sharing a quick update from Pipelane.\"}",
+                        Status = MessageStatus.Sent,
+                        CreatedAt = now.AddHours(-4 - i)
+                    };
+                    _db.Messages.Add(outbound);
+                    _db.MessageEvents.Add(new MessageEvent
+                    {
+                        Id = Guid.NewGuid(),
+                        TenantId = tenantId,
+                        MessageId = outbound.Id,
+                        Type = MessageEventType.Sent,
+                        Provider = "seed",
+                        CreatedAt = outbound.CreatedAt
+                    });
+
+                    var inbound = new Message
+                    {
+                        Id = Guid.NewGuid(),
+                        TenantId = tenantId,
+                        ConversationId = conversation.Id,
+                        Channel = conversation.PrimaryChannel,
+                        Direction = MessageDirection.In,
+                        Type = MessageType.Text,
+                        PayloadJson = "{\"text\":\"Thanks, can we chat next week?\"}",
+                        Status = MessageStatus.Delivered,
+                        CreatedAt = outbound.CreatedAt.AddMinutes(30)
+                    };
+                    _db.Messages.Add(inbound);
+                    _db.MessageEvents.Add(new MessageEvent
+                    {
+                        Id = Guid.NewGuid(),
+                        TenantId = tenantId,
+                        MessageId = inbound.Id,
+                        Type = MessageEventType.Delivered,
+                        Provider = "seed",
+                        CreatedAt = inbound.CreatedAt
+                    });
+                }
+                else
+                {
+                    var inbound = new Message
+                    {
+                        Id = Guid.NewGuid(),
+                        TenantId = tenantId,
+                        ConversationId = conversation.Id,
+                        Channel = conversation.PrimaryChannel,
+                        Direction = MessageDirection.In,
+                        Type = MessageType.Text,
+                        PayloadJson = "{\"text\":\"Hello team\"}",
+                        Status = MessageStatus.Delivered,
+                        CreatedAt = now.AddHours(-random.Next(2, 36))
+                    };
+                    _db.Messages.Add(inbound);
+                    _db.MessageEvents.Add(new MessageEvent
+                    {
+                        Id = Guid.NewGuid(),
+                        TenantId = tenantId,
+                        MessageId = inbound.Id,
+                        Type = MessageEventType.Delivered,
+                        Provider = "seed",
+                        CreatedAt = inbound.CreatedAt
+                    });
+                }
             }
         }
 
@@ -77,6 +166,96 @@ public class DataSeeder
                 IsActive = true,
                 UpdatedAtUtc = DateTime.UtcNow
             });
+        }
+
+        var hasProspecting = _db.Prospects.Any(p => p.TenantId == tenantId);
+        if (!hasProspecting)
+        {
+            var now = DateTime.UtcNow;
+            var sequenceId = Guid.NewGuid();
+            var sequence = new ProspectingSequence
+            {
+                Id = sequenceId,
+                TenantId = tenantId,
+                Name = "Default Outreach",
+                Description = "2-step prospecting sequence (J0 / J+3)",
+                IsActive = true,
+                TargetPersona = "RevOps Leaders",
+                EntryCriteriaJson = "{\"industry\":\"SaaS\"}",
+                CreatedAtUtc = now,
+                UpdatedAtUtc = now,
+                Steps = new List<ProspectingSequenceStep>
+                {
+                    new ProspectingSequenceStep
+                    {
+                        Id = Guid.NewGuid(),
+                        TenantId = tenantId,
+                        SequenceId = sequenceId,
+                        Order = 0,
+                        StepType = SequenceStepType.Email,
+                        Channel = Channel.Email,
+                        OffsetDays = 0,
+                        PromptTemplate = "Opening email focusing on pipeline automation benefits.",
+                        SubjectTemplate = "Quick idea for {{company}}",
+                        RequiresApproval = false,
+                        CreatedAtUtc = now,
+                        UpdatedAtUtc = now
+                    },
+                    new ProspectingSequenceStep
+                    {
+                        Id = Guid.NewGuid(),
+                        TenantId = tenantId,
+                        SequenceId = sequenceId,
+                        Order = 1,
+                        StepType = SequenceStepType.Email,
+                        Channel = Channel.Email,
+                        OffsetDays = 3,
+                        PromptTemplate = "Follow-up referencing previous note and case study.",
+                        SubjectTemplate = "Thought this might help {{company}}",
+                        RequiresApproval = false,
+                        CreatedAtUtc = now,
+                        UpdatedAtUtc = now
+                    },
+                }
+            };
+            _db.ProspectingSequences.Add(sequence);
+
+            var campaign = new ProspectingCampaign
+            {
+                Id = Guid.NewGuid(),
+                TenantId = tenantId,
+                SequenceId = sequence.Id,
+                Name = "Warm SaaS leads",
+                Status = ProspectingCampaignStatus.Draft,
+                SegmentJson = "{\"source\":\"demo\"}",
+                CreatedAtUtc = now,
+                UpdatedAtUtc = now,
+                ScheduledAtUtc = now.AddDays(1)
+            };
+            _db.ProspectingCampaigns.Add(campaign);
+
+            var prospects = new List<Prospect>();
+            var rng = new Random(84);
+            for (int i = 0; i < 50; i++)
+            {
+                prospects.Add(new Prospect
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = tenantId,
+                    Email = $"prospect{i}@acme{i % 10}.com",
+                    FirstName = $"Alex{i}",
+                    LastName = "Demo",
+                    Company = $"Acme {i % 10}",
+                    Title = i % 3 == 0 ? "VP Sales" : "Head of Revenue",
+                    Persona = "RevOps",
+                    Source = "seed",
+                    Status = ProspectStatus.New,
+                    CreatedAtUtc = now.AddDays(-rng.Next(1, 20)),
+                    UpdatedAtUtc = now.AddDays(-rng.Next(0, 5)),
+                    TagsJson = "[\"demo\",\"import\"]"
+                });
+            }
+            _db.Prospects.AddRange(prospects);
         }
 
         await _db.SaveChangesAsync(ct);

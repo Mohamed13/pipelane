@@ -1,0 +1,8 @@
+namespace Pipelane.Infrastructure.Background;
+
+public sealed class MessagingLimitsOptions
+{
+    public int DailySendCap { get; set; } = 100;
+    public TimeSpan QuietHoursStart { get; set; } = TimeSpan.FromHours(22);
+    public TimeSpan QuietHoursEnd { get; set; } = TimeSpan.FromHours(8);
+}

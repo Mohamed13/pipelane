@@ -15,6 +15,7 @@ Send tenant with `X-Tenant-Id` (ApiService supports header injection when provid
 
 ## Routes
 - `/onboarding`, `/templates`, `/contacts`, `/conversations/:contactId`, `/campaigns`, `/analytics`, `/settings`
+- Prospecting workspace: `/prospecting`, `/prospecting/onboarding`, `/prospecting/sequences`, `/prospecting/campaigns/:id`, `/prospecting/inbox`
 
 ## I18n & Theme
 - Language: EN/FR via `assets/i18n/*.json` (selector in header)

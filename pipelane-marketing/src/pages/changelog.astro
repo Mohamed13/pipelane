@@ -1,0 +1,57 @@
+---
+import BaseLayout from "@layouts/Base.astro";
+import Navbar from "@components/Navbar.astro";
+import Footer from "@components/Footer.astro";
+import NeonBadge from "@components/NeonBadge.astro";
+
+const entries = [
+  {
+    date: '2025-10-20',
+    title: 'Agent de prospection IA – version BÊTA',
+    items: [
+      'Génération de messages FR/EN avec explication du choix',
+      'Relance intelligente : rappel, valeur, preuve sociale, question',
+      'Classement automatique des réponses et recommandations action'
+    ]
+  },
+  {
+    date: '2025-10-10',
+    title: 'Console unifiée et formulaires démo',
+    items: [
+      'Nouvelle landing avec formulaire Demander une démo',
+      'Suivi en temps réel des statuts (envoyé, délivré, répondu)',
+      'Mise en place du bandeau consentement cookies'
+    ]
+  }
+];
+
+const metaTitle = 'Changelog – Pipelane';
+const metaDescription = 'Suivez les évolutions du produit Pipelane : nouveautés, améliorations et garde-fous de conformité.';
+---
+<BaseLayout title={metaTitle} description={metaDescription} canonical="https://www.pipelane.app/changelog">
+  <Navbar currentPath={Astro.url.pathname} />
+  <main class="space-y-20 pt-32">
+    <section class="container space-y-6">
+      <NeonBadge text="Changelog" />
+      <h1 class="text-balance text-4xl font-semibold leading-tight text-onSurfaceStrong sm:text-5xl">Évolutions produit</h1>
+      <p class="max-w-3xl text-lg leading-relaxed text-onSurface">Nos mises à jour, livraisons et garde-fous sont consignés ici. Chaque entrée inclut les impacts produit et conformité.</p>
+    </section>
+    <section class="container space-y-8">
+      {entries.map((entry) => (
+        <article class="glass rounded-3xl border border-line/30 p-6" aria-labelledby={ntry-}>
+          <p class="text-xs uppercase tracking-[0.35em] text-primary/80">{new Date(entry.date).toLocaleDateString('fr-FR')}</p>
+          <h2 id={ntry-} class="mt-2 text-xl font-semibold text-onSurfaceStrong">{entry.title}</h2>
+          <ul class="mt-4 space-y-2 text-sm leading-relaxed text-onSurface">
+            {entry.items.map((item) => (
+              <li class="flex items-start gap-3">
+                <span class="mt-1 h-2 w-2 rounded-full bg-primary"></span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </article>
+      ))}
+    </section>
+  </main>
+  <Footer />
+</BaseLayout>

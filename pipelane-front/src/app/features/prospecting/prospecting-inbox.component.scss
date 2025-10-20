@@ -1,0 +1,59 @@
+.inbox {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.loading,
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  color: rgba(0, 0, 0, 0.54);
+}
+
+.loading .spin {
+  animation: spin 1.2s linear infinite;
+}
+
+mat-icon.interested {
+  color: #4caf50;
+}
+
+mat-icon.meetingRequested {
+  color: #03a9f4;
+}
+
+mat-icon.unsubscribe {
+  color: #f44336;
+}
+
+mat-icon.notInterested {
+  color: #ff9800;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

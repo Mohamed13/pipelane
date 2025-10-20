@@ -1,0 +1,106 @@
+---
+import BaseLayout from "@layouts/Base.astro";
+import Navbar from "@components/Navbar.astro";
+import Footer from "@components/Footer.astro";
+import Section from "@components/Section.astro";
+import CTA from "@components/CTA.astro";
+import Icon from "@components/Icon.astro";
+import NeonBadge from "@components/NeonBadge.astro";
+
+const metaTitle = "Agent de prospection IA – Pipelane";
+const metaDescription = "Donnez votre cible et votre pitch, l’agent Pipelane rédige, envoie, relance et classe les réponses pour vous concentrer sur les rendez-vous.";
+
+const capabilities = [
+  "Rédige FR/EN avec un ton professionnel et humain",
+  "Envoie étalé aux bonnes heures pour éviter les rafales",
+  "Relance 2–3 fois si le prospect n’a pas répondu",
+  "Classe les réponses (intéressé, plus tard, hors scope, etc.)",
+  "Répond aux demandes simples : informations, créneaux, redirections"
+];
+
+const onboardingSteps = [
+  "Connecter l’email d’envoi",
+  "Écrire votre pitch",
+  "Importer vos contacts (CSV ou CRM)",
+  "Aperçu d’un email personnalisé",
+  "Lancer"
+];
+---
+<BaseLayout title={metaTitle} description={metaDescription} canonical="https://www.pipelane.app/prospection-ia">
+  <Navbar currentPath={Astro.url.pathname} />
+  <main class="space-y-24 lg:space-y-32 pt-32">
+    <section class="container space-y-6">
+      <NeonBadge text="Prospection IA" />
+      <h1 class="text-balance text-4xl font-semibold leading-tight text-onSurfaceStrong sm:text-5xl">Agent de prospection IA</h1>
+      <p class="max-w-3xl text-lg leading-relaxed text-onSurface">
+        Donnez-lui votre cible et votre pitch. Il écrit des emails courts et personnalisés, les envoie à la bonne cadence, relance intelligemment, lit les réponses et propose l’action suivante. Vous vous concentrez sur les rendez-vous.
+      </p>
+      <div class="flex flex-wrap gap-4">
+        <a href="#demo" class="btn-primary" data-analytics="cta_click" data-location="prospection-hero">Demander une démo</a>
+        <a href="/relance-intelligente" class="btn-ghost" data-analytics="cta_click" data-location="prospection-secondary">Voir la relance intelligente</a>
+      </div>
+    </section>
+
+    <Section
+      id="capacites"
+      eyebrow="Ce qu’il fait pour vous"
+      title="L’agent couvre toute la boucle de prospection"
+      contentClass="mt-12 space-y-4"
+    >
+      <ul class="space-y-3 text-sm leading-relaxed text-onSurface">
+        {capabilities.map((item) => (
+          <li class="flex items-start gap-3">
+            <span class="mt-1 text-primary"><Icon name="spark" size={18} /></span>
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
+    </Section>
+
+    <Section
+      id="demarrage"
+      eyebrow="Démarrage guidé"
+      title="Vous êtes opérationnel en moins d’une heure"
+      contentClass="mt-12 grid gap-6 md:grid-cols-3"
+    >
+      {onboardingSteps.map((step, index) => (
+        <div class="glass rounded-3xl border border-line/30 p-6">
+          <span class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/15 text-primary font-semibold">{String(index + 1).padStart(2, "0")}</span>
+          <p class="mt-4 text-sm leading-relaxed text-onSurface">{step}</p>
+        </div>
+      ))}
+    </Section>
+
+    <Section
+      id="sans-n8n"
+      eyebrow="Sans n8n"
+      title="Toujours natif, ports optionnels prêts si besoin"
+      description="Tout tourne dans Pipelane. Besoin d’intégrations spécifiques ? Activez nos deux ports optionnels (événements sortants, actions entrantes) sans refondre votre stack."
+      contentClass="mt-12 grid gap-6 md:grid-cols-2"
+    >
+      <div class="glass rounded-3xl border border-line/30 p-6 text-sm leading-relaxed text-onSurface">
+        <p>
+          L’agent gère déjà l’écriture, l’envoi, les relances, l’analyse des réponses et la priorisation. Vous gardez la main sur chaque message.
+        </p>
+      </div>
+      <div class="rounded-3xl border border-dashed border-primary/40 bg-primary/10 p-6 text-sm text-primary">
+        <p class="font-semibold uppercase tracking-[0.35em]">Ports optionnels</p>
+        <p class="mt-3">• Webhooks sortants : conversations, relances, conversions</p>
+        <p>• Actions entrantes : créer un ticket, pousser un événement CRM</p>
+      </div>
+    </Section>
+
+    <CTA
+      id="demo"
+      title="Prêt à lancer votre agent de prospection IA ?"
+      description="Connectez votre email d’envoi, importez votre pitch et laissez l’agent qualifier vos prospects."
+      primaryLabel="Demander une démo"
+      secondaryLabel="Voir la relance intelligente"
+      secondaryHref="/relance-intelligente"
+    />
+  </main>
+  <Footer />
+</BaseLayout>
+
+
+

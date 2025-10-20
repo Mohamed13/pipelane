@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Security.Cryptography;
+using System.Threading.RateLimiting;
 
 using FluentValidation;
 using FluentValidation.AspNetCore;
@@ -17,10 +18,13 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
 using Pipelane.Api.MultiTenancy;
+using Pipelane.Application.Ai;
 using Pipelane.Application.Abstractions;
+using Pipelane.Application.Prospecting;
 using Pipelane.Application.Services;
 using Pipelane.Application.Storage;
 using Pipelane.Domain.Enums;
+using Pipelane.Infrastructure.Automations;
 using Pipelane.Infrastructure.Background;
 using Pipelane.Infrastructure.Channels;
 using Pipelane.Infrastructure.Persistence;
@@ -46,6 +50,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ITenantProvider, HttpTenantProvider>();
 builder.Services.AddDbContext<AppDbContext>(o => o.UseSqlServer(conn));
 builder.Services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
+builder.Services.AddMemoryCache();
 
 // OpenTelemetry
 builder.Services.AddOpenTelemetry()
@@ -99,7 +104,55 @@ builder.Services.AddHttpClient("Resend", client =>
 {
     client.BaseAddress = new Uri("https://api.resend.com/");
 });
+builder.Services.AddHttpClient("OpenAI", client =>
+{
+    var baseUrl = builder.Configuration["OpenAI:BaseUrl"] ?? "https://api.openai.com/";
+    client.BaseAddress = new Uri(baseUrl);
+});
+builder.Services.AddHttpClient("Automations");
 
+builder.Services.AddRateLimiter(options =>
+{
+    var automationLimit = builder.Configuration.GetValue<int?>("Automations:RateLimitPerMinute") ?? 300;
+
+    options.AddPolicy("tenant-ai", httpContext =>
+    {
+        var tenantProvider = httpContext.RequestServices.GetRequiredService<ITenantProvider>();
+        var tenantId = tenantProvider.TenantId.ToString();
+        return RateLimitPartition.GetTokenBucketLimiter(
+            tenantId,
+            _ => new TokenBucketRateLimiterOptions
+            {
+                TokenLimit = 120,
+                TokensPerPeriod = 120,
+                ReplenishmentPeriod = TimeSpan.FromHours(1),
+                QueueLimit = 0,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+            });
+    });
+
+    options.AddPolicy("automations", httpContext =>
+    {
+        var key = httpContext.Request.Headers.TryGetValue("X-Automations-Token", out var tokenHeader)
+            ? tokenHeader.ToString()
+            : (httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous");
+
+        return RateLimitPartition.GetFixedWindowLimiter(
+            key,
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = automationLimit,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+            });
+    });
+});
+
+builder.Services.Configure<ProspectingAiOptions>(builder.Configuration.GetSection("OpenAI"));
+builder.Services.Configure<TextAiOptions>(builder.Configuration.GetSection("OpenAI"));
+builder.Services.Configure<MessagingLimitsOptions>(builder.Configuration.GetSection("MessagingLimits"));
+builder.Services.Configure<AutomationsOptions>(builder.Configuration.GetSection("Automations"));
 builder.Services.AddQuartz(q =>
 {
     var jobKey = new JobKey("followup-scheduler");
@@ -109,6 +162,14 @@ builder.Services.AddQuartz(q =>
         .WithIdentity("followup-scheduler-trigger")
         .StartNow()
         .WithSimpleSchedule(x => x.WithInterval(TimeSpan.FromMinutes(15)).RepeatForever()));
+
+    var sendDueKey = new JobKey("send-due-messages");
+    q.AddJob<SendDueMessagesJob>(opts => opts.WithIdentity(sendDueKey));
+    q.AddTrigger(opts => opts
+        .ForJob(sendDueKey)
+        .WithIdentity("send-due-messages-trigger")
+        .StartNow()
+        .WithSimpleSchedule(x => x.WithInterval(TimeSpan.FromMinutes(1)).RepeatForever()));
 });
 builder.Services.AddQuartzHostedService(options => options.WaitForJobsToComplete = false);
 
@@ -121,10 +182,16 @@ builder.Services.AddSingleton<IMessageChannel, WhatsAppChannel>();
 builder.Services.AddSingleton<IMessageChannel, EmailChannel>();
 builder.Services.AddSingleton<IMessageChannel, SmsChannel>();
 builder.Services.AddSingleton<IChannelRegistry, ChannelRegistry>();
+builder.Services.AddSingleton<OutboxDispatchExecutor>();
+builder.Services.AddScoped<IMessageDispatchGuard, MessageDispatchGuard>();
+builder.Services.AddSingleton<IAutomationEventPublisher, AutomationEventPublisher>();
 builder.Services.AddScoped<IMessagingService, MessagingService>();
 builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 builder.Services.AddSingleton<IProviderWebhookVerifier, ResendWebhookVerifier>();
 builder.Services.AddScoped<ResendWebhookProcessor>();
+builder.Services.AddScoped<IProspectingAiService, ProspectingAiService>();
+builder.Services.AddScoped<IProspectingService, ProspectingService>();
+builder.Services.AddScoped<ITextAiService, TextAiService>();
 
 // Background services
 builder.Services.AddHostedService<OutboxProcessor>();
@@ -153,6 +220,7 @@ using (var scope = app.Services.CreateScope())
 
 app.UseSerilogRequestLogging();
 app.UseCors();
+app.UseRateLimiter();
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 app.UseAuthentication();
@@ -166,3 +234,6 @@ app.MapControllers();
 app.MapGet("/health", () => Results.Ok(new { status = "ok" })).AllowAnonymous();
 
 app.Run();
+
+
+

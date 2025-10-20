@@ -1,6 +1,7 @@
 ---
 import "@fontsource-variable/inter/index.css";
 import "@styles/globals.css";
+import ConsentManager from "@components/ConsentManager.astro";
 
 interface Props {
   title?: string;
@@ -40,6 +41,8 @@ const isDev = import.meta.env.DEV;
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content="https://www.pipelane.app/og-cover.png" />
     <meta name="twitter:creator" content="@pipelane" />
+
+    <slot name="head" />
 
     <script is:inline>
       const root = document.documentElement;
@@ -203,11 +206,32 @@ const isDev = import.meta.env.DEV;
           requestTick();
         };
 
+        const track = (eventName, payload = {}) => {
+          window.dataLayer = window.dataLayer || [];
+          window.dataLayer.push({ event: eventName, ...payload });
+        };
+
+        const activateAnalytics = () => {
+          const elements = Array.from(document.querySelectorAll('[data-analytics]'));
+          elements.forEach((el) => {
+            el.addEventListener('click', () => {
+              const eventName = el.getAttribute('data-analytics');
+              if (!eventName) return;
+              const location = el.getAttribute('data-location');
+              const payload = {};
+              if (location) payload.location = location;
+              track(eventName, payload);
+            });
+          });
+        };
+
         activateReveal();
         activateNavSpy();
         activateParallax();
+        activateAnalytics();
       })();
     </script>
     {isDev && <script type="module" src="/src/scripts/contrast-check.ts"></script>}
+    <ConsentManager />
   </body>
 </html>

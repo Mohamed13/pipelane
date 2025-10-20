@@ -1,516 +1,369 @@
-﻿﻿﻿﻿﻿---
+---
 import BaseLayout from "@layouts/Base.astro";
 import Navbar from "@components/Navbar.astro";
-import NeonBadge from "@components/NeonBadge.astro";
+import Footer from "@components/Footer.astro";
 import Section from "@components/Section.astro";
-import FeatureCard from "@components/FeatureCard.astro";
-import IntegrationCard from "@components/IntegrationCard.astro";
-import PricingCard from "@components/PricingCard.astro";
-import FAQItem from "@components/FAQItem.astro";
 import CTA from "@components/CTA.astro";
-import TimelineStep from "@components/TimelineStep.astro";
 import StatCard from "@components/StatCard.astro";
+import DemoForm from "@components/DemoForm.astro";
+import NeonBadge from "@components/NeonBadge.astro";
 import Icon from "@components/Icon.astro";
-import { Image } from "astro:assets";
 
-import consoleDashboard from "../assets/img/console-dashboard.svg";
-import automationFlow from "../assets/img/automation-flow.svg";
-import analyticsGlow from "../assets/img/analytics-glow.svg";
-import integrationsGrid from "../assets/img/integrations-grid.svg";
-import journeyMobile from "../assets/img/journey-mobile.svg";
-import insightsTiles from "../assets/img/insights-tiles.svg";
-import pipelineBranches from "../assets/img/pipeline-branches.svg";
+const heroBullets = ["+ de réponses", "Zéro oubli", "Tout au même endroit"];
 
-const timeline = [
+const gains = [
   {
-    title: "Capture & import",
-    description: "Formulaires, webhooks, intégrations CRM, import CSV en quelques clics."
+    title: "Gain de temps",
+    description: "Fini les emails manuels et les relances oubliées. L’agent prépare et envoie pour vous."
   },
   {
-    title: "Orchestration & règles",
-    description: "Fenêtre WhatsApp, séquences conditionnelles, quiet hours, segmentation dynamique."
+    title: "Régularité",
+    description: "Chaque jour, aux meilleures heures, votre pipe avance sans effort ni charge mentale."
   },
   {
-    title: "Envoi & suivi",
-    description: "Statuts Sent / Delivered / Open / Failed visualisés en temps réel, alerts et relances."
-  },
-  {
-    title: "Analytics & conversions",
-    description: "Sources, templates, ROI et attribution multi-canale dans un cockpit unifié."
+    title: "Résultats",
+    description: "Plus de réponses, plus de rendez-vous qualifiés, sans sacrifier la personnalisation."
   }
 ];
 
-const features = [
+const workflowSteps = [
   {
-    icon: "automation",
-    title: "Orchestration guidée",
-    description: "Déclenchez des scénarios multi-canaux, gérez fenêtres et règles depuis une seule console."
+    title: "Connectez vos canaux",
+    description: "Email, WhatsApp, SMS : tout est prêt en quelques minutes."
   },
   {
-    icon: "analytics",
-    title: "Analytics temps réel",
-    description: "Visualisez réponses, conversions et revenus en temps réel par canal et template."
+    title: "Importez vos contacts et votre pitch",
+    description: "CSV ou CRM, l’agent s’adapte et prépare vos messages."
   },
   {
-    icon: "message",
-    title: "Templates intelligents",
-    description: "Versionnez vos contenus, injectez des variables et suivez la performance par segment."
+    title: "L’agent écrit, envoie, relance",
+    description: "Toujours au bon moment, avec le bon angle, sans relance agressive."
   },
   {
-    icon: "multiTenant",
-    title: "Multi-tenant sécurisé",
-    description: "Séparez vos organisations, appliquez un RBAC fin, historisez la moindre action."
-  },
-  {
-    icon: "integrations",
-    title: "Connectivité ouverte",
-    description: "Exposez des webhooks signés, branchez n8n, Slack, Resend, WhatsApp Cloud et votre SI."
-  },
-  {
-    icon: "shield",
-    title: "Conformité par défaut",
-    description: "Consents, STOP SMS, fenêtre WhatsApp 24h et audit data intégrés nativement."
+    title: "Vous ne gérez que les rendez-vous",
+    description: "L’agent classe les réponses et vous alerte dès qu’un prospect est chaud."
   }
 ];
 
-const integrations = [
-  { icon: "message", label: "WhatsApp Cloud" },
-  { icon: "automation", label: "Resend" },
-  { icon: "spark", label: "n8n" },
-  { icon: "analytics", label: "Slack" },
-  { icon: "multiTenant", label: "Meta Cloud" },
-  { icon: "integrations", label: "Webhooks personnalisés" }
+const relancePoints = [
+  "Choisit automatiquement le meilleur créneau.",
+  "Adapte l’angle : rappel, valeur, preuve sociale ou question.",
+  "Message court (3–6 lignes) et modifiable à tout moment.",
+  "Explique son choix : \"Pourquoi ce timing ?\" pour rester transparent."
 ];
 
-const pricing = [
+const dashboardStats = [
+  { metric: "+48 %", description: "de réponses sur 30 jours grâce aux relances ciblées", icon: "spark" },
+  { metric: "11 min", description: "de paramétrage pour lancer une séquence complète", icon: "clock" },
+  { metric: "92 %", description: "des réponses qualifiées transformées en rendez-vous", icon: "target" }
+];
+
+const testimonials = [
   {
-    tier: "Starter",
-    price: "49€/mois",
-    description: "1 tenant, 3 utilisateurs, 10k events",
-    features: ["Console unifiée", "Workflows no-code", "Support email"],
-    highlight: false
+    name: "Camille, COO",
+    quote: "On a doublé nos prises de rendez-vous sans recruter. L’agent gère le volume, l’équipe gère les deals."
   },
   {
-    tier: "Growth",
-    price: "149€/mois",
-    description: "5 tenants, 15 utilisateurs, 100k events",
-    features: ["Rôles avancés", "API temps réel", "Support prioritaire"],
-    highlight: true
+    name: "Jules, Head of Growth",
+    quote: "La relance intelligente est un no-brainer : bon moment, bon ton, pas de spam."
   },
   {
-    tier: "Scale",
-    price: "Sur mesure",
-    description: "SSO, SLA, support dédié",
-    features: ["SLA 99,9%", "Tenants illimités", "Intégrations custom"],
-    highlight: false
+    name: "Sonia, SDR Lead",
+    quote: "Je ne perds plus de temps à classer les réponses. Tout arrive déjà trié dans la console."
   }
 ];
 
-const faq = [
-  {
-    question: "Puis-je utiliser uniquement l'email ?",
-    answer: "Oui, chaque canal est optionnel et vous gardez le contrôle sur la configuration et les coûts."
-  },
-  {
-    question: "Gérez-vous la fenêtre WhatsApp 24h ?",
-    answer: "Oui, des règles automatiques vérifient la fenêtre et déclenchent des relances adaptées."
-  },
-  {
-    question: "Puis-je brancher mes webhooks entrants ?",
-    answer: "Oui, nous exposons des endpoints sécurisés par canal avec vérification de signature."
-  },
-  {
-    question: "Données & sécurité ?",
-    answer: "Multi-tenant, chiffrement des secrets, audit complet et contrôle RBAC sur chaque action."
-  },
-  {
-    question: "Essai gratuit ?",
-    answer: "Démo guidée et sandbox disponibles pour tester vos cas d'usage avant abonnement."
-  },
-  {
-    question: "Migration depuis mon outil actuel ?",
-    answer: "Import CSV, APIs et accompagnement pour récupérer vos contacts, templates et historiques."
-  }
+const logos = ["NovaOps", "Shiftly", "QuantLeap", "Beryl", "Clarity"];
+
+const securityHighlights = [
+  "Données chiffrées au repos et en transit",
+  "Opt-out et consentements respectés par canal",
+  "Hébergement UE disponible sur demande",
+  "Journal complet des actions et accès RBAC"
 ];
 
-const benefits = [
-  {
-    metric: "+20–35%",
-    description: "de taux de réponse grâce aux séquences et relances intelligentes.",
-    icon: "analytics"
-  },
-  {
-    metric: "Jusqu'à 2h",
-    description: "gagnées par opérateur et par jour via automatisations & templates.",
-    icon: "automation"
-  },
-  {
-    metric: "Vue consolidée",
-    description: "pour prioriser ce qui convertit vraiment, par canal et template.",
-    icon: "shield"
-  }
-];
+const pageTitle = "Pipelane – Votre assistant commercial qui ne dort jamais";
+const pageDescription =
+  "Pipelane centralise WhatsApp, Email et SMS, rédige et envoie des messages personnalisés, relance intelligemment et vous amène des rendez-vous qualifiés.";
 
-const howItWorks = [
-  "Connectez vos canaux (WhatsApp, Email, SMS)",
-  "Créez vos règles (si/alors) et séquences",
-  "Lancez vos campagnes et suivez les conversions"
-];
+const productSchema = {
+  "@context": "https://schema.org",
+  "@type": "Product",
+  name: "Pipelane",
+  description: pageDescription,
+  brand: { "@type": "Brand", name: "Pipelane" },
+  offers: [
+    {
+      "@type": "Offer",
+      priceCurrency: "EUR",
+      price: "290",
+      availability: "https://schema.org/InStock",
+      url: "https://www.pipelane.app/prix"
+    }
+  ]
+};
 
-const quotes = [
-  "Mise en prod en 48h",
-  "+22% de réponses",
-  "On a enfin une vision claire"
-];
-
-const logos = ["NovaTech", "Velia", "QuantifyX", "Orbitline", "Bluehawk"];
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "Comment fonctionne l’agent de prospection IA ?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Vous connectez vos canaux, importez votre pitch et vos contacts. L’agent écrit, envoie, relance et classe les réponses ; vous validez ou modifiez les propositions avant envoi."
+      }
+    },
+    {
+      "@type": "Question",
+      name: "La relance intelligente respecte-t-elle les opt-out ?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Oui, l’agent intègre les consentements canal par canal, respecte les quiet hours et explique chaque choix de relance avant validation."
+      }
+    },
+    {
+      "@type": "Question",
+      name: "Ai-je besoin d’autres outils (n8n, Zapier) pour commencer ?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Non, tout tourne dans Pipelane. Des ports optionnels (événements sortants, actions entrantes) sont disponibles plus tard si vous souhaitez des intégrations spécifiques."
+      }
+    }
+  ]
+};
 ---
-<BaseLayout>
-  <Navbar />
-  <main class="bg-grid">
-    <section id="hero" class="relative isolate overflow-hidden py-28">
-      <div class="absolute inset-0 -z-20 bg-hero-gradient opacity-80"></div>
-      <div class="absolute inset-0 -z-30 bg-[radial-gradient(circle_at_20%_10%,rgba(125,249,255,0.16),transparent_65%)]"></div>
-      <div class="container grid gap-16 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:items-center">
-        <div class="space-y-8">
-          <NeonBadge text="Plateforme d'automations omni-canales" />
-          <div class="space-y-4">
-            <h1 class="text-4xl font-semibold tracking-tight on-surface-strong sm:text-5xl">
-              Pipelane — centralisez, automatisez, convertissez.
-            </h1>
-            <p class="max-w-xl text-lg leading-relaxed on-surface">
-              Une console unique pour capter, envoyer et suivre tous vos messages (WhatsApp, Email, SMS), avec règles intelligentes, analytics temps réel et suivi multi-tenant.
-            </p>
-          </div>
-          <div class="flex flex-wrap gap-3 text-xs font-medium uppercase tracking-[0.3em]">
-            <span class="chip">Multi-tenant</span>
-            <span class="chip">Automations no-code</span>
-            <span class="chip">Analytics temps réel</span>
-          </div>
-          <form
-            id="hero-form"
-            class="mt-6 grid gap-4 rounded-3xl border border-line/35 bg-surfaceOverlay p-6 backdrop-blur"
-            action="/api/demo-request"
-            method="post"
-            data-astro-reload
+<BaseLayout title={pageTitle} description={pageDescription} canonical="https://www.pipelane.app/">
+  <Fragment slot="head">
+    <script type="application/ld+json">{JSON.stringify(productSchema)}</script>
+    <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
+  </Fragment>
+  <Navbar currentPath={Astro.url.pathname} />
+  <main class="space-y-28 lg:space-y-36">
+    <section id="hero" class="relative overflow-hidden pt-36">
+      <div class="container grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,480px)]">
+        <div class="space-y-6">
+          <NeonBadge text="Console omni-canale + Agent IA" />
+          <h1 class="text-balance text-4xl font-semibold leading-tight tracking-tight text-onSurfaceStrong sm:text-5xl">
+            Votre assistant commercial qui ne dort jamais
+          </h1>
+          <p class="text-lg leading-relaxed text-onSurface">
+            Pipelane centralise WhatsApp, Email et SMS, rédige et envoie des messages personnalisés, relance intelligemment et vous amène des rendez-vous qualifiés — sans charge mentale.
+          </p>
+          <ul class="flex flex-wrap gap-3 text-sm font-medium uppercase tracking-[0.35em] text-primary">
+            {heroBullets.map((item) => (
+              <li key={item} class="rounded-full border border-primary/40 px-4 py-2">
+                {item}
+              </li>
+            ))}
+          </ul>
+        <div class="flex flex-wrap items-center gap-4 pt-2">
+          <a
+            href="#demo"
+            class="btn-primary"
+            data-analytics="cta_click"
+              data-location="hero-primary"
+            >
+              Demander une démo
+            </a>
+            <a
+              href="/prospection-ia"
+              class="btn-ghost"
+              data-analytics="cta_click"
+              data-location="hero-secondary"
           >
-            <div class="grid gap-4 sm:grid-cols-2">
-              <div class="grid gap-2">
-                <label class="text-xs font-semibold uppercase tracking-[0.18em] on-surface" for="hero-name">Nom</label>
-                <input
-                  id="hero-name"
-                  name="name"
-                  type="text"
-                  required
-                  placeholder="Votre nom"
-                  class="w-full rounded-2xl border border-line/35 bg-surfaceOverlay px-4 py-3 text-sm on-surface-strong outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/40"
-                />
+            Voir l’agent de prospection
+          </a>
+        </div>
+        <div class="max-w-xl rounded-[26px] border border-line/25 bg-surfaceOverlay/70 p-5 shadow-soft">
+          <DemoForm idPrefix="hero" compact />
+        </div>
+      </div>
+        <div class="relative isolate">
+          <div class="absolute -left-6 -top-10 h-52 w-52 rounded-full bg-primary/20 blur-3xl"></div>
+          <div class="absolute -bottom-12 right-0 h-56 w-56 rounded-full bg-secondary/20 blur-3xl"></div>
+          <div class="relative space-y-5 rounded-[32px] border border-line/30 bg-surfaceOverlay/70 p-6 shadow-soft backdrop-blur">
+            <div class="rounded-2xl border border-line/40 bg-surface/80 p-5">
+              <div class="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-onSurface">
+                <span>Console</span>
+                <span>Prospection</span>
               </div>
-              <div class="grid gap-2">
-                <label class="text-xs font-semibold uppercase tracking-[0.18em] on-surface" for="hero-email">Email</label>
-                <input
-                  id="hero-email"
-                  name="email"
-                  type="email"
-                  required
-                  placeholder="vous@entreprise.com"
-                  class="w-full rounded-2xl border border-line/35 bg-surfaceOverlay px-4 py-3 text-sm on-surface-strong outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/40"
-                />
-              </div>
-              <div class="grid gap-2">
-                <label class="text-xs font-semibold uppercase tracking-[0.18em] on-surface" for="hero-company">Entreprise</label>
-                <input
-                  id="hero-company"
-                  name="company"
-                  type="text"
-                  required
-                  placeholder="Pipelane"
-                  class="w-full rounded-2xl border border-line/35 bg-surfaceOverlay px-4 py-3 text-sm on-surface-strong outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/40"
-                />
-              </div>
-              <div class="grid gap-2">
-                <label class="text-xs font-semibold uppercase tracking-[0.18em] on-surface" for="hero-volume">Volume mensuel</label>
-                <select
-                  id="hero-volume"
-                  name="volume"
-                  required
-                  class="w-full appearance-none rounded-2xl border border-line/35 bg-surfaceOverlay px-4 py-3 text-sm on-surface-strong outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/40"
-                >
-                  <option value="">Sélectionnez</option>
-                  <option value="-5k">Moins de 5 000</option>
-                  <option value="5k-25k">5 000 - 25 000</option>
-                  <option value="25k-100k">25 000 - 100 000</option>
-                  <option value="100k+">Plus de 100 000</option>
-                </select>
+              <div class="mt-4 space-y-3 text-sm">
+                <div class="flex items-center justify-between rounded-2xl bg-surfaceOverlay px-4 py-3">
+                  <span class="text-onSurface">Séquence BtoB SaaS</span>
+                  <span class="text-primary font-semibold">En cours</span>
+                </div>
+                <div class="rounded-2xl bg-surfaceOverlay px-4 py-3 text-left">
+                  <p class="text-xs uppercase tracking-[0.3em] text-primary">Prochaine relance</p>
+                  <p class="mt-2 text-lg font-semibold text-onSurfaceStrong">Mardi 10:30 · angle valeur</p>
+                  <p class="mt-1 text-xs text-onSurface/70">Contact : camille@alto.co</p>
+                </div>
               </div>
             </div>
-            <button type="submit" class="btn-primary justify-center">
-              Demander une démo
-            </button>
-          </form>
-        </div>
-        <div class="relative">
-          <div class="glass-strong scrim relative overflow-hidden rounded-[32px] border border-line/40">
-            <Image
-              src={consoleDashboard}
-              alt="Vue console Pipelane"
-              loading="lazy"
-              class="absolute inset-0 h-full w-full object-cover"
-              decoding="async"
-              formats={["webp", "png"]}
-            />
-            <div class="relative z-10 space-y-5 px-8 py-10 text-onSurfaceStrong">
-              <p class="text-sm uppercase tracking-[0.3em] text-primary">Timeline omni-canale</p>
-              <div class="grid gap-4">
-                <div class="rounded-2xl border border-line/25 bg-[rgba(4,8,21,0.88)] p-4 shadow-glow">
-                  <p class="text-xs uppercase tracking-[0.2em] text-onSurface">WhatsApp • NovaTech</p>
-                  <p class="mt-2 text-lg font-semibold on-surface-strong">Séquence onboarding</p>
-                  <p class="mt-1 text-xs text-onSurface">Sent → Delivered → Opened</p>
-                </div>
-                <div class="rounded-2xl border border-line/25 bg-primary/35 p-4 text-onSurfaceStrong shadow-glow">
-                  <p class="text-xs uppercase tracking-[0.2em] text-onSurface">Email • Bluehawk</p>
-                  <p class="mt-2 text-lg font-semibold">Campagne nurture</p>
-                  <p class="mt-1 text-xs text-onSurface">Conversions +22%</p>
-                </div>
-                <div class="rounded-2xl border border-line/25 bg-accent/35 p-4 text-onSurfaceStrong shadow-glow">
-                  <p class="text-xs uppercase tracking-[0.2em] text-onSurface">SMS • Orbitline</p>
-                  <p class="mt-2 text-lg font-semibold">Rappel fenêtre 24h</p>
-                  <p class="mt-1 text-xs text-onSurface">Follow-up automatisé</p>
-                </div>
-              </div>
+            <div class="rounded-2xl border border-line/35 bg-surfaceOverlay/90 p-5 text-sm leading-relaxed text-onSurface">
+              <p class="font-semibold text-onSurfaceStrong">Pourquoi ce choix ?</p>
+              <p class="mt-2 text-onSurface">
+                Historique lu, dernière réponse il y a 3 jours, meilleurs taux mardi matin. Proposition de relance angle “valeur” avec preuve client.
+              </p>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <Section id="social" title="Déjà adoptée par des équipes orientées résultats" center variant="panel">
-      <div class="flex flex-wrap items-center justify-center gap-8 text-sm uppercase tracking-[0.35em] on-surface">
-        {logos.map((logo) => (
-          <span key={logo} class="reveal text-base font-semibold on-surface-strong">{logo}</span>
-        ))}
-      </div>
-      <div class="mt-8 flex flex-wrap justify-center gap-4 text-sm on-surface">
-        {quotes.map((quote) => (
-          <span key={quote} class="reveal rounded-full border border-line/35 px-4 py-2 uppercase tracking-[0.25em]">
-            “{quote}”
-          </span>
-        ))}
-      </div>
-    </Section>
-
     <Section
-      id="product"
-      title="Votre pipeline de messages, de A à Z"
-      description="Composez vos parcours, mesurez leur impact et ajustez-les en direct dans un cockpit unique."
-      variant="media"
-      image={automationFlow}
-      imageAlt="Automations Pipelane"
+      id="gains"
+      eyebrow="Ce que vous gagnez"
+      title="Trois résultats dès la première semaine"
+      description="L’agent IA travaille à votre place, avec votre ton, et vous libère du suivi quotidien."
+      contentClass="mt-12 grid gap-6 md:grid-cols-3"
     >
-      <div class="grid gap-8 lg:grid-cols-2">
-        {timeline.map((step, index) => (
-          <TimelineStep number={index + 1} title={step.title} description={step.description} />
-        ))}
+      {gains.map((gain) => (
+        <div class="reveal glass rounded-3xl border border-line/30 p-6">
+          <h3 class="text-xl font-semibold text-onSurfaceStrong">{gain.title}</h3>
+          <p class="mt-3 text-sm leading-relaxed text-onSurface">{gain.description}</p>
+        </div>
+      ))}
+    </Section>
+
+    <Section
+      id="marche"
+      eyebrow="Comment ça marche"
+      title="L’agent s’occupe de tout, vous ne gérez que les rendez-vous"
+      description="Une mise en route simple pour une prospection qui tourne en continu."
+      contentClass="mt-12 grid gap-6 md:grid-cols-2"
+    >
+      {workflowSteps.map((step, index) => (
+        <div class="reveal glass rounded-3xl border border-line/30 p-6">
+          <div class="flex items-start gap-4">
+            <span class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/15 text-primary font-semibold">{String(index + 1).padStart(2, "0")}</span>
+            <div class="space-y-2">
+              <h3 class="text-lg font-semibold text-onSurfaceStrong">{step.title}</h3>
+              <p class="text-sm leading-relaxed text-onSurface">{step.description}</p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </Section>
+
+    <Section
+      id="relance"
+      eyebrow="Relance intelligente"
+      title="La relance qui ne saoule pas"
+      description="Bon moment, bon angle, 3–6 lignes utiles. Modifiable à tout instant avec explication \"Pourquoi ce choix ?\"."
+      variant="panel"
+      contentClass="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
+    >
+      <div class="space-y-4 text-sm leading-relaxed text-onSurface">
+        <ul class="space-y-3">
+          {relancePoints.map((point) => (
+            <li class="flex items-start gap-3">
+              <span class="mt-1 text-primary">
+                <Icon name="spark" size={18} />
+              </span>
+              <span>{point}</span>
+            </li>
+          ))}
+        </ul>
+        <div class="rounded-3xl border border-line/40 bg-surfaceOverlay/80 p-5">
+          <p class="text-xs uppercase tracking-[0.3em] text-primary">Carte d’exemple</p>
+          <p class="mt-2 text-sm text-onSurfaceStrong">Prochaine relance : Jeudi 15:00 · angle preuve sociale</p>
+          <p class="mt-2 text-xs text-onSurface/70">Suggestion : “Nous venons d’accompagner NovaOps sur le même enjeu, voici le retour en 2 points…”</p>
+        </div>
+      </div>
+      <div class="rounded-3xl border border-line/30 bg-surfaceOverlay/60 p-6 text-sm leading-relaxed text-onSurface">
+        <p class="text-xs uppercase tracking-[0.3em] text-primary">Pourquoi vous allez aimer</p>
+        <p class="mt-3 text-onSurfaceStrong">
+          L’agent connaît l’historique, respecte les quiet hours, intègre vos opt-out et vous laisse la main. Vous validez en un clic ou modifiez avant envoi.
+        </p>
       </div>
     </Section>
 
     <Section
-      id="benefits"
-      title="Pourquoi Pipelane change la donne"
+      id="mvp"
+      eyebrow="MVP sans n8n"
+      title="Tout tourne dans Pipelane"
+      description="Pas besoin d’un stack complexe pour démarrer. Consolidez votre prospection dans un seul outil, prêt à l’emploi."
+      contentClass="mt-12 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
+    >
+      <div class="reveal glass rounded-3xl border border-line/30 p-6 text-sm leading-relaxed text-onSurface">
+        <p>
+          L’agent écrit, envoie, relance et classe les réponses au sein de la console. Besoin d’intégrations spécifiques ?
+          Activez nos deux ports optionnels (événements sortants, actions entrantes) quand vous le souhaitez.
+        </p>
+        <ul class="mt-4 space-y-2 text-sm">
+          <li class="flex items-center gap-2 text-primary"><span class="h-2 w-2 rounded-full bg-primary"></span>Ports optionnels prêts mais désactivés par défaut</li>
+          <li class="flex items-center gap-2 text-primary"><span class="h-2 w-2 rounded-full bg-primary"></span>Relances et suivi natifs, sans n8n</li>
+          <li class="flex items-center gap-2 text-primary"><span class="h-2 w-2 rounded-full bg-primary"></span>Console unique pour le support, la vente et la réussite client</li>
+        </ul>
+      </div>
+      <div class="reveal rounded-3xl border border-dashed border-primary/40 bg-primary/10 p-6 text-sm leading-relaxed text-primary">
+        <p class="font-semibold uppercase tracking-[0.3em]">Ports optionnels</p>
+        <p class="mt-2">• Webhooks sortants (événements conversation, réponses, relances)</p>
+        <p>• Actions entrantes (créer un ticket, pousser un événement CRM)</p>
+        <p class="mt-3 text-primary/70">Activez-les quand vous voulez, sans toucher au cœur du produit.</p>
+      </div>
+    </Section>
+
+    <Section
+      id="dashboard"
+      eyebrow="Tableau de bord"
+      title="Pilotez vos conversations et vos conversions"
+      description="Envoyés, délivrés, ouverts, réponses, rendez-vous : tout est suivi en temps réel avec des vues prêtes."
       center
-      contentClass="mt-12 grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] items-start"
+      contentClass="mt-12 grid gap-6 md:grid-cols-3"
     >
-      <div class="grid gap-6 grid-cols-[repeat(auto-fit,minmax(260px,1fr))]">
-        {benefits.map((benefit) => (
-          <StatCard metric={benefit.metric} description={benefit.description} />
-        ))}
-      </div>
-      <div class="glass-strong scrim relative overflow-hidden rounded-3xl border border-line/35">
-        <Image
-          src={insightsTiles}
-          alt="Tableaux analytics Pipelane"
-          loading="lazy"
-          class="absolute inset-0 h-full w-full object-cover"
-          decoding="async"
-          formats={["webp", "png"]}
-        />
-        <div class="relative z-10 space-y-3 rounded-3xl border border-line/25 bg-[rgba(6,12,28,0.86)] px-8 py-10 text-onSurfaceStrong shadow-glow backdrop-blur">
-          <p class="text-sm uppercase tracking-[0.3em] text-primary">Benchmarks consolidés</p>
-          <p class="text-lg leading-relaxed text-onSurfaceStrong">
-            Visualisez en un coup d'œil la contribution de chaque équipe et priorisez les conversations les plus chaudes.
-          </p>
-        </div>
-      </div>
-    </Section>
-
-    <Section
-      id="how"
-      title="Comment ça marche"
-      description="Trois étapes pour passer de la vision à l'exécution."
-      contentClass="mt-12 grid gap-8 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]"
-    >
-      <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {howItWorks.map((step, index) => (
-          <div key={step} class="reveal glass rounded-3xl border border-line/30 p-6">
-            <span class="text-sm uppercase tracking-[0.3em] text-primary">Étape {index + 1}</span>
-            <p class="mt-4 text-lg font-semibold on-surface-strong">{step}</p>
-          </div>
-        ))}
-      </div>
-      <div class="glass-strong scrim relative overflow-hidden rounded-3xl border border-line/35">
-        <Image
-          src={pipelineBranches}
-          alt="Branchements automation"
-          loading="lazy"
-          class="absolute inset-0 h-full w-full object-cover"
-          decoding="async"
-          formats={["webp", "png"]}
-        />
-        <div class="relative z-10 space-y-3 rounded-3xl border border-line/25 bg-[rgba(6,12,28,0.86)] px-8 py-10 text-onSurfaceStrong shadow-glow backdrop-blur">
-          <p class="text-sm uppercase tracking-[0.3em] text-primary">Orchestration intelligente</p>
-          <p class="text-lg leading-relaxed text-onSurfaceStrong">
-            Suivez les engagements, branchez des relances conditionnelles et déclenchez des campagnes sans sortir de la timeline.
-          </p>
-        </div>
-      </div>
-    </Section>
-
-    <Section
-      id="features"
-      title="Tout ce qu'il faut pour orchestrer vos conversations"
-      description="Une plateforme complète pensée pour les équipes qui veulent scaler leurs interactions."
-      contentClass="mt-12 grid gap-10 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]"
-    >
-      <div class="grid gap-6 sm:grid-cols-2">
-        {features.map((feature, index) => (
-          <FeatureCard icon={feature.icon} title={feature.title} description={feature.description} index={index} />
-        ))}
-      </div>
-      <div class="glass-strong scrim relative hidden overflow-hidden rounded-3xl border border-line/30 px-0 py-0 shadow-glow xl:block">
-        <Image
-          src={analyticsGlow}
-          alt="Vue analytics"
-          loading="lazy"
-          class="absolute inset-0 h-full w-full object-cover"
-          decoding="async"
-          formats={["webp", "png"]}
-        />
-        <div class="relative z-10 space-y-3 rounded-3xl border border-line/25 bg-[rgba(6,12,28,0.86)] px-8 py-10 text-onSurfaceStrong shadow-glow backdrop-blur">
-          <p class="text-sm uppercase tracking-[0.3em] text-primary">Pilotage en direct</p>
-          <p class="text-lg leading-relaxed text-onSurfaceStrong">
-            Comparez les conversions par canal, affichez les tops templates et identifiez les segments à relancer en priorité.
-          </p>
-        </div>
-      </div>
-    </Section>
-
-    <Section
-      id="integrations"
-      title="Connectez votre stack"
-      description="WhatsApp, Email, SMS, Resend, n8n, Meta Cloud, Slack… Pipelane s'interface avec vos outils."
-      contentClass="mt-12 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
-    >
-      <div class="grid gap-5 sm:grid-cols-2">
-        {integrations.map((integration) => (
-          <IntegrationCard icon={integration.icon} label={integration.label} />
-        ))}
-      </div>
-      <div class="glass-strong scrim relative overflow-hidden rounded-3xl border border-line/35">
-        <Image
-          src={integrationsGrid}
-          alt="Grille d'intégrations"
-          loading="lazy"
-          class="absolute inset-0 h-full w-full object-cover"
-          decoding="async"
-          formats={["webp", "png"]}
-        />
-        <div class="relative z-10 space-y-3 rounded-3xl border border-line/25 bg-[rgba(6,12,28,0.86)] px-8 py-10 text-onSurfaceStrong shadow-glow backdrop-blur">
-          <p class="text-sm uppercase tracking-[0.3em] text-primary">APIs & Webhooks</p>
-          <p class="text-lg leading-relaxed text-onSurfaceStrong">
-            Des webhooks signés, une API temps réel et des connecteurs prêts pour n8n, Slack, Resend ou votre CRM maison.
-          </p>
-        </div>
-      </div>
-    </Section>
-
-    <Section id="pricing" title="Tarification simple, sans surprise" description="Aucun frais caché. Annulable à tout moment." center contentClass="mt-12 grid gap-6 md:grid-cols-3">
-      {pricing.map((plan) => (
-        <PricingCard tier={plan.tier} price={plan.price} description={plan.description} features={plan.features} highlight={plan.highlight} />
+      {dashboardStats.map((stat) => (
+        <StatCard metric={stat.metric} description={stat.description} icon={stat.icon} />
       ))}
     </Section>
 
     <Section
-      id="faq"
-      title="Questions fréquentes"
-      description="Besoin d'en savoir plus ? Notre équipe répond en direct lors de la démo."
-      contentClass="mt-12 grid gap-5 md:grid-cols-2"
+      id="preuve"
+      eyebrow="Preuve & réassurance"
+      title="Des équipes commerciales & growth qui dorment mieux"
+      description="Ils nous utilisent déjà pour garder le rythme sans épuiser les équipes."
+      contentClass="mt-12 grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]"
     >
-      {faq.map((item) => (
-        <FAQItem question={item.question} answer={item.answer} />
-      ))}
-    </Section>
-
-    <Section
-      id="stories"
-      title="Suivi mobile, analytics et relances depuis un seul centre de contrôle"
-      description="Vos équipes restent alignées : activation, support, sales, tout le monde agit avec les mêmes signaux."
-      variant="media"
-      image={journeyMobile}
-      imageAlt="Storyboard mobile"
-    >
-      <div class="grid gap-6 lg:grid-cols-2">
-        <div class="glass rounded-3xl border border-line/25 p-6">
-          <div class="flex items-start gap-3">
-            <div class="mt-1 text-primary">
-              <Icon name="lightning" size={28} />
+      <div class="space-y-6">
+        <div class="grid gap-6 md:grid-cols-3">
+          {testimonials.map((testimonial) => (
+            <div class="reveal glass rounded-3xl border border-line/30 p-6 text-sm leading-relaxed text-onSurface">
+              <p class="text-onSurface/80">“{testimonial.quote}”</p>
+              <p class="mt-4 text-xs uppercase tracking-[0.3em] text-primary">{testimonial.name}</p>
             </div>
-            <div class="space-y-2">
-              <h3 class="text-lg font-semibold on-surface-strong">Alertes de conversion instantanées</h3>
-              <p class="text-sm leading-relaxed on-surface">
-                Recevez une notification dès qu'une opportunité répond, déclenchez un follow-up SMS ou assignez un opérateur.
-              </p>
-            </div>
-          </div>
+          ))}
         </div>
-        <div class="glass rounded-3xl border border-line/25 p-6">
-          <div class="flex items-start gap-3">
-            <div class="mt-1 text-primary">
-              <Icon name="target" size={28} />
-            </div>
-            <div class="space-y-2">
-              <h3 class="text-lg font-semibold on-surface-strong">Segmentations dynamiques</h3>
-              <p class="text-sm leading-relaxed on-surface">
-                Segmentez automatiquement selon le statut de conversation, le score d'engagement ou le canal préféré.
-              </p>
-            </div>
-          </div>
+        <div class="flex flex-wrap items-center gap-4 text-xs uppercase tracking-[0.35em] text-onSurface/60">
+          {logos.map((logo) => (
+            <span class="rounded-full border border-line/20 px-4 py-2">{logo}</span>
+          ))}
         </div>
+      </div>
+      <div class="reveal glass-strong space-y-4 rounded-3xl border border-line/30 p-6 text-sm leading-relaxed text-onSurface">
+        <p class="text-xs uppercase tracking-[0.3em] text-primary">Sécurité & RGPD</p>
+        <ul class="space-y-3">
+          {securityHighlights.map((item) => (
+            <li class="flex items-start gap-3">
+              <span class="mt-1 text-primary">
+                <Icon name="shield" size={18} />
+              </span>
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
       </div>
     </Section>
 
     <CTA
-      id="contact"
-      title="Prêt à centraliser vos messages et accélérer la conversion ?"
-      description="Nos experts vous guident pour connecter vos canaux, configurer vos règles et lancer vos campagnes en quelques jours."
+      id="demo"
+      title="Remplissez votre pipe sans écrire un seul email"
+      description="Réservez une démo : on connecte vos canaux, on importe votre pitch et votre agent IA est prêt en moins d’une heure."
       primaryLabel="Demander une démo"
-      secondaryLabel="Voir la documentation"
-      secondaryHref="https://docs.pipelane.app"
+      secondaryLabel="Voir la prospection IA"
+      secondaryHref="/prospection-ia"
     />
   </main>
-    <footer class="border-t border-line/30 bg-surfaceOverlay py-10">
-    <div class="container flex flex-col gap-6 text-sm on-surface md:flex-row md:items-center md:justify-between">
-      <div class="flex flex-wrap gap-5 uppercase tracking-[0.25em] text-onSurface">
-        <a href="#product">Produit</a>
-        <a href="#pricing">Prix</a>
-        <a href="#contact">Docs</a>
-        <a href="#faq">Sécurité</a>
-        <a href="mailto:contact@pipelane.app">Contact</a>
-      </div>
-      <p class="on-surface">© Pipelane. Tous droits réservés.</p>
-    </div>
-    <div class="container mt-10 space-y-3 text-xs leading-relaxed text-onSurface md:mt-12">
-      <p class="uppercase tracking-[0.35em] text-primary/80">Built by NeuroPulse Studio</p>
-    </div>
-  </footer>
+  <Footer />
 </BaseLayout>
-

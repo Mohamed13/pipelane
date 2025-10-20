@@ -1,0 +1,55 @@
+<mat-card class="onboarding">
+  <h1>Prospecting onboarding</h1>
+  <p class="intro">
+    Follow the guided steps to connect your email channel, craft your message, and launch the new prospecting module.
+  </p>
+  <mat-horizontal-stepper labelPosition="bottom">
+    <mat-step>
+      <ng-template matStepLabel>Connect email</ng-template>
+      <p>
+        Configure SendGrid or SMTP credentials inside <strong>Settings → Channels</strong>. Ensure SPF/DKIM records are applied.
+      </p>
+      <button mat-raised-button color="primary" [routerLink]="['/settings']">Open settings</button>
+    </mat-step>
+    <mat-step>
+      <ng-template matStepLabel>Define pitch</ng-template>
+      <p>
+        Create the base messaging inside your <strong>Prospecting Sequence</strong>. Use AI preview to personalise prompts and guardrails.
+      </p>
+      <button mat-stroked-button color="primary" [routerLink]="['/prospecting/sequences']">Create sequence</button>
+    </mat-step>
+    <mat-step>
+      <ng-template matStepLabel>Import prospects</ng-template>
+      <p>
+        Upload a CSV or JSON mapping of leads. The system deduplicates and enriches the list via Clearbit/Dropcontact n8n workflow.
+      </p>
+      <button mat-stroked-button color="primary" (click)="runAutomation('enrich')" [disabled]="busy()">
+        <mat-icon>play_arrow</mat-icon>
+        Trigger enrich workflow
+      </button>
+    </mat-step>
+    <mat-step>
+      <ng-template matStepLabel>Launch outreach</ng-template>
+      <p>
+        Start your campaign to schedule J0/J+3/J+7 messages with quiet hours respected. Monitor deliverability on the dashboard.
+      </p>
+      <button mat-stroked-button color="primary" (click)="runAutomation('send-next')" [disabled]="busy()">
+        <mat-icon>outgoing_mail</mat-icon>
+        Send next batch
+      </button>
+    </mat-step>
+    <mat-step>
+      <ng-template matStepLabel>Follow-up & inbox</ng-template>
+      <p>
+        Let the follow-up workflow nudge dormant prospects, classify replies, and surface booking opportunities.
+      </p>
+      <div class="actions">
+        <button mat-stroked-button color="primary" (click)="runAutomation('follow-up')" [disabled]="busy()">
+          <mat-icon>auto_awesome</mat-icon>
+          Schedule follow-ups
+        </button>
+        <button mat-button color="primary" [routerLink]="['/prospecting/inbox']">Open inbox</button>
+      </div>
+    </mat-step>
+  </mat-horizontal-stepper>
+</mat-card>

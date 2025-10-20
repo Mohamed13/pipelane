@@ -1,5 +1,6 @@
 ---
 import NeonBadge from "./NeonBadge.astro";
+import DemoForm from "./DemoForm.astro";
 
 interface Props {
   id: string;
@@ -11,8 +12,6 @@ interface Props {
 }
 
 const { id, title, description, primaryLabel, secondaryLabel, secondaryHref = "#" } = Astro.props as Props;
-
-const inputClasses = "w-full rounded-2xl border border-line/35 bg-surfaceOverlay px-4 py-3 text-base on-surface-strong outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/40";
 ---
 <section id={id} class="py-20">
   <div class="container">
@@ -24,81 +23,16 @@ const inputClasses = "w-full rounded-2xl border border-line/35 bg-surfaceOverlay
         <h2 class="text-3xl font-semibold tracking-tight on-surface-strong sm:text-4xl">{title}</h2>
         <p class="max-w-xl text-lg leading-relaxed on-surface">{description}</p>
         <div class="flex flex-wrap gap-4 pt-2">
-          <button type="submit" form="demo-form" class="btn-primary">
+          <a href="#demo" class="btn-primary" data-analytics="cta_click" data-location={${id}-primary}>
             {primaryLabel}
-          </button>
-          <a class="btn-ghost" href={secondaryHref}>
+          </a>
+          <a class="btn-ghost" href={secondaryHref} data-analytics="cta_click" data-location={${id}-secondary}>
             {secondaryLabel}
           </a>
         </div>
       </div>
       <div class="relative z-10 mt-10 lg:mt-0">
-        <form
-          id="demo-form"
-          method="post"
-          action="/api/demo-request"
-          class="grid gap-5"
-          data-astro-reload
-        >
-          <div class="grid gap-2">
-            <label class="text-sm font-medium on-surface" for={`${id}-name`}>Nom</label>
-            <input
-              id={`${id}-name`}
-              name="name"
-              type="text"
-              required
-              placeholder="Votre nom"
-              class={inputClasses}
-            />
-          </div>
-          <div class="grid gap-2">
-            <label class="text-sm font-medium on-surface" for={`${id}-email`}>Email</label>
-            <input
-              id={`${id}-email`}
-              name="email"
-              type="email"
-              required
-              placeholder="vous@entreprise.com"
-              class={inputClasses}
-            />
-          </div>
-          <div class="grid gap-2">
-            <label class="text-sm font-medium on-surface" for={`${id}-company`}>Entreprise</label>
-            <input
-              id={`${id}-company`}
-              name="company"
-              type="text"
-              required
-              placeholder="Pipelane"
-              class={inputClasses}
-            />
-          </div>
-          <div class="grid gap-2">
-            <label class="text-sm font-medium on-surface" for={`${id}-volume`}>Volume de messages mensuels</label>
-            <select
-              id={`${id}-volume`}
-              name="volume"
-              required
-              class={`${inputClasses} appearance-none`}
-            >
-              <option value="">Sélectionnez</option>
-              <option value="-5k">Moins de 5 000</option>
-              <option value="5k-25k">5 000 - 25 000</option>
-              <option value="25k-100k">25 000 - 100 000</option>
-              <option value="100k+">Plus de 100 000</option>
-            </select>
-          </div>
-          <div class="grid gap-2">
-            <label class="text-sm font-medium on-surface" for={`${id}-notes`}>Notes</label>
-            <textarea
-              id={`${id}-notes`}
-              name="notes"
-              rows={4}
-              placeholder="Partagez un peu de contexte"
-              class={inputClasses}
-            ></textarea>
-          </div>
-        </form>
+        <DemoForm idPrefix={${id}-form} submitLabel={primaryLabel} />
       </div>
       <div class="absolute inset-0 -z-10 scrim">
         <div class="absolute inset-0 bg-hero-gradient opacity-70"></div>

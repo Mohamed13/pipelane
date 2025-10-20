@@ -65,6 +65,114 @@
   gap: var(--space-2);
 }
 
+.ai-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(117, 240, 255, 0.12);
+
+  &__buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  &__spinner {
+    margin-left: var(--space-2);
+  }
+
+  &__confidence {
+    font-size: 0.8rem;
+    margin-left: 0.3rem;
+    opacity: 0.8;
+  }
+}
+
+.ai-preview {
+  border: 1px solid rgba(117, 240, 255, 0.12);
+  border-radius: var(--radius-md);
+
+  mat-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-3);
+
+    button {
+      margin-left: auto;
+    }
+  }
+
+  &__subject {
+    font-weight: 600;
+    margin-bottom: var(--space-2);
+  }
+
+  &__text {
+    white-space: pre-line;
+    margin: 0;
+  }
+}
+
+.pitch-card {
+  border: 1px solid rgba(117, 240, 255, 0.12);
+  border-radius: var(--radius-md);
+
+  &__field {
+    width: 100%;
+  }
+}
+
+.smart-followup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(117, 240, 255, 0.12);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  &__when {
+    font-weight: 600;
+    margin: 0;
+  }
+
+  &__preview {
+    margin: 0;
+    white-space: pre-line;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+}
+
 .messages-section {
   display: flex;
   flex-direction: column;

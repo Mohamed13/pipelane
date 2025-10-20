@@ -1,0 +1,76 @@
+.layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) minmax(360px, 2fr);
+  gap: 24px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.sequence {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.sequence:last-child {
+  border-bottom: none;
+}
+
+.badge {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.54);
+}
+
+.badge.paused {
+  color: #f44336;
+}
+
+.form-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.step {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.step header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.step .grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.empty {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}

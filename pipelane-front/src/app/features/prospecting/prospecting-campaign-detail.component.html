@@ -1,0 +1,61 @@
+<mat-card class="campaign" *ngIf="campaign() as campaign; else loadingTpl">
+  <header>
+    <div>
+      <h1>{{ campaign.name }}</h1>
+      <p>Status: <strong>{{ campaign.status | titlecase }}</strong></p>
+    </div>
+    <div class="actions">
+      <button
+        mat-stroked-button
+        color="primary"
+        (click)="start()"
+        [disabled]="campaign.status === 'running'"
+      >
+        <mat-icon>play_arrow</mat-icon>
+        Start
+      </button>
+      <button
+        mat-stroked-button
+        color="warn"
+        (click)="pause()"
+        [disabled]="campaign.status === 'paused'"
+      >
+        <mat-icon>pause</mat-icon>
+        Pause
+      </button>
+    </div>
+  </header>
+
+  <section class="details">
+    <h2>Sequence</h2>
+    <p>{{ campaign.sequenceId }}</p>
+    <h2>Schedule</h2>
+    <p>
+      Scheduled: {{ campaign.scheduledAtUtc | date : 'medium' : undefined : 'UTC' }}<br />
+      Started: {{ campaign.startedAtUtc | date : 'medium' : undefined : 'UTC' || '—' }}<br />
+      Completed: {{ campaign.completedAtUtc ? (campaign.completedAtUtc | date : 'medium') : '—' }}
+    </p>
+  </section>
+
+  <section class="preview" *ngIf="preview() as preview">
+    <h2>Preview schedule</h2>
+    <mat-list>
+      <mat-list-item *ngFor="let step of preview.steps">
+        <mat-icon matListItemIcon>schedule</mat-icon>
+        <div matListItemTitle>{{ step.label }}</div>
+        <div matListItemLine>{{ step.scheduledAtUtc | date : 'medium' : undefined : 'UTC' }}</div>
+      </mat-list-item>
+    </mat-list>
+  </section>
+</mat-card>
+
+<ng-template #loadingTpl>
+  <div class="loading" *ngIf="loading(); else emptyTpl">
+    <mat-icon class="spin">hourglass_empty</mat-icon>
+    Loading campaign…
+  </div>
+</ng-template>
+
+<ng-template #emptyTpl>
+  <div class="empty">No campaign selected.</div>
+</ng-template>

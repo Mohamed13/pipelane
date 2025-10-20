@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Pipelane.Application.Services;
 using Pipelane.Application.Storage;
 using Pipelane.Domain.Entities;
+using Pipelane.Domain.Entities.Prospecting;
 using Pipelane.Domain.Enums;
 
 using Xunit;
@@ -34,6 +35,13 @@ public class FakeDbContext : DbContext, IAppDbContext
     public DbSet<OutboxMessage> Outbox => Set<OutboxMessage>();
     public DbSet<User> Users => Set<User>();
     public DbSet<FollowupTask> FollowupTasks => Set<FollowupTask>();
+    public DbSet<Prospect> Prospects => Set<Prospect>();
+    public DbSet<ProspectingSequence> ProspectingSequences => Set<ProspectingSequence>();
+    public DbSet<ProspectingSequenceStep> ProspectingSequenceSteps => Set<ProspectingSequenceStep>();
+    public DbSet<ProspectingCampaign> ProspectingCampaigns => Set<ProspectingCampaign>();
+    public DbSet<EmailGeneration> EmailGenerations => Set<EmailGeneration>();
+    public DbSet<SendLog> ProspectingSendLogs => Set<SendLog>();
+    public DbSet<ProspectReply> ProspectReplies => Set<ProspectReply>();
 }
 
 public class ChannelRulesServiceTests

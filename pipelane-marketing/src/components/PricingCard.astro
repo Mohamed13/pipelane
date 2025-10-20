@@ -7,7 +7,15 @@ interface Props {
   highlight?: boolean;
 }
 
-const { tier, price, description, features, highlight = false } = Astro.props as Props;
+const {
+  tier,
+  price,
+  description,
+  features,
+  highlight = false,
+  ctaHref = "#demo",
+  ctaLabel = "Demander une démo"
+} = Astro.props as Props;
 ---
 <div class={`reveal relative flex h-full flex-col rounded-3xl border ${highlight ? "border-primary/70" : "border-line/35"} glass-strong p-8 transition-transform duration-350 hover:-translate-y-1`}>
   {highlight && (
@@ -30,8 +38,9 @@ const { tier, price, description, features, highlight = false } = Astro.props as
       </li>
     ))}
   </ul>
-  <a href="#contact" class="btn-primary mt-8 w-full justify-center">
-    Demander une démo
+  <a href={ctaHref} class="btn-primary mt-8 w-full justify-center">
+    {ctaLabel}
   </a>
 </div>
+
 

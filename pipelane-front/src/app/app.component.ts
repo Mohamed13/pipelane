@@ -452,6 +452,13 @@ export class AppComponent {
       tourKey: 'nav-onboarding',
     },
     {
+      label: 'Prospecting',
+      route: '/prospecting',
+      icon: 'rocket_launch',
+      tooltip: 'Prospecting workspace',
+      tourKey: 'nav-prospecting',
+    },
+    {
       label: 'Templates',
       route: '/templates',
       icon: 'space_dashboard',
@@ -658,3 +665,5 @@ export class AppComponent {
       .join(' ');
   }
 }
+
+

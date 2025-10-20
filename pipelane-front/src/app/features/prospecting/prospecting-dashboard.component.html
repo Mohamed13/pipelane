@@ -1,0 +1,94 @@
+<section class="dashboard" *ngIf="analytics() as analytics; else loadingTpl">
+  <div class="header">
+    <h1>Prospecting Overview</h1>
+    <button mat-stroked-button color="primary" matTooltip="Refresh metrics" (click)="refresh()">
+      <mat-icon>refresh</mat-icon>
+      Refresh
+    </button>
+  </div>
+
+  <div class="kpi-grid">
+    <mat-card class="kpi-card" matTooltip="Total prospects available in the workspace">
+      <div class="kpi-title">Prospects</div>
+      <div class="kpi-value">{{ analytics.totalProspects | number }}</div>
+    </mat-card>
+    <mat-card class="kpi-card" matTooltip="Campaigns currently sending">
+      <div class="kpi-title">Active campaigns</div>
+      <div class="kpi-value">{{ analytics.activeCampaigns }}</div>
+    </mat-card>
+    <mat-card class="kpi-card" matTooltip="Emails sent over the selected period">
+      <div class="kpi-title">Emails sent</div>
+      <div class="kpi-value">{{ analytics.emailsSent | number }}</div>
+    </mat-card>
+    <mat-card class="kpi-card" matTooltip="Meetings booked from replies">
+      <div class="kpi-title">Meetings booked</div>
+      <div class="kpi-value">{{ analytics.meetingsBooked | number }}</div>
+    </mat-card>
+  </div>
+
+  <mat-card class="chart-card" *ngIf="chartSeries.length > 0">
+    <h2 matTooltip="Daily activity captured from send logs">Activity trend</h2>
+    <apx-chart
+      [series]="chartSeries"
+      [chart]="chartOptions.chart"
+      [dataLabels]="chartOptions.dataLabels"
+      [stroke]="chartOptions.stroke"
+      [xaxis]="chartOptions.xaxis"
+      [tooltip]="chartOptions.tooltip"
+    ></apx-chart>
+  </mat-card>
+
+  <div class="two-column">
+    <mat-card class="list-card">
+      <div class="card-header">
+        <h2>Sequences</h2>
+        <a mat-button color="primary" [routerLink]="['/prospecting/sequences']">Manage</a>
+      </div>
+      <ul>
+        <li *ngFor="let seq of sequences() | slice : 0 : 5">
+          <div>
+            <strong>{{ seq.name }}</strong>
+            <span>{{ seq.steps.length }} steps</span>
+          </div>
+          <span class="status" [class.inactive]="!seq.isActive">{{ seq.isActive ? 'Active' : 'Paused' }}</span>
+        </li>
+        <li *ngIf="sequences().length === 0" class="empty">No sequences yet.</li>
+      </ul>
+    </mat-card>
+
+    <mat-card class="list-card">
+      <div class="card-header">
+        <h2>Campaigns</h2>
+        <a mat-button color="primary" [routerLink]="['/prospecting/campaigns', campaigns()[0]?.id]" *ngIf="campaigns().length > 0">Open latest</a>
+      </div>
+      <ul>
+        <li *ngFor="let camp of campaigns() | slice : 0 : 5" [routerLink]="['/prospecting/campaigns', camp.id]" matTooltip="View campaign details">
+          <div>
+            <strong>{{ camp.name }}</strong>
+            <span>Sequence • {{ camp.sequenceId | slice : 0 : 8 }}</span>
+          </div>
+          <span class="status">{{ camp.status | titlecase }}</span>
+        </li>
+        <li *ngIf="campaigns().length === 0" class="empty">No campaigns configured.</li>
+      </ul>
+      <button mat-stroked-button color="primary" [routerLink]="['/prospecting/onboarding']">
+        Launch onboarding
+      </button>
+    </mat-card>
+  </div>
+</section>
+
+<ng-template #loadingTpl>
+  <div class="loading" *ngIf="loading(); else emptyTpl">
+    <mat-icon class="spin">hourglass_top</mat-icon>
+    Loading prospecting metrics…
+  </div>
+</ng-template>
+
+<ng-template #emptyTpl>
+  <div class="empty-state">
+    <h2>Set up prospecting</h2>
+    <p>Kick off by importing leads, crafting a sequence, and launching your first campaign.</p>
+    <button mat-raised-button color="primary" [routerLink]="['/prospecting/onboarding']">Run onboarding</button>
+  </div>
+</ng-template>

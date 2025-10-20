@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Pipelane.Application.DTOs;
 using Pipelane.Application.Storage;
 using Pipelane.Domain.Entities;
+using Pipelane.Infrastructure.Automations;
 
 namespace Pipelane.Api.Controllers;
 
@@ -17,7 +18,13 @@ public class ContactsController : ControllerBase
 {
     private readonly IAppDbContext _db;
     private readonly Pipelane.Infrastructure.Persistence.ITenantProvider _tenant;
-    public ContactsController(IAppDbContext db, Pipelane.Infrastructure.Persistence.ITenantProvider tenant) { _db = db; _tenant = tenant; }
+    private readonly IAutomationEventPublisher _events;
+    public ContactsController(IAppDbContext db, Pipelane.Infrastructure.Persistence.ITenantProvider tenant, IAutomationEventPublisher events)
+    {
+        _db = db;
+        _tenant = tenant;
+        _events = events;
+    }
 
     [HttpPost("import")]
     public async Task<IActionResult> Import([FromBody] ImportContactsRequest req, CancellationToken ct)
@@ -30,16 +37,21 @@ public class ContactsController : ControllerBase
             foreach (var c in arr) { if (c.Id == Guid.Empty) c.Id = Guid.NewGuid(); c.TenantId = _tenant.TenantId; c.CreatedAt = DateTime.UtcNow; c.UpdatedAt = c.CreatedAt; }
             await _db.Contacts.AddRangeAsync(arr, ct);
             await _db.SaveChangesAsync(ct);
+            foreach (var contact in arr)
+            {
+                await _events.PublishAsync("contact.created", new { contactId = contact.Id, contact.Email, contact.Phone }, _tenant.TenantId, ct);
+            }
             return Ok(new { imported = arr.Count });
         }
         // CSV minimal: phone,email,first,last,lang
         var lines = text.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         int count = 0;
+        var imported = new List<Contact>();
         foreach (var line in lines.Skip(1))
         {
             var cols = line.Trim().Split(',');
             if (cols.Length < 5) continue;
-            _db.Contacts.Add(new Contact
+            var contact = new Contact
             {
                 Id = Guid.NewGuid(),
                 TenantId = _tenant.TenantId,
@@ -50,10 +62,16 @@ public class ContactsController : ControllerBase
                 Lang = cols[4],
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
-            });
+            };
+            imported.Add(contact);
+            _db.Contacts.Add(contact);
             count++;
         }
         await _db.SaveChangesAsync(ct);
+        foreach (var contact in imported)
+        {
+            await _events.PublishAsync("contact.created", new { contactId = contact.Id, contact.Email, contact.Phone }, _tenant.TenantId, ct);
+        }
         return Ok(new { imported = count });
     }
 

@@ -23,7 +23,9 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { debounceTime } from 'rxjs/operators';
 
 import { ApiService } from '../../core/api.service';
 import { PolicyService } from '../../core/policy.service';
@@ -34,6 +36,11 @@ import {
   Message,
   MessageStatus,
   SendMessageResponse,
+  AiGenerateMessageRequest,
+  AiGenerateMessageResponse,
+  AiClassifyReplyResponse,
+  AiSuggestFollowupRequest,
+  AiSuggestFollowupResponse,
 } from '../../core/models';
 
 type ComposerMode = 'text' | 'template';
@@ -87,6 +94,7 @@ interface PendingMessageTracking {
     MatTooltipModule,
     MatButtonToggleModule,
     MatMenuModule,
+    MatSlideToggleModule,
     NgIf,
   ],
   templateUrl: './conversation-thread.component.html',
@@ -122,6 +130,42 @@ export class ConversationThreadComponent {
     validators: [Validators.required, Validators.minLength(3)],
   });
 
+  private readonly pitchStorageKey = 'pipelane_pitch';
+  private readonly followupStorageKey = `pipelane_relance_${this.contactId}`;
+  private readonly initialFollowupState = this.readFollowupState();
+
+  pitchControl = new FormControl<string>(this.readPitch(), {
+    nonNullable: true,
+    validators: [Validators.required, Validators.minLength(5)],
+  });
+
+  aiMessagePreview = signal<AiGenerateMessageResponse | null>(null);
+  aiGenerating = signal(false);
+  classifying = signal(false);
+  classification = signal<AiClassifyReplyResponse | null>(null);
+  smartFollowupEnabled = signal(this.initialFollowupState.enabled);
+  followupPreview = signal<AiSuggestFollowupResponse | null>(this.initialFollowupState.preview);
+  followupLoading = signal(false);
+
+  private readonly followupWatcher = effect(
+    () => {
+      const enabled = this.smartFollowupEnabled();
+      const preview = this.followupPreview();
+      if (!enabled) {
+        this.persistFollowupState(false, null);
+        return;
+      }
+      if (!preview && !this.followupLoading()) {
+        this.requestSmartFollowup();
+        return;
+      }
+      if (preview) {
+        this.persistFollowupState(true, preview);
+      }
+    },
+    { allowSignalWrites: true },
+  );
+
   readonly ChannelLabels = ChannelLabels;
   readonly templateVariables = [
     '{{firstName}}',
@@ -136,6 +180,110 @@ export class ConversationThreadComponent {
   private awaitingTerminal = false;
   private pendingAutoPoll = false;
   private pendingTracking: PendingMessageTracking | null = null;
+
+  onGenerateAiMessage(): void {
+    if (this.aiGenerating()) {
+      return;
+    }
+    const payload = this.buildAiMessagePayload();
+    if (!payload) {
+      return;
+    }
+    this.aiGenerating.set(true);
+    this.api.generateAiMessage(payload).subscribe({
+      next: (response) => {
+        this.aiGenerating.set(false);
+        this.aiMessagePreview.set(response);
+      },
+      error: () => {
+        this.aiGenerating.set(false);
+        this.aiMessagePreview.set(null);
+      },
+    });
+  }
+
+  onClassifyReply(): void {
+    if (this.classifying()) {
+      return;
+    }
+    const latestInbound = this.latestInboundMessage();
+    if (!latestInbound) {
+      return;
+    }
+    const text = this.renderPayload(latestInbound);
+    this.classifying.set(true);
+    this.api
+      .classifyAiReply({ text, language: this.primaryChannel() === 'email' ? 'fr' : 'en' })
+      .subscribe({
+        next: (res) => {
+          this.classification.set(res);
+          this.classifying.set(false);
+        },
+        error: () => {
+          this.classifying.set(false);
+        },
+      });
+  }
+
+  onToggleSmartFollowup(checked: boolean): void {
+    this.smartFollowupEnabled.set(checked);
+    if (!checked) {
+      this.followupPreview.set(null);
+    }
+  }
+
+  onValidateFollowup(): void {
+    const preview = this.followupPreview();
+    if (!preview) {
+      return;
+    }
+    this.composerMode.set('text');
+    this.textControl.setValue(preview.previewText);
+    this.followupPreview.set(null);
+    this.smartFollowupEnabled.set(false);
+  }
+
+  onModifyFollowup(): void {
+    const preview = this.followupPreview();
+    if (!preview) {
+      return;
+    }
+    this.composerMode.set('text');
+    this.textControl.setValue(preview.previewText);
+  }
+
+  onDeferFollowup(): void {
+    const preview = this.followupPreview();
+    if (!preview) {
+      return;
+    }
+    const next = new Date(preview.scheduledAtIso);
+    next.setDate(next.getDate() + 1);
+    const updated: AiSuggestFollowupResponse = {
+      ...preview,
+      scheduledAtIso: next.toISOString(),
+    };
+    this.followupPreview.set(updated);
+  }
+
+  onStopFollowup(): void {
+    this.smartFollowupEnabled.set(false);
+    this.followupPreview.set(null);
+  }
+
+  sendGeneratedMessage(): void {
+    const preview = this.aiMessagePreview();
+    if (!preview) {
+      return;
+    }
+    this.textControl.setValue(preview.text);
+    this.composerMode.set('text');
+    this.aiMessagePreview.set(null);
+  }
+
+  clearGeneratedMessage(): void {
+    this.aiMessagePreview.set(null);
+  }
 
   canText = computed(() => {
     const convo = this.conversation();
@@ -183,6 +331,11 @@ export class ConversationThreadComponent {
       },
       { total: 0, incoming: 0, outgoing: 0, delivered: 0, failed: 0 },
     );
+  });
+
+  hasInboundMessages = computed(() => {
+    const messages = this.conversation()?.messages ?? [];
+    return messages.some((message) => message.direction === 'in');
   });
 
   providersUsed = computed<ProviderBadge[]>(() => {
@@ -246,6 +399,10 @@ export class ConversationThreadComponent {
         this.composerMode.set('text');
       }
     });
+
+    this.pitchControl.valueChanges
+      .pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef))
+      .subscribe((value) => this.savePitch(value));
   }
 
   onComposerModeChange(mode: ComposerMode): void {
@@ -581,6 +738,156 @@ export class ConversationThreadComponent {
     return { label: provider, className: 'provider-generic' };
   }
 
+  private buildAiMessagePayload(): AiGenerateMessageRequest | null {
+    const convo = this.conversation();
+    if (!convo?.messages?.length) {
+      return null;
+    }
+    const channel = this.primaryChannel() ?? 'email';
+    const historySnippet = this.buildHistorySnippet();
+    const context = {
+      firstName: undefined,
+      lastName: undefined,
+      company: undefined,
+      role: undefined,
+      painPoints: [] as string[],
+      pitch: this.pitchControl.value,
+      calendlyUrl: undefined,
+      lastMessageSnippet: historySnippet || undefined,
+    };
+    return {
+      contactId: this.contactId,
+      channel,
+      language: channel === 'email' ? 'fr' : 'en',
+      context,
+    };
+  }
+
+  private latestInboundMessage(): Message | undefined {
+    const convo = this.conversation();
+    if (!convo?.messages?.length) {
+      return undefined;
+    }
+    return [...convo.messages].reverse().find((m) => m.direction === 'in');
+  }
+
+  private requestSmartFollowup(): void {
+    if (this.followupLoading()) {
+      return;
+    }
+    const convo = this.conversation();
+    if (!convo?.messages?.length) {
+      return;
+    }
+    const lastMessage = convo.messages.at(-1);
+    if (!lastMessage) {
+      return;
+    }
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC';
+    const payload: AiSuggestFollowupRequest = {
+      channel: lastMessage.channel,
+      timezone,
+      lastInteractionAt: lastMessage.createdAt,
+      read: this.latestInboundMessage()?.status === 'opened',
+      language: lastMessage.channel === 'email' ? 'fr' : 'en',
+      historySnippet: this.buildHistorySnippet(6) || undefined,
+      performanceHints: null,
+    };
+    this.followupLoading.set(true);
+    this.api.suggestSmartFollowup(payload).subscribe({
+      next: (res) => {
+        this.followupLoading.set(false);
+        this.followupPreview.set(res);
+      },
+      error: () => {
+        this.followupLoading.set(false);
+      },
+    });
+  }
+
+  private buildHistorySnippet(limit = 4): string {
+    const convo = this.conversation();
+    const messages = convo?.messages ?? [];
+    if (!messages.length) {
+      return '';
+    }
+    const recent = messages.slice(-limit);
+    return recent
+      .map((message) => {
+        const who = message.direction === 'in' ? 'Client' : 'Vous';
+        const text = this.renderPayload(message).replace(/\s+/g, ' ').trim();
+        return `${who}: ${text}`;
+      })
+      .join('\n');
+  }
+
+  private readPitch(): string {
+    if (typeof window === 'undefined') {
+      return 'Nous aidons les équipes à accélérer leur prospection avec un copilote IA.';
+    }
+    try {
+      return (
+        window.localStorage.getItem(this.pitchStorageKey) ??
+        'Nous aidons les équipes à accélérer leur prospection avec un copilote IA.'
+      );
+    } catch {
+      return 'Nous aidons les équipes à accélérer leur prospection avec un copilote IA.';
+    }
+  }
+
+  private savePitch(value: string): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    try {
+      window.localStorage.setItem(this.pitchStorageKey, value);
+    } catch {
+      // ignore storage errors
+    }
+  }
+
+  private readFollowupState(): {
+    enabled: boolean;
+    preview: AiSuggestFollowupResponse | null;
+  } {
+    if (typeof window === 'undefined') {
+      return { enabled: false, preview: null };
+    }
+    try {
+      const raw = window.localStorage.getItem(this.followupStorageKey);
+      if (!raw) {
+        return { enabled: false, preview: null };
+      }
+      const parsed = JSON.parse(raw) as {
+        enabled?: boolean;
+        preview?: AiSuggestFollowupResponse | null;
+      };
+      return {
+        enabled: parsed.enabled ?? false,
+        preview: parsed.preview ?? null,
+      };
+    } catch {
+      return { enabled: false, preview: null };
+    }
+  }
+
+  private persistFollowupState(
+    enabled: boolean,
+    preview: AiSuggestFollowupResponse | null,
+  ): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    try {
+      window.localStorage.setItem(
+        this.followupStorageKey,
+        JSON.stringify({ enabled, preview }),
+      );
+    } catch {
+      // ignore storage errors
+    }
+  }
+
   channelIcon(channel: Channel | null): string {
     switch (channel) {
       case 'whatsapp':
@@ -594,3 +901,7 @@ export class ConversationThreadComponent {
     }
   }
 }
+
+
+
+

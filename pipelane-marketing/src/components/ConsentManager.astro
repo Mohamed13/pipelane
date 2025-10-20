@@ -1,0 +1,74 @@
+---
+const gaId = import.meta.env.PUBLIC_GA_ID ?? "";
+const linkedinId = import.meta.env.PUBLIC_LINKEDIN_ID ?? "";
+const bannerMessage = "Nous utilisons des cookies pour mesurer l’audience et améliorer nos campagnes.";
+---
+<div class="fixed inset-x-0 bottom-4 z-50 flex justify-center px-4" data-consent-banner hidden>
+  <div class="glass max-w-2xl rounded-3xl border border-line/35 bg-surfaceOverlay/95 p-5 shadow-soft">
+    <div class="flex flex-col gap-4 text-sm leading-relaxed text-onSurface md:flex-row md:items-center md:justify-between">
+      <p>{bannerMessage}</p>
+      <div class="flex shrink-0 gap-3">
+        <button type="button" class="btn-primary" data-consent-accept>Accepter</button>
+        <button type="button" class="btn-ghost" data-consent-reject>Refuser</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script is:inline>
+  (() => {
+    const gaId = "";
+    const linkedinId = "";
+    const storageKey = 'pipelane_consent';
+    const banner = document.querySelector('[data-consent-banner]');
+    const acceptBtn = document.querySelector('[data-consent-accept]');
+    const rejectBtn = document.querySelector('[data-consent-reject]');
+
+    const loadScripts = () => {
+      if (window.__pipelaneTagsLoaded) return;
+      window.__pipelaneTagsLoaded = true;
+      if (gaId) {
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({ 'js': new Date() });
+        window.dataLayer.push({ 'config': gaId });
+        const script = document.createElement('script');
+        script.async = true;
+        script.src = https://www.googletagmanager.com/gtag/js?id=;
+        document.head.appendChild(script);
+        const inline = document.createElement('script');
+        inline.textContent = window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', '');;
+        document.head.appendChild(inline);
+      }
+      if (linkedinId) {
+        const script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.text = ar _linkedin_data_partner_id = '';;
+        document.head.appendChild(script);
+        const loader = document.createElement('script');
+        loader.type = 'text/javascript';
+        loader.async = true;
+        loader.src = 'https://snap.licdn.com/li.lms-analytics/insight.min.js';
+        document.head.appendChild(loader);
+      }
+    };
+
+    const stored = localStorage.getItem(storageKey);
+    if (stored === 'accepted') {
+      loadScripts();
+    } else if (stored === 'rejected') {
+      // rien
+    } else if (banner) {
+      banner.hidden = false;
+    }
+
+    acceptBtn?.addEventListener('click', () => {
+      localStorage.setItem(storageKey, 'accepted');
+      banner?.remove();
+      loadScripts();
+    });
+
+    rejectBtn?.addEventListener('click', () => {
+      localStorage.setItem(storageKey, 'rejected');
+      banner?.remove();
+    });
+  })();
+</script>

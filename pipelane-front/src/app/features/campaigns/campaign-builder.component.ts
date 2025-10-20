@@ -91,6 +91,7 @@ export class CampaignBuilderComponent {
       templateId: this.fb.control<string>('', Validators.required),
       primaryChannel: this.fb.control<Channel>('whatsapp', Validators.required),
       fallbackOrder: this.fb.control<Channel[]>([]),
+      smartFollowupDefault: this.fb.control<boolean>(false),
     }),
     schedule: this.fb.group({
       scheduledDate: this.fb.control<Date | null>(null),
@@ -230,6 +231,7 @@ export class CampaignBuilderComponent {
             templateId: '',
             primaryChannel: 'whatsapp',
             fallbackOrder: [],
+            smartFollowupDefault: false,
           },
           schedule: {
             scheduledDate: null,
@@ -303,6 +305,7 @@ export class CampaignBuilderComponent {
         schedule.scheduledTime ?? null,
       ),
       batchSize: schedule.batchSize ? Number(schedule.batchSize) : null,
+      smartFollowupDefault: message.smartFollowupDefault ?? false,
     };
   }
 

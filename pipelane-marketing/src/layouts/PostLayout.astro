@@ -1,0 +1,37 @@
+---
+import BaseLayout from "@layouts/Base.astro";
+import Navbar from "@components/Navbar.astro";
+import Footer from "@components/Footer.astro";
+import NeonBadge from "@components/NeonBadge.astro";
+
+const { frontmatter, content } = Astro;
+const { title, description, date, draft = false } = frontmatter as {
+  title: string;
+  description?: string;
+  date?: string;
+  draft?: boolean;
+};
+
+const pageTitle = `${title} – Pipelane`;
+const pageDescription =
+  description ??
+  "Retours d'expérience et guides pratiques pour activer la prospection IA, la relance intelligente et l'exécution commerciale.";
+const canonical = `https://www.pipelane.app${Astro.url.pathname}`;
+const formattedDate = date ? new Date(date).toLocaleDateString("fr-FR", { year: "numeric", month: "long", day: "numeric" }) : undefined;
+---
+<BaseLayout title={pageTitle} description={pageDescription} canonical={canonical}>
+  <Navbar currentPath={Astro.url.pathname} />
+  <main class="container space-y-12 pt-32 pb-20">
+    <article class="mx-auto max-w-3xl space-y-6 text-onSurface">
+      <header class="space-y-4">
+        {draft && <NeonBadge text="Brouillon" />}
+        <h1 class="text-balance text-4xl font-semibold leading-tight text-onSurfaceStrong sm:text-5xl">{title}</h1>
+        {formattedDate && <p class="text-sm uppercase tracking-[0.35em] text-primary/80">{formattedDate}</p>}
+      </header>
+      <div class="space-y-6 leading-relaxed [>&h2]:mt-10 [>&h2]:text-2xl [>&h2]:font-semibold [>&h3]:mt-8 [>&h3]:text-xl [>&ul]:list-disc [>&ul]:pl-6 [>&ol]:list-decimal [>&ol]:pl-6 [>&a]:text-primary [>&a]:underline">
+        {content}
+      </div>
+    </article>
+  </main>
+  <Footer />
+</BaseLayout>

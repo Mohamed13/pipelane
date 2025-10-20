@@ -1,0 +1,133 @@
+---
+import BaseLayout from "@layouts/Base.astro";
+import Navbar from "@components/Navbar.astro";
+import Footer from "@components/Footer.astro";
+import Section from "@components/Section.astro";
+import PricingCard from "@components/PricingCard.astro";
+import FAQItem from "@components/FAQItem.astro";
+import NeonBadge from "@components/NeonBadge.astro";
+
+const metaTitle = "Tarifs – Pipelane";
+const metaDescription = "Choisissez le plan qui vous convient : Good, Better, Best. Aucune surprise, tout est inclus dès le départ.";
+
+const tiers = [
+  {
+    tier: "Good",
+    price: "290€/mois",
+    description: "Pour démarrer la prospection IA avec une équipe réduite.",
+    features: [
+      "Agent de prospection IA + relance intelligente",
+      "Console omni-canale (Email, WhatsApp, SMS)",
+      "1 500 relances intelligentes / mois",
+      "Suivi temps réel + exports CSV",
+      "Support email sous 24 h"
+    ]
+  },
+  {
+    tier: "Better",
+    price: "590€/mois",
+    description: "Le pack pour une équipe growth ou sales complète.",
+    highlight: true,
+    features: [
+      "Tout Good",
+      "5 000 relances intelligentes / mois",
+      "Angles personnalisés + A/B objets",
+      "Ports optionnels activables (webhooks, actions)",
+      "Onboarding guidé + support chat"
+    ]
+  },
+  {
+    tier: "Best",
+    price: "À partir de 1 090€/mois",
+    description: "Accompagnement sur mesure : sécurité, intégrations, SLA.",
+    features: [
+      "Tout Better",
+      "Limites quotidiennes personnalisées",
+      "Hébergement UE dédié + SSO",
+      "SLA 99,9% et support prioritaire",
+      "Workshops optimisation prospection"
+    ]
+  }
+];
+
+const faqs = [
+  {
+    question: "Puis-je upgrader ou downgrader quand je veux ?",
+    answer: "Oui, le plan s’ajuste mensuellement. Les limites (relances, utilisateurs) sont recalculées au prorata."
+  },
+  {
+    question: "Que se passe-t-il si je dépasse mes relances intelligentes ?",
+    answer: "Vous recevez une alerte et vous pouvez ajouter un pack ponctuel ou passer sur le plan supérieur. Pas de blocage brutal."
+  },
+  {
+    question: "L’intégration WhatsApp est-elle incluse ?",
+    answer: "Oui, l’agent gère la fenêtre 24h, les templates et le routage avec WhatsApp Cloud. Les coûts Meta restent à votre charge."
+  },
+  {
+    question: "Proposez-vous une formation ?",
+    answer: "Chaque plan inclut un onboarding guidé. Les formules Better et Best intègrent des sessions d’optimisation régulières."
+  }
+];
+
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map((item) => ({
+    "@type": "Question",
+    name: item.question,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: item.answer
+    }
+  }))
+};
+---
+<BaseLayout title={metaTitle} description={metaDescription} canonical="https://www.pipelane.app/prix">
+  <Fragment slot="head">
+    <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
+  </Fragment>
+  <Navbar currentPath={Astro.url.pathname} />
+  <main class="space-y-24 lg:space-y-32 pt-32">
+    <section class="container space-y-6 text-center">
+      <NeonBadge text="Tarification" />
+      <h1 class="text-balance text-4xl font-semibold leading-tight text-onSurfaceStrong sm:text-5xl">Tarifs transparents, tout inclus</h1>
+      <p class="mx-auto max-w-3xl text-lg leading-relaxed text-onSurface">
+        Choisissez le plan qui correspond à votre volume. Pas de frais cachés : l’agent IA, la relance intelligente et la console sont inclus. Ports optionnels prêts si vous avez besoin d’intégrations plus tard.
+      </p>
+    </section>
+
+    <Section
+      id="plans"
+      eyebrow="Good / Better / Best"
+      title="Trois niveaux pour accompagner votre croissance"
+      center
+      contentClass="mt-12 grid gap-6 md:grid-cols-3"
+    >
+      {tiers.map((plan) => (
+        <PricingCard tier={plan.tier} price={plan.price} description={plan.description} features={plan.features} highlight={plan.highlight} />
+      ))}
+    </Section>
+
+    <Section
+      id="faq"
+      eyebrow="Questions fréquentes"
+      title="Précisions sur la tarification"
+      description="Un doute ? On vous répond pendant la démo, et vous pouvez tester dans une sandbox avant de vous engager."
+      contentClass="mt-12 grid gap-5 md:grid-cols-2"
+    >
+      {faqs.map((item) => (
+        <FAQItem question={item.question} answer={item.answer} />
+      ))}
+    </Section>
+
+    <CTA
+      id="demo"
+      title="Besoin d’un devis sur mesure ?"
+      description="Parlez-nous de votre volume, on active l’agent IA et la relance intelligente avec les bons garde-fous."
+      primaryLabel="Demander une démo"
+      secondaryLabel="Parler sécurité & RGPD"
+      secondaryHref="/securite-rgpd"
+    />
+  </main>
+  <Footer />
+</BaseLayout>

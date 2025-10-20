@@ -1,67 +1,63 @@
-# Pipelane Marketing Site
+# Pipelane Marketing
 
-Landing page futuriste construite avec Astro et Tailwind CSS pour présenter la plateforme d'automations omni-canales Pipelane.
+Site marketing Astro + Tailwind mettant en avant l’agent de prospection IA, la relance intelligente et la console omni-canale Pipelane.
 
-## Caractéristiques principales
-- Thème sombre clair respectant WCAG 2.2 AA (tokens foreground/surface dédiés).
-- Animations légères (IntersectionObserver, parallax CSS) respectant `prefers-reduced-motion`.
-- Sections héro, social proof, tour produit, bénéfices, marche à suivre, features, intégrations, pricing, FAQ, récits clients et CTA final avec médias illustratifs.
-- Formulaires de demande de démo (hero + CTA) envoyés vers `/api/demo-request` avec validation serveur.
-- Métadonnées SEO complètes (OpenGraph, Twitter), favicon, sitemap et robots.
+## Lancer la démo marketing
 
-## Prérequis
-- Node.js 20.11 ou supérieur (recommandé Node 20.14).
-- Gestionnaire de paquets : `pnpm` (recommandé) ou `npm`/`yarn`.
+`ash
+cd pipelane-marketing
+npm install       # ou pnpm install
+define PUBLIC_GA_ID=              # optionnel GA4
+set PUBLIC_LINKEDIN_ID=           # optionnel Pixel LinkedIn
+npm run dev
+`
 
-## Installation
-```bash
-pnpm install
-# ou
-npm install
-```
+- Aperçu live sur http://localhost:4321 (démarrage auto via 
+pm run dev).
+- 
+pm run build && npm run preview pour vérifier le build statique.
+- 
+pm run test:a11y et 
+pm run test:lighthouse (Lighthouse mobile ≥ 95, A11Y ≥ 95).
 
-## Scripts
-```bash
-pnpm dev            # démarrage du serveur Astro en mode développement
-pnpm build          # build de production
-pnpm preview        # prévisualisation du build
-pnpm preview:ci     # preview en mode CI (127.0.0.1:4321)
-pnpm lint           # linting ESLint
-pnpm format         # formatage Prettier
-pnpm test:a11y      # audit contrastes / a11y via pa11y-ci (nécessite un port libre 4321)
-pnpm test:lighthouse# Lighthouse accessibilité (échoue si score < 95)
-```
+## Fonctionnalités
+
+- Navigation mise à jour : Produit, Prospection IA (BÊTA), Relance intelligente (BÊTA), Prix, Sécurité & RGPD, Ressources (blog), Demander une démo.
+- Nouvelles pages dédiées (/prospection-ia, /relance-intelligente, /prix, /securite-rgpd, /blog, /changelog).
+- Hero refondu : promesse claire + formulaire « Demander une démo » avec pré-remplissage UTM.
+- Sections d’accueil : gains, mode opératoire, relance intelligente, MVP sans n8n, tableau de bord, réassurance, CTA final.
+- Formulaires centralisés (DemoForm) : champs requis + message libre, UTMs cachés, toast de confirmation, push demo_submit dans dataLayer.
+- Consentement cookies : bannière acceptation/refus, GA4 + LinkedIn chargés uniquement après consentement.
+- SEO : titles/descriptions uniques, schema.org Product + FAQ, sitemap/robots à jour.
+- Blog en mode brouillon (3 articles 600–900 mots) avec layout dédié + CTA final.
 
 ## Structure
-```
+
+`
 pipelane-marketing/
-├── public/              # assets statiques (favicon, OG image, sitemap)
+├── public/
+│   ├── robots.txt
+│   └── sitemap.xml
 ├── src/
-│   ├── assets/img/      # médias illustratifs (mockups, analytics, intégrations)
-│   ├── components/      # UI réutilisable (Section, FeatureCard, CTA…)
-│   ├── layouts/         # layout de base + scripts globaux
-│   ├── pages/           # routes Astro (`/` et `/api/demo-request`)
-│   ├── scripts/         # vérifications front (contrast-check)
-│   └── styles/          # tokens + global styles
-├── pa11yci.config.cjs   # configuration pa11y-ci
-├── tailwind.config.cjs
-├── astro.config.ts
-└── package.json
-```
+│   ├── components/ (Navbar, Footer, DemoForm, ConsentManager…)
+│   ├── layouts/ (Base, PostLayout)
+│   ├── pages/ (landing + pages dédiées + API demo-request)
+│   └── styles/scripts
+`
 
-## Qualité & accessibilité
-- Palette AA pilotée par `src/styles/tokens.css` (surfaces/foregrounds pour sombre & clair).
-- Utilitaires Tailwind personnalisés : `.on-surface`, `.on-surface-strong`, `.scrim`, variantes `glass`.
-- Pa11y CI + Lighthouse automatisés (`test:a11y`, `test:lighthouse`).
-- Script `src/scripts/contrast-check.ts` déclenché en dev : logge les éléments < AA en console.
-- Images responsive via `<Image />` (`astro:assets`), lazy-load et scrim overlay pour garantir la lisibilité.
+## Scripts utiles
 
-## Endpoint `/api/demo-request`
-- Accepte `application/json` ou `x-www-form-urlencoded`.
-- Valide `name`, `email`, `company`, `volume` et journalise les demandes côté serveur.
-- Réponse JSON `{ ok: true }` ou `{ ok: false, error }` avec codes HTTP appropriés.
+`ash
+npm run dev            # serveur Astro développement
+npm run build          # build production
+npm run preview        # prévisualisation
+npm run test:a11y      # pa11y-ci sur /, /prospection-ia, /relance-intelligente, /prix, /securite-rgpd
+npm run test:lighthouse# Lighthouse mobile (accessibilité ≥ 95)
+`
 
-## Aller plus loin
-- Brancher l'endpoint vers un CRM ou une file d'attente.
-- Ajouter des tests de rendu (`@astrojs/check`) pour vérifier les sections critiques.
-- Intégrer un service d'analytics (Fathom, Plausible) lors du déploiement.
+## Notes
+
+- PUBLIC_GA_ID et PUBLIC_LINKEDIN_ID sont optionnels. Sans consentement ou sans valeur, aucun tag n’est chargé.
+- Les ports optionnels (webhooks/action entrante) sont mentionnés mais désactivés par défaut.
+- Le formulaire /api/demo-request journalise les demandes côté serveur (console) et répond en JSON.
+- Les styles glass, on-surface, scrim assurent contraste AA/AAA et focus visibles.

@@ -1,0 +1,27 @@
+.onboarding {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.intro {
+  margin: 0;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+mat-horizontal-stepper {
+  background: transparent;
+}
+
+mat-step {
+  padding: 16px 0;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}

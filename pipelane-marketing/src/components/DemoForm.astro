@@ -1,0 +1,166 @@
+---
+interface Props {
+  idPrefix: string;
+  compact?: boolean;
+  submitLabel?: string;
+}
+
+const { idPrefix, compact = false, submitLabel = "Demander une démo" } = Astro.props as Props;
+
+const inputClasses = "w-full rounded-2xl border border-line/35 bg-surfaceOverlay px-4 py-3 text-base on-surface-strong outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/40";
+const selectClasses = `${inputClasses} appearance-none`;
+const containerClasses = compact ? "grid gap-4 sm:grid-cols-2" : "grid gap-5";
+const notesClasses = compact ? "sm:col-span-2" : "";
+const footerClasses = compact ? "flex flex-col gap-3 sm:col-span-2 sm:flex-row sm:items-center" : "flex flex-col gap-3";
+---
+<form
+  data-demo-form
+  method="post"
+  action="/api/demo-request"
+  class={containerClasses}
+  novalidate
+>
+  <div class="grid gap-2">
+    <label class="text-sm font-medium on-surface" for={`${idPrefix}-name`}>Nom</label>
+    <input
+      id={`${idPrefix}-name`}
+      name="name"
+      type="text"
+      required
+      placeholder="Votre nom"
+      class={inputClasses}
+    />
+  </div>
+  <div class="grid gap-2">
+    <label class="text-sm font-medium on-surface" for={`${idPrefix}-email`}>Email</label>
+    <input
+      id={`${idPrefix}-email`}
+      name="email"
+      type="email"
+      required
+      placeholder="vous@entreprise.com"
+      class={inputClasses}
+    />
+  </div>
+  <div class="grid gap-2">
+    <label class="text-sm font-medium on-surface" for={`${idPrefix}-company`}>Entreprise</label>
+    <input
+      id={`${idPrefix}-company`}
+      name="company"
+      type="text"
+      required
+      placeholder="Pipelane"
+      class={inputClasses}
+    />
+  </div>
+  <div class="grid gap-2">
+    <label class="text-sm font-medium on-surface" for={`${idPrefix}-volume`}>Volume mensuel</label>
+    <select id={`${idPrefix}-volume`} name="volume" required class={selectClasses}>
+      <option value="">Sélectionnez</option>
+      <option value="-5k">Moins de 5 000</option>
+      <option value="5k-25k">5 000 - 25 000</option>
+      <option value="25k-100k">25 000 - 100 000</option>
+      <option value="100k+">Plus de 100 000</option>
+    </select>
+  </div>
+  <div class={`grid gap-2 ${notesClasses}`}>
+    <label class="text-sm font-medium on-surface" for={`${idPrefix}-notes`}>Message</label>
+    <textarea
+      id={`${idPrefix}-notes`}
+      name="notes"
+      rows={compact ? 3 : 4}
+      placeholder="Partagez un peu de contexte"
+      class={inputClasses}
+    ></textarea>
+  </div>
+  <input type="hidden" name="utm_source" />
+  <input type="hidden" name="utm_medium" />
+  <input type="hidden" name="utm_campaign" />
+  <input type="hidden" name="gclid" />
+  <input type="hidden" name="fbclid" />
+  <div class={footerClasses}>
+    <button
+      type="submit"
+      class="btn-primary flex-1 justify-center"
+      data-demo-submit
+      data-analytics="demo_submit"
+    >
+      {submitLabel}
+    </button>
+    <p data-demo-status class="text-sm text-onSurface/70"></p>
+    <div class="text-xs uppercase tracking-[0.3em] text-onSurface/60">Réponse sous 24 h · Zéro spam</div>
+  </div>
+</form>
+<script is:inline>
+  (() => {
+    if (window.__pipelaneDemoFormLoaded) return;
+    window.__pipelaneDemoFormLoaded = true;
+    const params = new URLSearchParams(window.location.search);
+
+    const fillUtm = (form) => {
+      ["utm_source", "utm_medium", "utm_campaign", "gclid", "fbclid"].forEach((key) => {
+        const input = form.querySelector(`input[name="${key}"]`);
+        if (input && !input.value) {
+          input.value = params.get(key) ?? "";
+        }
+      });
+    };
+
+    const forms = Array.from(document.querySelectorAll('[data-demo-form]'));
+    forms.forEach((form) => {
+      const status = form.querySelector('[data-demo-status]');
+      const submit = form.querySelector('[data-demo-submit]');
+      fillUtm(form);
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const formData = new FormData(form);
+        submit?.setAttribute('disabled', 'true');
+        submit?.classList.add('opacity-70', 'cursor-wait');
+        if (status) {
+          status.textContent = 'Envoi…';
+          status.classList.remove('text-primary', 'text-red-400');
+          status.classList.add('text-onSurface/70');
+        }
+        try {
+          const response = await fetch('/api/demo-request', {
+            method: 'POST',
+            body: formData
+          });
+          const payload = await response.json().catch(() => ({}));
+          if (response.ok) {
+            if (status) {
+              status.textContent = 'Merci, on revient vers vous sous 24 h.';
+              status.classList.remove('text-onSurface/70');
+              status.classList.add('text-primary');
+            }
+            form.reset();
+            fillUtm(form);
+            window.dataLayer = window.dataLayer || [];
+            window.dataLayer.push({
+              event: 'demo_submit',
+              company: formData.get('company') || '',
+              volume: formData.get('volume') || '',
+              utm_source: formData.get('utm_source') || ''
+            });
+          } else {
+            if (status) {
+              status.textContent = payload?.error ?? 'Impossible d’envoyer le formulaire.';
+              status.classList.remove('text-onSurface/70');
+              status.classList.add('text-red-400');
+            }
+          }
+        } catch (error) {
+          if (status) {
+            status.textContent = "Impossible d’envoyer le formulaire.";
+            status.classList.remove('text-onSurface/70');
+            status.classList.add('text-red-400');
+          }
+        } finally {
+          submit?.removeAttribute('disabled');
+          submit?.classList.remove('opacity-70', 'cursor-wait');
+        }
+      });
+    });
+  })();
+</script>

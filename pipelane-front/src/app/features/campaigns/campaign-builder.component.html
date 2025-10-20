@@ -215,6 +215,16 @@
         </section>
       </div>
 
+      <div class="option-row">
+        <mat-slide-toggle
+          color="primary"
+          formControlName="smartFollowupDefault"
+          matTooltip="Active la relance intelligente par défaut pour les conversations issues de cette campagne."
+        >
+          Relance intelligente par défaut
+        </mat-slide-toggle>
+      </div>
+
       <div class="step-actions">
         <button mat-stroked-button matStepperPrevious>
           <mat-icon>arrow_back</mat-icon>
@@ -385,6 +395,10 @@
                   ? messageGroup.get('fallbackOrder')?.value || []
                   : 'None'
               }}
+            </p>
+            <p class="muted">
+              Relance intelligente :
+              {{ messageGroup.get('smartFollowupDefault')?.value ? 'ON' : 'OFF' }}
             </p>
           </div>
           <div class="review-card">

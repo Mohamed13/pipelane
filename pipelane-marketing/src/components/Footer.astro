@@ -1,0 +1,67 @@
+---
+const productLinks = [
+  { href: "/", label: "Produit" },
+  { href: "/prospection-ia", label: "Prospection IA" },
+  { href: "/relance-intelligente", label: "Relance intelligente" },
+  { href: "/prix", label: "Prix" }
+];
+
+const trustLinks = [
+  { href: "/securite-rgpd", label: "Sécurité & RGPD" },
+  { href: "https://status.pipelane.app", label: "Statut", external: true },
+  { href: "https://docs.pipelane.app", label: "Docs", external: true }
+];
+
+const companyLinks = [
+  { href: "/blog", label: "Ressources" },
+  { href: "mailto:contact@pipelane.app", label: "Contact", external: true },
+  { href: "/mentions-legales", label: "Mentions légales & Privacy" }
+];
+---
+<footer class="border-t border-line/20 bg-surfaceOverlay/70 backdrop-blur">
+  <div class="container grid gap-12 py-16 md:grid-cols-[repeat(3,minmax(0,1fr))]">
+    <div class="space-y-4">
+      <p class="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Produit</p>
+      <ul class="space-y-2 text-sm on-surface">
+        {productLinks.map((link) => (
+          <li key={link.href}>
+            <a href={link.href} class="transition hover:text-primary" target={link.external ? "_blank" : undefined} rel={link.external ? "noreferrer" : undefined}>
+              {link.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+    <div class="space-y-4">
+      <p class="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Confiance</p>
+      <ul class="space-y-2 text-sm on-surface">
+        {trustLinks.map((link) => (
+          <li key={link.href}>
+            <a href={link.href} class="transition hover:text-primary" target={link.external ? "_blank" : undefined} rel={link.external ? "noreferrer" : undefined}>
+              {link.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+    <div class="space-y-4">
+      <p class="text-xs font-semibold uppercase tracking-[0.3em] text-primary">À propos</p>
+      <ul class="space-y-2 text-sm on-surface">
+        {companyLinks.map((link) => (
+          <li key={link.href}>
+            <a href={link.href} class="transition hover:text-primary" target={link.external ? "_blank" : undefined} rel={link.external ? "noreferrer" : undefined}>
+              {link.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+  <div class="border-t border-line/15">
+    <div class="container flex flex-col gap-4 py-8 text-xs uppercase tracking-[0.25em] text-onSurface md:flex-row md:items-center md:justify-between">
+      <span>Pipelane</span>
+      <span>© {new Date().getFullYear()} Pipelane. Tous droits réservés.</span>
+      <span class="tracking-[0.3em] text-primary/70">Remplissez votre pipe sans écrire un seul email.</span>
+    </div>
+  </div>
+</footer>
