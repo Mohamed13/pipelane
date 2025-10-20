@@ -7,7 +7,7 @@ namespace Pipelane.Api.Controllers;
 
 [ApiController]
 [Microsoft.AspNetCore.Authorization.Authorize]
-[Route("api/ai")]
+[Route("api/prospecting/ai")]
 public class ProspectingAiController : ControllerBase
 {
     private readonly IProspectingService _service;

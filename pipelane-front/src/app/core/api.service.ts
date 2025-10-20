@@ -355,7 +355,7 @@ export class ApiService {
     tenantId?: string,
   ): Observable<GenerateProspectingEmailResponse> {
     return this.http
-      .post<GenerateProspectingEmailResponse>(`${this.base}/api/ai/generate-email`, payload, {
+      .post<GenerateProspectingEmailResponse>(`${this.base}/api/prospecting/ai/generate-email`, payload, {
         headers: this.headers(tenantId),
       })
       .pipe(catchError(this.handleError('Generating prospecting email')));
@@ -366,7 +366,7 @@ export class ApiService {
     tenantId?: string,
   ): Observable<ClassifyReplyResponse> {
     return this.http
-      .post<ClassifyReplyResponse>(`${this.base}/api/ai/classify-reply`, payload, {
+      .post<ClassifyReplyResponse>(`${this.base}/api/prospecting/ai/classify-reply`, payload, {
         headers: this.headers(tenantId),
       })
       .pipe(catchError(this.handleError('Classifying reply')));
@@ -377,7 +377,7 @@ export class ApiService {
     tenantId?: string,
   ): Observable<AutoReplyResponse> {
     return this.http
-      .post<AutoReplyResponse>(`${this.base}/api/ai/auto-reply`, payload, {
+      .post<AutoReplyResponse>(`${this.base}/api/prospecting/ai/auto-reply`, payload, {
         headers: this.headers(tenantId),
       })
       .pipe(catchError(this.handleError('Generating auto-reply')));

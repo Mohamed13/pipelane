@@ -23,7 +23,7 @@ Set tenant per request via header: `X-Tenant-Id: <GUID>`.
   - GET `/api/prospects`, POST `/api/prospects/import`, POST `/api/prospects/optout`
   - GET `/api/prospecting/sequences`, POST `/api/prospecting/sequences`
   - GET `/api/prospecting/campaigns`, `POST /api/prospecting/campaigns/{id}/start|pause|preview`
-  - GET `/api/prospecting/replies`, POST `/api/ai/generate-email|classify-reply|auto-reply`
+- GET `/api/prospecting/replies`, POST `/api/prospecting/ai/generate-email|classify-reply|auto-reply`
   - POST `/api/prospecting/hooks/{enrich|send-next|follow-up}`
 
 ## Notes
@@ -34,6 +34,6 @@ Set tenant per request via header: `X-Tenant-Id: <GUID>`.
 ## Prospecting Module
 - Entities: `Prospect`, `ProspectingSequence`, `ProspectingSequenceStep`, `ProspectingCampaign`, `SendLog`, `ProspectReply`, `EmailGeneration`, `LeadScore` (extended for prospects).
 - SQL Server migrations include per-tenant indexes and unique constraints on prospect email.
-- AI integration hooks via `/api/ai/*` endpoints. Configure `OpenAI:ApiKey` (optional) for live completions; falls back to deterministic templates when absent.
+- AI integration hooks via `/api/ai/*` (copilot conversation actions) and `/api/prospecting/ai/*` (module prospection). Configure `OpenAI:ApiKey` (optional) for live completions; falls back to deterministic templates when absent.
 - SendGrid webhook listens on `/api/email/webhooks/sendgrid` updating `ProspectingSendLogs` and creating `ProspectReply` records.
 - Automation hooks (`/api/prospecting/hooks/enrich|send-next|follow-up`) provide a stateless surface for n8n flows to orchestrate enrichment, scheduling, and follow-ups.
