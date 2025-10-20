@@ -66,3 +66,29 @@
 3. Etendre la couverture de tests : xUnit (analytics, followups, adapters), Jest/Cypress (ApiService, analytics, conversation, campagnes), pa11y/Lighthouse dans la CI marketing.
 4. Normaliser la documentation/encodage (marketing), mettre a jour swagger/types, documenter les nouvelles variables dans `.env.example`.
 5. Renforcer l'Ops : secrets non par defaut, workflows CI actifs pour build/test, exporter OTel vers une stack d'observabilite et surveiller les jobs background.
+
+## RECAP FINAL
+- **Endpoints IA**  
+  - `POST /api/ai/generate-message` — Exemple : `{"channel":"email","language":"fr","context":{"firstName":"Alex","company":"NeonCorp","pitch":"Nous aidons...","calendlyUrl":"https://cal.com/demo","lastMessageSnippet":"On se tient au courant ?"}}` → `{ "subject": "...", "text": "...", "html": "...", "languageDetected": "fr" }`.  
+  - `POST /api/ai/classify-reply` — Exemple : `{"text":"Sounds good, book me Tuesday."}` → `{ "intent": "Interested", "confidence": 0.91 }`.  
+  - `POST /api/ai/suggest-followup` — Exemple : `{"channel":"email","timezone":"Europe/Paris","lastInteractionAt":"2025-01-08T15:00:00Z","read":true,"historySnippet":"Merci pour la demo","performanceHints":{"goodHours":[10,11,14]}}` → `{ "scheduledAtIso": "2025-01-10T09:30:00Z", "angle": "value", "previewText": "..." }`.
+- **Ports automations (optionnels)**  
+  - Webhook sortant : `AutomationEventPublisher` pousse `message.sent`, `message.status.changed`, `contact.created` vers `AUTOMATIONS_EVENTS_URL` quand `AUTOMATIONS_EVENTS_ENABLED=true` + token valide.  
+  - Webhook entrant : `POST /api/automations/actions` (header `X-Automations-Token`) gère `send_message`, `create_task`, `schedule_followup`.
+- **Ecrans Front**  
+  - `Conversations` : boutons “Générer un message (IA)”, “Classer la réponse (IA)”, switch “Relance intelligente” et carte “Prochaine relance” (`pipelane-front/src/app/features/contacts/conversation-thread.component.*`).  
+  - `Campaign Builder` : commutateur “Relance intelligente par défaut” dans l’étape planification (`pipelane-front/src/app/features/campaigns/campaign-builder.component.html`).  
+  - Tutoriel ngx-shepherd (5 étapes) rejouable via menu Aide (`pipelane-front/src/app/core/tour.service.ts`).
+- **Scénarios smoke**  
+  1. Générer → envoyer : `POST /api/ai/generate-message`, insérer l’aperçu dans le composeur, envoyer via `/messages/send`.  
+  2. Classer une réponse : `POST /api/ai/classify-reply`, vérifier le badge d’intention dans la conversation.  
+  3. Relance intelligente : activer le switch, appeler `POST /api/ai/suggest-followup`, valider la proposition (planifie un job dans l’outbox).  
+  Ces parcours sont couverts par `SmokeScenarioTests` (`pipelane-api/tests/Pipelane.Tests/SmokeScenarioTests.cs`).
+- **Variables d’environnement clés**  
+  - Backend (`pipelane-api/.env.example`) : `OPENAI_API_KEY`, `OPENAI_MODEL`, `AI_DAILY_BUDGET_EUR`, `DAILY_SEND_CAP`, `QUIET_START`, `QUIET_END`, `AUTOMATIONS_*`.  
+  - Front (`pipelane-front/.env`) : `API_BASE_URL`.  
+  - Prévoir `RESEND_API_KEY`, secrets DB/JWT, et tokens automations.
+- **Commandes utiles**
+  - Backend build/tests : `dotnet restore`, `dotnet build`, `dotnet test` (ou scripts `./scripts/build.ps1`, `./scripts/test.ps1`).  
+  - Front : `npm install`, `npm start`, `npm run ui:test`, `npm run ui:check`, `npm run ui:e2e`.  
+  - Seeder exécuté au démarrage de l’API (Quartz + migrations) pour préparer la démo multi-canal.
