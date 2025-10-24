@@ -29,8 +29,11 @@ Guidance for agents working in the Pipelane monorepo. Keep changes scoped, docum
   - `OutboxProcessor` locks batches, retries with exponential backoff, persists `Message` + `MessageEvent`.
   - `CampaignRunner` promotes due campaigns and enqueues up to 100 contacts (segment JSON still rudimentary).
   - `FollowupScheduler` (Quartz) creates `FollowupTask` items after 24h without reply and schedules `nudge-1` template nudges at 48h.
+- Follow-up preview: `FollowupsController` exposes `GET /api/followups/preview` which pulls a history snippet, calls `ITextAiService` for an angle/preview, enforces quiet hours + daily caps, and persists the proposal via `IFollowupProposalStore`.
+- Rate limiting: `MessageSendRateLimiter` persists per-tenant/global windows through `RateLimitSnapshotStore`; metrics surface at `GET /health/metrics` (queue depth, avg send latency, webhook error rate).
 - Integrations: email uses Resend (`EmailChannel`, dedicated HTTP client). `ResendWebhookVerifier` (HMAC) and `ResendWebhookProcessor` (idempotent status mapping) are already covered by unit tests. WhatsApp/SMS adapters are stubbed for now.
-- Analytics: `AnalyticsService.GetDeliveryAsync` powers `/analytics/delivery` with totals, per-channel, and per-template breakdowns.
+- Webhooks: failures land in `FailedWebhooks` via `WebhookDeadLetterStore`, then Quartz `WebhookRetryJob` pulls due items and retries against the appropriate `IMessageChannel`.
+- Analytics & reports: `AnalyticsService.GetDeliveryAsync` now returns timeline points per day; `AnalyticsController` adds `/analytics/top-messages` for replies/opens, and `ReportsController` exposes `/api/reports/summary(.pdf)`.
 - Auth/security: `AuthController` supports register/login/me, JWT signing with configurable key, PBKDF2 password hashing, AES-GCM encryption service, Serilog + OpenTelemetry (console exporter).
 - Extend channels or analytics? Update the swagger snapshot (`pipelane-api/swagger.json`) and document any new env vars.
 
@@ -38,9 +41,10 @@ Guidance for agents working in the Pipelane monorepo. Keep changes scoped, docum
 - Standalone Angular 20 setup with Angular Material theming (`ThemeService`) and route guards in `app.routes.ts`.
 - `ApiService` centralises HTTP calls, injects `X-Tenant-Id`, and surfaces toast errors.
 - Design tokens & composants partagés : `src/theme/_tokens.scss` centralise couleurs/gradients/motion; `kpi-card` et `chart-card` enveloppent Material + ng-apexcharts.
-- `AnalyticsOverviewComponent` s'appuie sur ng-apexcharts (area/donut/bar), KPI sparklines et MatTable reliés à `/analytics/delivery`.
-- `ConversationThreadComponent` affiche bulles vitrées, badges provider/statut, panneau insight repliable et composer texte/template avec helpers variables.
-- `CampaignBuilderComponent` devient un wizard 4 étapes (audience, message, schedule, review) avec preview dynamique (`/api/followups/preview`).
+- `ConversationThreadComponent` affiche bulles vitrées, badges provider/statut, panneau insight repliable, et la carte “Prochaine relance” consomme l’endpoint preview avec actions Valider/Modifier/Reporter/Stop.
+- `AnalyticsOverviewComponent` ajoute timeline, top sujets/templates (replies/opens fallback) et export PDF en s’appuyant sur les nouveaux endpoints `/analytics/top-messages` et `/api/reports/summary(.pdf)`.
+- `CampaignBuilderComponent` devient un wizard 4 étapes (audience, message, schedule, review) avec preview dynamique (`/api/followups/preview`) et smart follow-up par défaut.
+- Mode démo : `ApiService` expose `POST /api/demo/run` et l’UI affiche un bouton “Lancer la démo” conditionné par `DEMO_MODE`.
 - `TourService` embarque ngx-shepherd pour un onboarding guidé (flag localStorage + replay via menu Aide).
 - Tests front : nouvelles specs Jest (`app.component` tooltips, `tour.service`, `analytics` mapping) et specs Cypress (`analytics`, `campaign_builder`, `onboarding`, `tour`). Lancer `npm run ui:e2e` une fois le front servi (`npm start` ou serveur statique sur `dist/`).
 - Regenerate API types (`npm run gen:api`) whenever backend DTOs evolve.
@@ -56,6 +60,7 @@ Guidance for agents working in the Pipelane monorepo. Keep changes scoped, docum
 - OpenTelemetry currently exports to console; plan exporters if observability requirements grow.
 - Reference `tasks.md`, `TODO-net8.md`, and `TODO-angular.md` for backlog context before introducing new tasks.
 - Keep `AGENTS.md`, `COMPTE_RENDU.md`, and swagger/types docs accurate when behaviour changes.
+- CI workflows: backend/front (lint+tests+build) and `marketing-ci.yml` (Astro build + pa11y + Lighthouse). Mettez à jour les scripts si leur signature change.
 - The repo may contain unrelated local changes—never revert work you did not author; sync with maintainers if conflicts arise.
 
 ## Practical Tips

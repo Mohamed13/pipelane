@@ -9,6 +9,8 @@ cd pipelane-marketing
 npm install       # ou pnpm install
 define PUBLIC_GA_ID=              # optionnel GA4
 set PUBLIC_LINKEDIN_ID=           # optionnel Pixel LinkedIn
+set PUBLIC_DEMO_MODE=false         # active le bouton \ Lancer la démo\
+set PUBLIC_CONSOLE_URL=http://localhost:4200  # URL console pour ouvrir la sandbox
 npm run dev
 `
 
@@ -61,3 +63,4 @@ npm run test:lighthouse# Lighthouse mobile (accessibilité ≥ 95)
 - Les ports optionnels (webhooks/action entrante) sont mentionnés mais désactivés par défaut.
 - Le formulaire /api/demo-request journalise les demandes côté serveur (console) et répond en JSON.
 - Les styles glass, on-surface, scrim assurent contraste AA/AAA et focus visibles.
+- La CI (`.github/workflows/marketing-ci.yml`) exécute build + `npm run test:a11y` + `npm run test:lighthouse` (seuil accessibilité ≥ 0,95).

@@ -24,19 +24,23 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { forkJoin, of } from 'rxjs';
-import { catchError, debounceTime, map } from 'rxjs/operators';
+import { catchError, debounceTime, finalize } from 'rxjs/operators';
 
 import { ApiService } from '../../core/api.service';
 import {
   DeliveryAnalyticsResponse,
   DeliveryChannelBreakdown,
+  DeliveryTimelinePoint,
   DeliveryTotals,
+  ReportSummaryResponse,
+  TopMessageItem,
+  TopMessagesResponse,
 } from '../../core/models';
 import { ThemeService } from '../../core/theme.service';
 import { KpiCardComponent, KpiSparklineConfig } from '../../shared/ui/kpi-card.component';
 import { ChartCardComponent, ChartCardConfig } from '../../shared/ui/chart-card.component';
 import { RevealOnScrollDirective } from '../../shared/ui/reveal-on-scroll.directive';
-import { ApexOptions, ChartType } from 'ng-apexcharts';
+import { ApexAxisChartSeries, ApexOptions, ChartType } from 'ng-apexcharts';
 
 type RangePreset = 'today' | '7d' | '30d' | 'custom';
 
@@ -147,11 +151,17 @@ export class AnalyticsOverviewComponent implements AfterViewInit {
   readonly previousAnalytics = signal<DeliveryAnalyticsResponse | null>(null);
   readonly timeline = signal<TimelinePoint[]>([]);
   readonly palette = signal<ChartPalette>(buildPalette());
+  readonly summary = signal<ReportSummaryResponse | null>(null);
+  readonly previousSummary = signal<ReportSummaryResponse | null>(null);
+  readonly topMessages = signal<TopMessagesResponse | null>(null);
+  readonly exporting = signal(false);
 
   readonly kpis = computed<KpiViewModel[]>(() => {
     const data = this.analytics();
     const previous = this.previousAnalytics();
     const timeline = this.timeline();
+    const summary = this.summary();
+    const previousSummary = this.previousSummary();
     if (!data) {
       return [];
     }
@@ -170,6 +180,8 @@ export class AnalyticsOverviewComponent implements AfterViewInit {
     };
     const openRates = timeline.map((p) => ratio(p.totals.opened, p.totals.delivered) * 100);
     const failRates = timeline.map((p) => failureRate(p.totals) * 100);
+    const meetingsCurrent = summary?.meetingsBooked ?? 0;
+    const meetingsPrevious = previousSummary?.meetingsBooked ?? 0;
 
     return [
       {
@@ -219,6 +231,15 @@ export class AnalyticsOverviewComponent implements AfterViewInit {
         delta: deltaPercent(failureRate(totals), failureRate(prevTotals), true),
         deltaLabel: 'vs previous',
         sparkline: { data: failRates, categories: labels, color: this.palette().warn },
+      },
+      {
+        label: 'Meetings booked',
+        caption: 'Replies marked as interested',
+        value: meetingsCurrent,
+        icon: 'event_available',
+        tooltip: 'Replies classified as interested or meeting requested during the selected period.',
+        delta: deltaPercent(meetingsCurrent, meetingsPrevious),
+        deltaLabel: 'vs previous period',
       },
     ];
   });
@@ -360,17 +381,83 @@ export class AnalyticsOverviewComponent implements AfterViewInit {
   });
 
   readonly templateBar = computed<ChartCardConfig | null>(() => {
-    const data = this.analytics();
-    if (!data) {
+    const analytics = this.analytics();
+    if (!analytics) {
       return null;
     }
     const palette = this.palette();
-    const templates = [...(data.byTemplate ?? [])]
-      .sort((a, b) => b.delivered - a.delivered)
-      .slice(0, 6);
+    const source = this.rankTopMessages(this.topMessages());
 
-    const labels = templates.map((template) => template.template ?? 'Untitled');
-    const seriesData = templates.map((template) => template.delivered);
+    if (!source.length) {
+      const fallback = [...(analytics.byTemplate ?? [])].sort((a, b) => b.delivered - a.delivered).slice(0, 6);
+      if (!fallback.length) {
+        return {
+          title: 'Top messages',
+          subtitle: 'Replies and opens by template',
+          series: [],
+          options: baseChartOptions(palette, 'bar'),
+          height: 360,
+          loading: this.loading(),
+          emptyState: {
+            title: 'No message activity',
+            message: 'Send a campaign to view engagement insights.',
+          },
+        };
+      }
+
+      const labels = fallback.map((template) => template.template ?? 'Untitled');
+      const data = fallback.map((template) => template.delivered);
+      const baseOptions = baseChartOptions(palette, 'bar');
+      const options: Partial<ApexOptions> = {
+        ...baseOptions,
+        chart: {
+          ...(baseOptions.chart ?? {}),
+          type: 'bar',
+        },
+        plotOptions: {
+          bar: {
+            horizontal: true,
+            borderRadius: 8,
+            barHeight: '60%',
+          },
+        },
+        dataLabels: { enabled: false },
+        xaxis: {
+          categories: labels,
+          labels: { style: { colors: labels.map(() => palette.textMuted) } },
+        },
+        colors: [palette.accent],
+        tooltip: { theme: palette.mode, y: { formatter: (value: number) => formatNumber(value) } },
+      };
+
+      return {
+        title: 'Top templates',
+        subtitle: 'Delivered messages per template',
+        series: [{ name: 'Delivered', data }],
+        options,
+        height: 360,
+        loading: this.loading(),
+      };
+    }
+
+    const labels = source.map((item) => item.label || 'Untitled');
+    const replies = source.map((item) => item.replies);
+    const opens = source.map((item) => item.opened);
+    const delivered = source.map((item) => item.delivered);
+
+    const hasReplies = replies.some((value) => value > 0);
+    const hasOpens = opens.some((value) => value > 0);
+
+    const series: ApexAxisChartSeries = [];
+    if (hasReplies) {
+      series.push({ name: 'Replies', data: replies });
+    }
+    if (hasOpens) {
+      series.push({ name: 'Opened', data: opens });
+    }
+    if (!series.length) {
+      series.push({ name: 'Delivered', data: delivered });
+    }
 
     const baseOptions = baseChartOptions(palette, 'bar');
     const options: Partial<ApexOptions> = {
@@ -378,25 +465,23 @@ export class AnalyticsOverviewComponent implements AfterViewInit {
       chart: {
         ...(baseOptions.chart ?? {}),
         type: 'bar',
+        stacked: series.length > 1,
       },
       plotOptions: {
         bar: {
-          horizontal: false,
+          horizontal: true,
           borderRadius: 8,
-          columnWidth: '45%',
+          barHeight: '60%',
         },
       },
       dataLabels: { enabled: false },
       xaxis: {
         categories: labels,
-        labels: {
-          style: { colors: labels.map(() => palette.textMuted) },
-        },
+        labels: { style: { colors: labels.map(() => palette.textMuted) } },
       },
-      yaxis: {
-        labels: { style: { colors: [palette.textMuted] } },
-      },
-      colors: [palette.accent],
+      colors: series.length > 1
+        ? [palette.accent, palette.primary, palette.secondary]
+        : [palette.primary],
       tooltip: {
         theme: palette.mode,
         y: { formatter: (value: number) => formatNumber(value) },
@@ -404,15 +489,15 @@ export class AnalyticsOverviewComponent implements AfterViewInit {
     };
 
     return {
-      title: 'Top templates',
-      subtitle: 'Deliveries per message template',
-      series: [{ name: 'Delivered', data: seriesData }],
+      title: 'Top-performing messages',
+      subtitle: hasReplies ? 'Replies and opens for the last period' : 'Open and delivery counts',
+      series,
       options,
       height: 360,
       loading: this.loading(),
       emptyState: {
-        title: 'No template activity',
-        message: 'Publish a template to view delivery performance.',
+        title: 'No engagement yet',
+        message: 'Send a nudge to gather some replies.',
       },
     };
   });
@@ -488,9 +573,47 @@ export class AnalyticsOverviewComponent implements AfterViewInit {
     this.loadRange(range);
   }
 
+  downloadSummary(): void {
+    if (this.loading() || this.exporting()) {
+      return;
+    }
+    const range = this.selectedRange() ?? computePresetRange(this.rangePreset());
+    const normalized = normaliseRange(range);
+    const fromIso = toIso(startOfDay(normalized.start));
+    const toIsoValue = toIso(endOfDay(normalized.end));
+
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    this.exporting.set(true);
+    this.api
+      .downloadReportSummaryPdf(fromIso, toIsoValue)
+      .pipe(
+        takeUntilDestroyed(),
+        finalize(() => this.exporting.set(false)),
+      )
+      .subscribe({
+        next: (blob) => {
+          const fromSlug = normalized.start.toISOString().slice(0, 10);
+          const toSlug = normalized.end.toISOString().slice(0, 10);
+          const url = URL.createObjectURL(blob);
+          const anchor = document.createElement('a');
+          anchor.href = url;
+          anchor.download = `pipelane-summary-${fromSlug}-${toSlug}.pdf`;
+          anchor.click();
+          URL.revokeObjectURL(url);
+        },
+        error: () => {
+          // handled by handleError snackbar
+        },
+      });
+  }
+
   private loadRange(range: DateRange): void {
     this.loading.set(true);
     this.error.set(null);
+    this.topMessages.set(null);
     const currentRange = normaliseRange(range);
     const durationDays = Math.max(
       1,
@@ -501,18 +624,19 @@ export class AnalyticsOverviewComponent implements AfterViewInit {
       end: addDays(currentRange.start, -1),
     };
 
+    const currentStartIso = toIso(startOfDay(currentRange.start));
+    const currentEndIso = toIso(endOfDay(currentRange.end));
+    const previousStartIso = toIso(startOfDay(previousRange.start));
+    const previousEndIso = toIso(endOfDay(previousRange.end));
+
     forkJoin({
-      current: this.api.getDeliveryAnalytics(toIso(currentRange.start), toIso(currentRange.end)),
-      previous: this.api.getDeliveryAnalytics(
-        toIso(startOfDay(previousRange.start)),
-        toIso(endOfDay(previousRange.end)),
-      ),
-      timeline: this.fetchTimeline(currentRange),
+      current: this.api.getDeliveryAnalytics(currentStartIso, currentEndIso),
+      previous: this.api.getDeliveryAnalytics(previousStartIso, previousEndIso),
+      summary: this.api.getReportSummary(currentStartIso, currentEndIso),
+      previousSummary: this.api.getReportSummary(previousStartIso, previousEndIso),
+      topMessages: this.api.getTopMessages(currentStartIso, currentEndIso),
     })
       .pipe(
-        map(({ current, previous, timeline }) => {
-          return { current, previous, timeline };
-        }),
         catchError((error: unknown) => {
           this.error.set('Unable to load analytics right now. Please retry in a minute.');
           console.error('Analytics load failed', error);
@@ -521,28 +645,90 @@ export class AnalyticsOverviewComponent implements AfterViewInit {
       )
       .subscribe((result) => {
         if (!result) {
+          this.analytics.set(null);
+          this.previousAnalytics.set(null);
+          this.summary.set(null);
+          this.previousSummary.set(null);
+          this.timeline.set([]);
+           this.topMessages.set(null);
           this.loading.set(false);
           return;
         }
         this.analytics.set(result.current);
         this.previousAnalytics.set(result.previous);
-        this.timeline.set(result.timeline);
+        this.summary.set(result.summary);
+        this.previousSummary.set(result.previousSummary);
+        this.timeline.set(this.mapTimeline(result.current.timeline ?? []));
+        this.topMessages.set(this.normalizeTopMessages(result.topMessages));
         this.selectedRange.set(range);
         this.loading.set(false);
       });
   }
 
-  private fetchTimeline(range: DateRange) {
-    const days = enumerateDays(range.start, range.end);
-    if (!days.length) {
-      return of<TimelinePoint[]>([]);
+  private mapTimeline(points: DeliveryTimelinePoint[]): TimelinePoint[] {
+    if (!points.length) {
+      return [];
     }
-    const requests = days.map((day) =>
-      this.api
-        .getDeliveryAnalytics(toIso(startOfDay(day)), toIso(endOfDay(day)))
-        .pipe(map((response) => ({ date: day, totals: response.totals ?? DEFAULT_TOTALS }))),
-    );
-    return forkJoin(requests);
+    return points
+      .slice()
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .map((point) => ({
+        date: new Date(point.date),
+        totals: {
+          queued: point.queued ?? 0,
+          sent: point.sent ?? 0,
+          delivered: point.delivered ?? 0,
+          opened: point.opened ?? 0,
+          failed: point.failed ?? 0,
+          bounced: point.bounced ?? 0,
+        },
+      }));
+  }
+
+  private normalizeTopMessages(top: TopMessagesResponse | null | undefined): TopMessagesResponse | null {
+    if (!top) {
+      return null;
+    }
+    return {
+      ...top,
+      topByReplies: [...(top.topByReplies ?? [])],
+      topByOpens: [...(top.topByOpens ?? [])],
+    };
+  }
+
+  private rankTopMessages(top: TopMessagesResponse | null): TopMessageItem[] {
+    if (!top) {
+      return [];
+    }
+    const replies = [...(top.topByReplies ?? [])].sort((a, b) => {
+      const replyDelta = b.replies - a.replies;
+      if (replyDelta !== 0) {
+        return replyDelta;
+      }
+      const openDelta = b.opened - a.opened;
+      if (openDelta !== 0) {
+        return openDelta;
+      }
+      return b.delivered - a.delivered;
+    });
+    const repliesWithActivity = replies.filter((item) => item.replies > 0);
+    if (repliesWithActivity.length) {
+      return repliesWithActivity.slice(0, 6);
+    }
+
+    const opens = [...(top.topByOpens ?? [])].sort((a, b) => {
+      const openDelta = b.opened - a.opened;
+      if (openDelta !== 0) {
+        return openDelta;
+      }
+      return b.delivered - a.delivered;
+    });
+    const opensWithActivity = opens.filter((item) => item.opened > 0);
+    if (opensWithActivity.length) {
+      return opensWithActivity.slice(0, 6);
+    }
+
+    return [];
   }
 }
 
@@ -579,17 +765,6 @@ function orderRange(start: Date, end: Date): DateRange {
     return { start: startOfDay(start), end: endOfDay(end) };
   }
   return { start: startOfDay(end), end: endOfDay(start) };
-}
-
-function enumerateDays(start: Date, end: Date): Date[] {
-  const dates: Date[] = [];
-  let cursor = startOfDay(start);
-  const endDay = startOfDay(end);
-  while (cursor <= endDay) {
-    dates.push(new Date(cursor));
-    cursor = addDays(cursor, 1);
-  }
-  return dates;
 }
 
 function startOfDay(date: Date): Date {

@@ -13,7 +13,32 @@ class ApiStub {
       totals: DEFAULT_TOTALS,
       byChannel: [],
       byTemplate: [],
+      timeline: [],
     });
+  }
+
+  getReportSummary() {
+    return of({
+      from: '',
+      to: '',
+      totals: DEFAULT_TOTALS,
+      byChannel: [],
+      topTemplates: [],
+      meetingsBooked: 0,
+    });
+  }
+
+  getTopMessages() {
+    return of({
+      from: '',
+      to: '',
+      topByReplies: [],
+      topByOpens: [],
+    });
+  }
+
+  downloadReportSummaryPdf() {
+    return of(new Blob());
   }
 
   previewFollowups() {
@@ -80,6 +105,7 @@ describe('AnalyticsOverviewComponent mapping', () => {
       totals,
       byChannel: [],
       byTemplate: [],
+      timeline: [],
     });
 
     const areaChart = component.areaChart();
@@ -108,10 +134,154 @@ describe('AnalyticsOverviewComponent mapping', () => {
         { channel: 'whatsapp', queued: 0, sent: 6, delivered: 5, opened: 4, failed: 1, bounced: 1 },
       ],
       byTemplate: [],
+      timeline: [],
     });
 
     const donut = component.channelDonut();
     expect(donut?.series).toEqual([3, 5]);
     expect(donut?.options?.labels).toEqual(['Email', 'WhatsApp']);
+  });
+
+  it('uses top messages replies for bar chart sorted by engagement', () => {
+    const fixture = TestBed.createComponent(AnalyticsOverviewComponent);
+    const component = fixture.componentInstance;
+
+    component['analytics'].set({
+      totals: DEFAULT_TOTALS,
+      byChannel: [],
+      byTemplate: [],
+      timeline: [],
+    });
+
+    component['topMessages'].set({
+      from: '',
+      to: '',
+      topByReplies: [
+        {
+          key: 'template:b',
+          label: 'Template B',
+          channel: 'sms',
+          sent: 2,
+          delivered: 2,
+          opened: 1,
+          failed: 0,
+          bounced: 0,
+          replies: 1,
+        },
+        {
+          key: 'template:a',
+          label: 'Template A',
+          channel: 'email',
+          sent: 3,
+          delivered: 3,
+          opened: 2,
+          failed: 0,
+          bounced: 0,
+          replies: 3,
+        },
+      ],
+      topByOpens: [],
+    });
+
+    const chart = component.templateBar();
+    const series = (chart?.series as Array<{ name: string; data: number[] }>) || [];
+    expect(series[0].name).toBe('Replies');
+    expect(series[0].data).toEqual([3, 1]);
+    expect(chart?.options?.xaxis?.['categories']).toEqual(['Template A', 'Template B']);
+  });
+
+  it('falls back to opened ranking when replies are absent', () => {
+    const fixture = TestBed.createComponent(AnalyticsOverviewComponent);
+    const component = fixture.componentInstance;
+
+    component['analytics'].set({
+      totals: DEFAULT_TOTALS,
+      byChannel: [],
+      byTemplate: [],
+      timeline: [],
+    });
+
+    component['topMessages'].set({
+      from: '',
+      to: '',
+      topByReplies: [
+        {
+          key: 'template:a',
+          label: 'Template A',
+          channel: 'email',
+          sent: 5,
+          delivered: 4,
+          opened: 0,
+          failed: 0,
+          bounced: 0,
+          replies: 0,
+        },
+      ],
+      topByOpens: [
+        {
+          key: 'template:b',
+          label: 'Template B',
+          channel: 'sms',
+          sent: 10,
+          delivered: 9,
+          opened: 6,
+          failed: 1,
+          bounced: 0,
+          replies: 0,
+        },
+      ],
+    });
+
+    const chart = component.templateBar();
+    const series = (chart?.series as Array<{ name: string; data: number[] }>) || [];
+    expect(series[0].name).toBe('Opened');
+    expect(series[0].data).toEqual([6]);
+    expect(chart?.options?.xaxis?.['categories']).toEqual(['Template B']);
+  });
+
+  it('falls back to by-template delivery when no top messages are available', () => {
+    const fixture = TestBed.createComponent(AnalyticsOverviewComponent);
+    const component = fixture.componentInstance;
+
+    component['analytics'].set({
+      totals: DEFAULT_TOTALS,
+      byChannel: [],
+      byTemplate: [
+        {
+          template: 'Template C',
+          channel: 'email',
+          queued: 0,
+          sent: 4,
+          delivered: 4,
+          opened: 2,
+          failed: 0,
+          bounced: 0,
+        },
+        {
+          template: 'Template D',
+          channel: 'sms',
+          queued: 0,
+          sent: 3,
+          delivered: 1,
+          opened: 0,
+          failed: 1,
+          bounced: 1,
+        },
+      ],
+      timeline: [],
+    });
+
+    component['topMessages'].set({
+      from: '',
+      to: '',
+      topByReplies: [],
+      topByOpens: [],
+    });
+
+    const chart = component.templateBar();
+    const series = (chart?.series as Array<{ name: string; data: number[] }>) || [];
+    expect(series[0].name).toBe('Delivered');
+    expect(series[0].data).toEqual([4, 1]);
+    expect(chart?.options?.xaxis?.['categories']).toEqual(['Template C', 'Template D']);
   });
 });
