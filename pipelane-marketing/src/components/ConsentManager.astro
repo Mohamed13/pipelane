@@ -14,10 +14,11 @@ const bannerMessage = "Nous utilisons des cookies pour mesurer l’audience et a
     </div>
   </div>
 </div>
-<script is:inline>
+<script is:inline data-ga={gaId} data-linkedin={linkedinId}>
   (() => {
-    const gaId = ${JSON.stringify(gaId)};
-    const linkedinId = ${JSON.stringify(linkedinId)};
+    const scriptEl = document.currentScript;
+    const gaId = scriptEl?.dataset.ga ?? '';
+    const linkedinId = scriptEl?.dataset.linkedin ?? '';
     const storageKey = 'pipelane_consent';
     const banner = document.querySelector('[data-consent-banner]');
     const acceptBtn = document.querySelector('[data-consent-accept]');
