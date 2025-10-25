@@ -16,8 +16,8 @@ const bannerMessage = "Nous utilisons des cookies pour mesurer l’audience et a
 </div>
 <script is:inline>
   (() => {
-    const gaId = "";
-    const linkedinId = "";
+    const gaId = ${JSON.stringify(gaId)};
+    const linkedinId = ${JSON.stringify(linkedinId)};
     const storageKey = 'pipelane_consent';
     const banner = document.querySelector('[data-consent-banner]');
     const acceptBtn = document.querySelector('[data-consent-accept]');
@@ -28,21 +28,29 @@ const bannerMessage = "Nous utilisons des cookies pour mesurer l’audience et a
       window.__pipelaneTagsLoaded = true;
       if (gaId) {
         window.dataLayer = window.dataLayer || [];
-        window.dataLayer.push({ 'js': new Date() });
-        window.dataLayer.push({ 'config': gaId });
+        window.dataLayer.push({ js: new Date() });
+        window.dataLayer.push({ config: gaId });
         const script = document.createElement('script');
         script.async = true;
-        script.src = https://www.googletagmanager.com/gtag/js?id=;
+        script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(gaId)}`;
         document.head.appendChild(script);
         const inline = document.createElement('script');
-        inline.textContent = window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', '');;
+        inline.text = [
+          'window.dataLayer = window.dataLayer || [];',
+          'function gtag(){dataLayer.push(arguments);}',
+          "gtag('js', new Date());",
+          `gtag('config', ${JSON.stringify(gaId)});`,
+        ].join('\n');
         document.head.appendChild(inline);
       }
       if (linkedinId) {
-        const script = document.createElement('script');
-        script.type = 'text/javascript';
-        script.text = ar _linkedin_data_partner_id = '';;
-        document.head.appendChild(script);
+        const partner = document.createElement('script');
+        partner.type = 'text/javascript';
+        partner.text = [
+          'window._linkedin_data_partner_ids = window._linkedin_data_partner_ids || [];',
+          `window._linkedin_data_partner_ids.push(${JSON.stringify(linkedinId)});`,
+        ].join('\n');
+        document.head.appendChild(partner);
         const loader = document.createElement('script');
         loader.type = 'text/javascript';
         loader.async = true;
