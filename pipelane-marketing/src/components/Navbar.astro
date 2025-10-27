@@ -15,6 +15,9 @@ interface Props {
 
 const { currentPath = "" } = Astro.props as Props;
 
+const demoMode = (import.meta.env.PUBLIC_DEMO_MODE ?? "false") === "true";
+const consoleUrl = (import.meta.env.PUBLIC_CONSOLE_URL ?? "http://localhost:4200").replace(/\/$/, "");
+
 const links: NavLink[] = [
   { href: "/", label: "Produit", matches: (path) => path === "/" },
   {
@@ -39,57 +42,87 @@ const links: NavLink[] = [
   { href: "/#demo", label: "Demander une démo", matches: () => false }
 ];
 
+if (demoMode) {
+  links.push({
+    href: `${consoleUrl}/login?demo=1`,
+    label: "Lancer la démo",
+    matches: () => false
+  });
+}
+
 const isActive = (link: NavLink) => {
   if (!currentPath) return false;
   return link.matches(currentPath);
 };
 ---
-<header class="pointer-events-none fixed inset-x-0 top-6 z-50 flex justify-center px-4">
-  <nav class="pointer-events-auto glass flex w-full max-w-5xl items-center justify-between gap-6 rounded-full border border-line/35 px-6 py-3 text-sm shadow-soft">
-    <a href="/" class="flex items-center gap-2 font-semibold tracking-wide uppercase text-primary">
-      <span class="h-2 w-2 rounded-full bg-primary"></span>
-      Pipelane
-    </a>
-    <button
-      type="button"
-      class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-line/40 bg-surface/60 text-onSurface md:hidden"
-      data-nav-toggle
-      aria-label="Ouvrir la navigation"
-      aria-expanded="false"
+<header class="pointer-events-none sticky top-4 z-[var(--z-nav)] flex justify-center px-4 lg:top-6">
+  <div class="pointer-events-auto w-full max-w-6xl">
+    <nav
+      data-nav-shell
+      class="glass relative flex w-full items-center justify-between gap-4 rounded-2xl px-4 py-2 text-sm shadow-soft transition-colors duration-200 data-[scrolled='true']:bg-white/5 data-[scrolled='true']:backdrop-blur-md md:px-6 md:py-3"
     >
-      ☰
-    </button>
-    <div class="hidden items-center gap-4 md:flex">
-      <ul class="flex items-center gap-1 rounded-full bg-surfaceOverlay p-1">
+      <div class="absolute inset-0 -z-10 animate-gradient-slow bg-[radial-gradient(120%_120%_at_0%_0%,rgba(56,189,248,0.18),transparent),radial-gradient(120%_140%_at_100%_50%,rgba(167,139,250,0.24),transparent)]"></div>
+      <a href="/" class="group flex items-center gap-2 font-semibold uppercase tracking-[0.28em] on-surface-strong">
+        <span class="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-primary/20 text-primary shadow-glow">
+          <span class="absolute inset-0 animate-pulse-slow bg-[radial-gradient(circle,rgba(56,189,248,0.35)0%,transparent 70%)]"></span>
+          <span class="relative text-base font-semibold">PL</span>
+        </span>
+        <span class="text-xs lg:text-sm">Pipelane</span>
+      </a>
+      <button
+        type="button"
+        class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-line/40 bg-surface/70 on-surface transition hover:text-primary md:hidden"
+        data-nav-toggle
+        aria-label="Ouvrir la navigation"
+        aria-expanded="false"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <path d="M4 8H20M4 12H20M10 16H20" />
+        </svg>
+      </button>
+      <div class="hidden flex-1 items-center justify-end gap-4 md:flex">
+        <div
+          class="glass flex max-w-full flex-1 justify-end rounded-2xl px-1 py-1 shadow-soft"
+        >
+          <ul
+            class="flex max-w-full flex-1 snap-x snap-mandatory items-center gap-1 overflow-x-auto rounded-2xl px-1 py-1 flex-wrap md:flex-nowrap md:px-2"
+            style="scrollbar-gutter: stable;"
+          >
+          {links.map((link) => (
+            <li key={link.href} class="snap-center">
+              <a
+                href={link.href}
+                class:list={{
+                  "group relative inline-flex items-center gap-2 rounded-xl px-3 md:px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] transition-colors duration-200": true,
+                  "on-surface": !isActive(link),
+                  "on-surface-strong ring-1 ring-white/10": isActive(link)
+                }}
+                data-nav-link
+                aria-current={isActive(link) ? "page" : undefined}
+                data-active={isActive(link) ? "true" : "false"}
+              >
+                <span class="relative">{link.label}</span>
+                {link.isBeta && <NeonBadge class="!text-[9px]">BÊTA</NeonBadge>}
+                <span
+                  class="pointer-events-none absolute inset-x-2 bottom-1 h-px origin-center scale-x-0 bg-current transition-transform duration-200 ease-out group-hover:scale-x-100 group-data-[active='true']:scale-x-100"
+                ></span>
+              </a>
+            </li>
+          ))}
+          </ul>
+        </div>
+        <ThemeToggle />
+      </div>
+    </nav>
+  </div>
+  <div class="pointer-events-none fixed inset-x-0 top-[88px] z-40 px-4 md:hidden" data-nav-drawer hidden>
+    <div class="pointer-events-auto rounded-3xl border border-line/30 bg-surfaceStrong/95 p-6 shadow-soft backdrop-blur">
+      <ul class="grid gap-4 text-base on-surface">
         {links.map((link) => (
           <li key={link.href}>
             <a
               href={link.href}
-              class:list={{
-                "nav-link inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium uppercase tracking-[0.2em] transition": true,
-                "on-surface hover:text-primary": !isActive(link),
-                "bg-primary/10 text-primary": isActive(link)
-              }}
-              data-nav-link
-              aria-current={isActive(link) ? "page" : undefined}
-            >
-              <span>{link.label}</span>
-              {link.isBeta && <NeonBadge class="!text-[9px]">BÊTA</NeonBadge>}
-            </a>
-          </li>
-        ))}
-      </ul>
-      <ThemeToggle />
-    </div>
-  </nav>
-  <div class="pointer-events-none fixed inset-x-0 top-[72px] z-40 px-4 md:hidden" data-nav-drawer hidden>
-    <div class="pointer-events-auto glass rounded-3xl border border-line/30 p-6">
-      <ul class="grid gap-4 text-base">
-        {links.map((link) => (
-          <li key={link.href}>
-            <a
-              href={link.href}
-              class="flex items-center justify-between gap-2 on-surface"
+              class="flex items-center justify-between gap-2"
               data-nav-link
               aria-current={isActive(link) ? "page" : undefined}
             >
@@ -99,7 +132,8 @@ const isActive = (link: NavLink) => {
           </li>
         ))}
       </ul>
-      <div class="mt-6">
+      <div class="mt-6 flex items-center justify-between border-t border-line/20 pt-6">
+      <p class="text-xs uppercase tracking-[0.3em] text-textMuted">Apparence</p>
         <ThemeToggle />
       </div>
     </div>
@@ -134,5 +168,17 @@ const isActive = (link: NavLink) => {
         close();
       }
     });
+  })();
+  (() => {
+    const nav = document.querySelector("[data-nav-shell]");
+    if (!nav) return;
+
+    const handleScroll = () => {
+      const scrolled = window.scrollY > 8;
+      nav.setAttribute("data-scrolled", scrolled ? "true" : "false");
+    };
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
   })();
 </script>

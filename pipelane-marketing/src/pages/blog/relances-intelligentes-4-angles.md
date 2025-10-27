@@ -1,12 +1,10 @@
 ---
-layout: ../layouts/PostLayout.astro
+layout: ../../layouts/PostLayout.astro
 title: "Relances intelligentes : 4 angles qui débloquent des réponses"
 description: "Quatre angles de relance à tester immédiatement : rappel, valeur, preuve sociale, question ouverte."
 date: 2025-10-18
 draft: true
 ---
-layout: ../layouts/PostLayout.astro
-
 Relancer un prospect est un art subtil : trop tôt, vous paraissez pressant ; trop tard, l’opportunité refroidit. Avec la relance intelligente de Pipelane, vous pouvez alterner plusieurs angles sans perdre la cohérence de votre séquence. Voici quatre approches éprouvées, à utiliser selon la situation, pour générer des réponses utiles sans saouler votre interlocuteur.
 
 ## 1. L’angle « rappel » pour remettre le sujet sur la table

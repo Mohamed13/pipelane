@@ -1,12 +1,10 @@
 ---
-layout: ../layouts/PostLayout.astro
+layout: ../../layouts/PostLayout.astro
 title: "Comment obtenir ses 10 premiers rendez-vous B2B avec un agent IA (sans équipe sales)"
 description: "Plan d’action en 5 étapes pour lancer une prospection assistée par IA et décrocher vos 10 premiers rendez-vous qualifiés."
 date: 2025-10-20
 draft: true
 ---
-layout: ../layouts/PostLayout.astro
-
 ## Pourquoi un agent IA change la donne quand on démarre
 
 Quand on lance une offre B2B, la prospection est souvent un dilemme : il faut aller vite, personnaliser et relancer proprement… mais sans équipe sales. Résultat : on repousse, on envoie trois emails génériques, puis on passe au sujet suivant. L’agent IA prend exactement ce chantier et le rend soutenable : il rédige des messages courts, les envoie aux bonnes heures, relance avec un angle pertinent et remonte uniquement les réponses intéressées. Votre temps n’est plus bloqué dans un tableur mais sur les prospects qui lèvent vraiment la main.

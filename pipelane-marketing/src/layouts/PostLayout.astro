@@ -4,13 +4,19 @@ import Navbar from "@components/Navbar.astro";
 import Footer from "@components/Footer.astro";
 import NeonBadge from "@components/NeonBadge.astro";
 
-const { frontmatter, content } = Astro;
-const { title, description, date, draft = false } = frontmatter as {
+interface Frontmatter {
   title: string;
   description?: string;
   date?: string;
   draft?: boolean;
+}
+
+const { frontmatter = {}, Content } = Astro.props as {
+  frontmatter?: Frontmatter;
+  Content?: any;
 };
+const { title, description, date, draft = false } = frontmatter as Frontmatter;
+const hasContent = typeof Content === "function";
 
 const pageTitle = `${title} – Pipelane`;
 const pageDescription =
@@ -21,17 +27,19 @@ const formattedDate = date ? new Date(date).toLocaleDateString("fr-FR", { year: 
 ---
 <BaseLayout title={pageTitle} description={pageDescription} canonical={canonical}>
   <Navbar currentPath={Astro.url.pathname} />
-  <main class="container space-y-12 pt-32 pb-20">
-    <article class="mx-auto max-w-3xl space-y-6 text-onSurface">
-      <header class="space-y-4">
-        {draft && <NeonBadge text="Brouillon" />}
-        <h1 class="text-balance text-4xl font-semibold leading-tight text-onSurfaceStrong sm:text-5xl">{title}</h1>
-        {formattedDate && <p class="text-sm uppercase tracking-[0.35em] text-primary/80">{formattedDate}</p>}
-      </header>
-      <div class="space-y-6 leading-relaxed [>&h2]:mt-10 [>&h2]:text-2xl [>&h2]:font-semibold [>&h3]:mt-8 [>&h3]:text-xl [>&ul]:list-disc [>&ul]:pl-6 [>&ol]:list-decimal [>&ol]:pl-6 [>&a]:text-primary [>&a]:underline">
-        {content}
-      </div>
-    </article>
+  <main class="space-y-20 pb-20">
+    <section class="section pt-0">
+      <article class="container-page mx-auto max-w-3xl space-y-6 on-surface">
+        <header class="space-y-4">
+          {draft && <NeonBadge text="Brouillon" />}
+          <h1 class="text-balance font-semibold on-surface-strong text-4xl sm:text-5xl">{title}</h1>
+          {formattedDate && <p class="text-sm uppercase tracking-[0.35em] text-primary/80">{formattedDate}</p>}
+        </header>
+        <div class="space-y-6 leading-relaxed [>&h2]:mt-10 [>&h2]:text-2xl [>&h2]:font-semibold [>&h3]:mt-8 [>&h3]:text-xl [>&ul]:list-disc [>&ul]:pl-6 [>&ol]:list-decimal [>&ol]:pl-6 [>&a]:text-primary [>&a]:underline">
+          {hasContent ? <Content /> : <slot />}
+        </div>
+      </article>
+    </section>
   </main>
   <Footer />
 </BaseLayout>

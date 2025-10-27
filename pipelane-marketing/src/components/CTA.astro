@@ -12,6 +12,9 @@ interface Props {
 }
 
 const { id, title, description, primaryLabel, secondaryLabel, secondaryHref = "#" } = Astro.props as Props;
+
+const demoMode = (import.meta.env.PUBLIC_DEMO_MODE ?? "false") === "true";
+const consoleUrl = (import.meta.env.PUBLIC_CONSOLE_URL ?? "http://localhost:4200").replace(/\/$/, "");
 ---
 <section id={id} class="py-20">
   <div class="container">
@@ -23,16 +26,26 @@ const { id, title, description, primaryLabel, secondaryLabel, secondaryHref = "#
         <h2 class="text-3xl font-semibold tracking-tight on-surface-strong sm:text-4xl">{title}</h2>
         <p class="max-w-xl text-lg leading-relaxed on-surface">{description}</p>
         <div class="flex flex-wrap gap-4 pt-2">
-          <a href="#demo" class="btn-primary" data-analytics="cta_click" data-location={${id}-primary}>
+          <a href="#demo" class="btn-primary" data-analytics="cta_click" data-location={`${id}-primary`}>
             {primaryLabel}
           </a>
-          <a class="btn-ghost" href={secondaryHref} data-analytics="cta_click" data-location={${id}-secondary}>
+          {demoMode && (
+            <a
+              class="btn-ghost"
+              href={`${consoleUrl}/login?demo=1`}
+              data-analytics="cta_click"
+              data-location={`${id}-demo`}
+            >
+              Lancer la démo
+            </a>
+          )}
+          <a class="btn-ghost" href={secondaryHref} data-analytics="cta_click" data-location={`${id}-secondary`}>
             {secondaryLabel}
           </a>
         </div>
       </div>
       <div class="relative z-10 mt-10 lg:mt-0">
-        <DemoForm idPrefix={${id}-form} submitLabel={primaryLabel} />
+        <DemoForm idPrefix={`${id}-form`} submitLabel={primaryLabel} />
       </div>
       <div class="absolute inset-0 -z-10 scrim">
         <div class="absolute inset-0 bg-hero-gradient opacity-70"></div>
@@ -40,3 +53,4 @@ const { id, title, description, primaryLabel, secondaryLabel, secondaryHref = "#
     </div>
   </div>
 </section>
+

@@ -34,13 +34,17 @@ const guarantees = [
 ---
 <BaseLayout title={metaTitle} description={metaDescription} canonical="https://www.pipelane.app/securite-rgpd">
   <Navbar currentPath={Astro.url.pathname} />
-  <main class="space-y-24 lg:space-y-32 pt-32">
-    <section class="container space-y-6">
-      <NeonBadge text="Sécurité & RGPD" />
-      <h1 class="text-balance text-4xl font-semibold leading-tight text-onSurfaceStrong sm:text-5xl">Sécurité & RGPD</h1>
-      <p class="max-w-3xl text-lg leading-relaxed text-onSurface">
-        Pipelane est conçu pour respecter vos obligations légales : consentement, opt-out, traçabilité, hébergement UE et gouvernance des accès.
-      </p>
+  <main class="space-y-32">
+    <section class="section">
+      <div class="container-page space-y-6">
+        <NeonBadge text="Sécurité & RGPD" />
+        <h1 class="text-balance font-semibold on-surface-strong max-w-[42ch]">
+          Sécurité & RGPD
+        </h1>
+        <p class="max-w-3xl text-lg leading-relaxed on-surface">
+          Pipelane est conçu pour respecter vos obligations légales : consentement, opt-out, traçabilité, hébergement UE et gouvernance des accès.
+        </p>
+      </div>
     </section>
 
     <Section
@@ -50,8 +54,8 @@ const guarantees = [
       contentClass="mt-12 grid gap-6 md:grid-cols-3"
     >
       {pillars.map((pillar) => (
-        <div class="glass rounded-3xl border border-line/30 p-6 text-sm leading-relaxed text-onSurface">
-          <h2 class="text-lg font-semibold text-onSurfaceStrong">{pillar.title}</h2>
+        <div class="glass rounded-3xl border border-white/10 p-6 text-sm leading-relaxed on-surface md:p-7">
+          <h2 class="text-lg font-semibold on-surface-strong">{pillar.title}</h2>
           <p class="mt-3">{pillar.description}</p>
         </div>
       ))}
@@ -63,7 +67,7 @@ const guarantees = [
       title="Engagements contractuels"
       contentClass="mt-12 space-y-3"
     >
-      <ul class="space-y-3 text-sm leading-relaxed text-onSurface">
+      <ul class="space-y-3 text-sm leading-relaxed on-surface">
         {guarantees.map((item) => (
           <li class="flex items-start gap-3">
             <span class="mt-1 text-primary"><Icon name="shield" size={18} /></span>

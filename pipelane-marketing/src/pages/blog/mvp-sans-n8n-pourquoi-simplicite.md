@@ -1,12 +1,10 @@
 ---
-layout: ../layouts/PostLayout.astro
+layout: ../../layouts/PostLayout.astro
 title: "MVP sans n8n : pourquoi la simplicité gagne au début"
 description: "Repenser la prospection sans empiler les workflows : focus sur l’exécution, pas sur l’outillage."
 date: 2025-10-15
 draft: true
 ---
-layout: ../layouts/PostLayout.astro
-
 Beaucoup d’équipes growth construisent leur prospection autour d’un outillage complexe : n8n, Zapier, webhooks maison, scripts. C’est puissant… mais chronophage. Quand on veut valider un marché ou passer de 0 à 20 rendez-vous par mois, la simplicité bat la sophistication. Voici pourquoi un MVP sans n8n est souvent le meilleur choix, et comment Pipelane vous accompagne dans cette logique.
 
 ## 1. L’exécution compte plus que l’architecture
@@ -64,9 +62,6 @@ Trois signaux montrent qu’il est temps d’activer des intégrations avancées
 - Documentez chaque apprentissage pour préparer l’industrialisation.
 
 Vous évitez ainsi la dette technique tout en construisant un pipeline qui grossit semaine après semaine.
-
----
-layout: ../layouts/PostLayout.astro
 
 En résumé : commencez simple, allez vite, apprenez. Quand vous serez prêts à scale, l’écosystème Pipelane est là. D’ici là, gardez votre énergie pour ce qui compte : les prospects. [Demandez une démo](../#demo), on vous montre comment lancer votre MVP sans aucune dette technique.
 

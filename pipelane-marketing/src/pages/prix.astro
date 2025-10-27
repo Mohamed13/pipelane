@@ -6,6 +6,7 @@ import Section from "@components/Section.astro";
 import PricingCard from "@components/PricingCard.astro";
 import FAQItem from "@components/FAQItem.astro";
 import NeonBadge from "@components/NeonBadge.astro";
+import CTA from "@components/CTA.astro";
 
 const metaTitle = "Tarifs – Pipelane";
 const metaDescription = "Choisissez le plan qui vous convient : Good, Better, Best. Aucune surprise, tout est inclus dès le départ.";
@@ -18,6 +19,7 @@ const tiers = [
     features: [
       "Agent de prospection IA + relance intelligente",
       "Console omni-canale (Email, WhatsApp, SMS)",
+      "Lead Hunter (CSV)",
       "1 500 relances intelligentes / mois",
       "Suivi temps réel + exports CSV",
       "Support email sous 24 h"
@@ -30,6 +32,7 @@ const tiers = [
     highlight: true,
     features: [
       "Tout Good",
+      "Lead Hunter (Maps + enrichissement)",
       "5 000 relances intelligentes / mois",
       "Angles personnalisés + A/B objets",
       "Ports optionnels activables (webhooks, actions)",
@@ -42,6 +45,7 @@ const tiers = [
     description: "Accompagnement sur mesure : sécurité, intégrations, SLA.",
     features: [
       "Tout Better",
+      "Lead Hunter (connecteurs avancés & scoring étendu)",
       "Limites quotidiennes personnalisées",
       "Hébergement UE dédié + SSO",
       "SLA 99,9% et support prioritaire",
@@ -87,17 +91,24 @@ const faqSchema = {
     <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
   </Fragment>
   <Navbar currentPath={Astro.url.pathname} />
-  <main class="space-y-24 lg:space-y-32 pt-32">
-    <section class="container space-y-6 text-center">
-      <NeonBadge text="Tarification" />
-      <h1 class="text-balance text-4xl font-semibold leading-tight text-onSurfaceStrong sm:text-5xl">Tarifs transparents, tout inclus</h1>
-      <p class="mx-auto max-w-3xl text-lg leading-relaxed text-onSurface">
-        Choisissez le plan qui correspond à votre volume. Pas de frais cachés : l’agent IA, la relance intelligente et la console sont inclus. Ports optionnels prêts si vous avez besoin d’intégrations plus tard.
-      </p>
+  <main class="space-y-32">
+    <section class="section">
+      <div class="container-page space-y-6 text-center">
+        <NeonBadge text="Tarification" />
+        <h1 class="mx-auto text-balance font-semibold on-surface-strong max-w-[48ch]">
+          Tarifs transparents, tout inclus
+        </h1>
+        <p class="mx-auto max-w-3xl text-lg leading-relaxed on-surface">
+          Choisissez le plan qui correspond à votre volume. Pas de frais cachés : l’agent IA, la relance intelligente et la console sont inclus. Ports optionnels prêts si vous avez besoin d’intégrations plus tard.
+        </p>
+        <p class="mx-auto max-w-2xl text-sm font-medium uppercase tracking-[0.2em] text-primary">
+          1er RDV qualifié garanti ou prolongation gratuite.
+        </p>
+      </div>
     </section>
 
     <Section
-      id="plans"
+      id="lead-hunter"
       eyebrow="Good / Better / Best"
       title="Trois niveaux pour accompagner votre croissance"
       center

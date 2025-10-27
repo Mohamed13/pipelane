@@ -7,8 +7,13 @@ import CTA from "@components/CTA.astro";
 import Icon from "@components/Icon.astro";
 import NeonBadge from "@components/NeonBadge.astro";
 
-const metaTitle = "Agent de prospection IA – Pipelane";
-const metaDescription = "Donnez votre cible et votre pitch, l’agent Pipelane rédige, envoie, relance et classe les réponses pour vous concentrer sur les rendez-vous.";
+const metaTitle = "Lead Hunter AI — Pipelane";
+const metaDescription = "Lead Hunter AI repère, enrichit et score vos prospects en 60 secondes : carte, liste scorée et raisons transparentes, prêtes pour vos cadences.";
+
+const consoleBase = import.meta.env.PUBLIC_CONSOLE_URL ?? "/hunter";
+const hunterUrl = consoleBase.endsWith("/hunter")
+  ? consoleBase
+  : `${consoleBase.replace(/\/$/, "")}/hunter`;
 
 const capabilities = [
   "Rédige FR/EN avec un ton professionnel et humain",
@@ -16,6 +21,12 @@ const capabilities = [
   "Relance 2–3 fois si le prospect n’a pas répondu",
   "Classe les réponses (intéressé, plus tard, hors scope, etc.)",
   "Répond aux demandes simples : informations, créneaux, redirections"
+];
+
+const hunterBullets = [
+  "Critères simples ou phrase naturelle (Simple criteria or natural language)",
+  "Carte + liste scorée, raisons claires (Map + scored list, clear reasons)",
+  "1-clic : créer votre liste puis votre cadence (1-click list → cadence)"
 ];
 
 const onboardingSteps = [
@@ -28,16 +39,34 @@ const onboardingSteps = [
 ---
 <BaseLayout title={metaTitle} description={metaDescription} canonical="https://www.pipelane.app/prospection-ia">
   <Navbar currentPath={Astro.url.pathname} />
-  <main class="space-y-24 lg:space-y-32 pt-32">
-    <section class="container space-y-6">
-      <NeonBadge text="Prospection IA" />
-      <h1 class="text-balance text-4xl font-semibold leading-tight text-onSurfaceStrong sm:text-5xl">Agent de prospection IA</h1>
-      <p class="max-w-3xl text-lg leading-relaxed text-onSurface">
-        Donnez-lui votre cible et votre pitch. Il écrit des emails courts et personnalisés, les envoie à la bonne cadence, relance intelligemment, lit les réponses et propose l’action suivante. Vous vous concentrez sur les rendez-vous.
-      </p>
-      <div class="flex flex-wrap gap-4">
-        <a href="#demo" class="btn-primary" data-analytics="cta_click" data-location="prospection-hero">Demander une démo</a>
-        <a href="/relance-intelligente" class="btn-ghost" data-analytics="cta_click" data-location="prospection-secondary">Voir la relance intelligente</a>
+  <main class="space-y-32">
+    <section class="section">
+      <div class="container-page space-y-6">
+        <NeonBadge text="Prospection IA" />
+        <h1 class="text-balance font-semibold on-surface-strong max-w-[42ch]">
+          Agent de prospection IA
+        </h1>
+        <p class="max-w-3xl text-lg leading-relaxed on-surface">
+          Donnez-lui votre cible et votre pitch. Il écrit des emails courts et personnalisés, les envoie à la bonne cadence, relance intelligemment, lit les réponses et propose l’action suivante. Vous vous concentrez sur les rendez-vous.
+        </p>
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <a
+            href="#demo"
+            class="btn-primary min-h-[44px] rounded-xl px-5 shadow-glow focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+            data-analytics="cta_click"
+            data-location="prospection-hero"
+          >
+            Demander une démo
+          </a>
+          <a
+            href="/relance-intelligente"
+            class="btn-ghost min-h-[44px] rounded-xl px-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+            data-analytics="cta_click"
+            data-location="prospection-secondary"
+          >
+            Voir la relance intelligente
+          </a>
+        </div>
       </div>
     </section>
 
@@ -47,7 +76,7 @@ const onboardingSteps = [
       title="L’agent couvre toute la boucle de prospection"
       contentClass="mt-12 space-y-4"
     >
-      <ul class="space-y-3 text-sm leading-relaxed text-onSurface">
+      <ul class="space-y-3 text-sm leading-relaxed on-surface">
         {capabilities.map((item) => (
           <li class="flex items-start gap-3">
             <span class="mt-1 text-primary"><Icon name="spark" size={18} /></span>
@@ -64,11 +93,75 @@ const onboardingSteps = [
       contentClass="mt-12 grid gap-6 md:grid-cols-3"
     >
       {onboardingSteps.map((step, index) => (
-        <div class="glass rounded-3xl border border-line/30 p-6">
+        <div class="glass rounded-3xl border border-white/10 p-6 md:p-7">
           <span class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/15 text-primary font-semibold">{String(index + 1).padStart(2, "0")}</span>
-          <p class="mt-4 text-sm leading-relaxed text-onSurface">{step}</p>
+          <p class="mt-4 text-sm leading-relaxed on-surface">{step}</p>
         </div>
       ))}
+    </Section>
+
+    <Section
+      id="lead-hunter-ai"
+      eyebrow="Lead sourcing"
+      title="Lead Hunter AI : vos prospects en 60 secondes"
+      description="Repérez les comptes prometteurs avant d’écrire le moindre message. L’IA enrichit, score et explique ses choix pour que vous sélectionniez en conscience."
+      contentClass="mt-12 grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]"
+    >
+      <div class="space-y-5 text-sm leading-relaxed on-surface">
+        <ul class="space-y-3">
+          {hunterBullets.map((item) => (
+            <li class="flex items-start gap-3">
+              <span class="mt-1 text-primary"><Icon name="spark" size={16} /></span>
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+        <p>
+          Décrivez votre cible (“Restaurants à Paris avec bonnes notes”), importez un CSV ou combinez vos filtres (note minimale, avis, réseaux actifs, problèmes de site).
+          Lead Hunter déduplique, détecte les signaux web, calcule un score et vous explique le “pourquoi” de chaque proposition.
+        </p>
+        <div class="flex flex-wrap gap-3">
+          <a
+            class="btn-primary min-h-[44px] rounded-xl px-5 shadow-glow focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+            href={hunterUrl}
+            data-analytics="cta_click"
+            data-location="prospection-lead-hunter"
+          >
+            Tester avec 50 prospects de démo
+          </a>
+          <a
+            class="btn-ghost min-h-[44px] rounded-xl px-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+            href="/prix#lead-hunter"
+            data-analytics="cta_click"
+            data-location="prospection-lead-hunter-pricing"
+          >
+            Voir les offres Lead Hunter
+          </a>
+        </div>
+      </div>
+      <div class="glass rounded-3xl border border-white/10 p-6 shadow-soft md:p-7">
+        <div class="relative overflow-hidden rounded-2xl border border-line/30 bg-[radial-gradient(circle_at_top,rgba(129,212,250,0.2),transparent_70%)] p-6">
+          <p class="text-xs uppercase tracking-[0.26em] text-primary/80">Preview</p>
+          <h3 class="mt-3 text-lg font-semibold on-surface-strong">Carte + liste scorée</h3>
+          <p class="mt-2 text-sm on-surface">
+            Prospects classés, justification transparente, heatmap d’envoi idéale. Exportez ou créez une cadence en un clic.
+          </p>
+          <div class="mt-6 grid gap-3">
+            <div class="flex items-center justify-between rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-primary">
+              <span>Score 92 · Maison Nova</span>
+              <span>Paris</span>
+            </div>
+            <div class="flex items-center justify-between rounded-2xl border border-primary/10 bg-primary/5 px-4 py-3 text-sm on-surface">
+              <span>Score 88 · Bistro Lumen</span>
+              <span>Lyon</span>
+            </div>
+            <div class="flex items-center justify-between rounded-2xl border border-primary/10 bg-primary/5 px-4 py-3 text-sm on-surface">
+              <span>Score 86 · Atelier Bold</span>
+              <span>Marseille</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </Section>
 
     <Section
@@ -78,12 +171,12 @@ const onboardingSteps = [
       description="Tout tourne dans Pipelane. Besoin d’intégrations spécifiques ? Activez nos deux ports optionnels (événements sortants, actions entrantes) sans refondre votre stack."
       contentClass="mt-12 grid gap-6 md:grid-cols-2"
     >
-      <div class="glass rounded-3xl border border-line/30 p-6 text-sm leading-relaxed text-onSurface">
+      <div class="glass rounded-3xl border border-white/10 p-6 text-sm leading-relaxed on-surface md:p-7">
         <p>
           L’agent gère déjà l’écriture, l’envoi, les relances, l’analyse des réponses et la priorisation. Vous gardez la main sur chaque message.
         </p>
       </div>
-      <div class="rounded-3xl border border-dashed border-primary/40 bg-primary/10 p-6 text-sm text-primary">
+      <div class="rounded-3xl border border-dashed border-primary/40 bg-primary/10 p-6 text-sm text-primary md:p-7">
         <p class="font-semibold uppercase tracking-[0.35em]">Ports optionnels</p>
         <p class="mt-3">• Webhooks sortants : conversations, relances, conversions</p>
         <p>• Actions entrantes : créer un ticket, pousser un événement CRM</p>

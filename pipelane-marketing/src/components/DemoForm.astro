@@ -87,8 +87,8 @@ const footerClasses = compact ? "flex flex-col gap-3 sm:col-span-2 sm:flex-row s
     >
       {submitLabel}
     </button>
-    <p data-demo-status class="text-sm text-onSurface/70"></p>
-    <div class="text-xs uppercase tracking-[0.3em] text-onSurface/60">Réponse sous 24 h · Zéro spam</div>
+    <p data-demo-status class="text-sm text-textMuted"></p>
+    <div class="text-xs uppercase tracking-[0.3em] text-textMuted">Réponse sous 24 h · Zéro spam</div>
   </div>
 </form>
 <script is:inline>
@@ -120,7 +120,7 @@ const footerClasses = compact ? "flex flex-col gap-3 sm:col-span-2 sm:flex-row s
         if (status) {
           status.textContent = 'Envoi…';
           status.classList.remove('text-primary', 'text-red-400');
-          status.classList.add('text-onSurface/70');
+          status.classList.add('text-textMuted');
         }
         try {
           const response = await fetch('/api/demo-request', {
@@ -131,7 +131,7 @@ const footerClasses = compact ? "flex flex-col gap-3 sm:col-span-2 sm:flex-row s
           if (response.ok) {
             if (status) {
               status.textContent = 'Merci, on revient vers vous sous 24 h.';
-              status.classList.remove('text-onSurface/70');
+              status.classList.remove('text-textMuted');
               status.classList.add('text-primary');
             }
             form.reset();
@@ -146,14 +146,14 @@ const footerClasses = compact ? "flex flex-col gap-3 sm:col-span-2 sm:flex-row s
           } else {
             if (status) {
               status.textContent = payload?.error ?? 'Impossible d’envoyer le formulaire.';
-              status.classList.remove('text-onSurface/70');
+              status.classList.remove('text-textMuted');
               status.classList.add('text-red-400');
             }
           }
         } catch (error) {
           if (status) {
             status.textContent = "Impossible d’envoyer le formulaire.";
-            status.classList.remove('text-onSurface/70');
+            status.classList.remove('text-textMuted');
             status.classList.add('text-red-400');
           }
         } finally {

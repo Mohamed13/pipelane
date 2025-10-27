@@ -30,27 +30,38 @@ const metaDescription = 'Suivez les évolutions du produit Pipelane : nouveauté
 ---
 <BaseLayout title={metaTitle} description={metaDescription} canonical="https://www.pipelane.app/changelog">
   <Navbar currentPath={Astro.url.pathname} />
-  <main class="space-y-20 pt-32">
-    <section class="container space-y-6">
-      <NeonBadge text="Changelog" />
-      <h1 class="text-balance text-4xl font-semibold leading-tight text-onSurfaceStrong sm:text-5xl">Évolutions produit</h1>
-      <p class="max-w-3xl text-lg leading-relaxed text-onSurface">Nos mises à jour, livraisons et garde-fous sont consignés ici. Chaque entrée inclut les impacts produit et conformité.</p>
+  <main class="space-y-20">
+    <section class="section">
+      <div class="container-page space-y-6">
+        <NeonBadge text="Changelog" />
+        <h1 class="text-balance font-semibold on-surface-strong text-4xl sm:text-5xl">Évolutions produit</h1>
+        <p class="max-w-3xl text-lg leading-relaxed on-surface">Nos mises à jour, livraisons et garde-fous sont consignés ici. Chaque entrée inclut les impacts produit et conformité.</p>
+      </div>
     </section>
-    <section class="container space-y-8">
-      {entries.map((entry) => (
-        <article class="glass rounded-3xl border border-line/30 p-6" aria-labelledby={ntry-}>
-          <p class="text-xs uppercase tracking-[0.35em] text-primary/80">{new Date(entry.date).toLocaleDateString('fr-FR')}</p>
-          <h2 id={ntry-} class="mt-2 text-xl font-semibold text-onSurfaceStrong">{entry.title}</h2>
-          <ul class="mt-4 space-y-2 text-sm leading-relaxed text-onSurface">
-            {entry.items.map((item) => (
-              <li class="flex items-start gap-3">
-                <span class="mt-1 h-2 w-2 rounded-full bg-primary"></span>
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-        </article>
-      ))}
+    <section class="section pt-0">
+      <div class="container-page space-y-8">
+      {entries.map((entry) => {
+        const headingId = `entry-${entry.date}`;
+        return (
+          <article class="glass rounded-3xl border border-white/10 p-6 on-surface md:p-7" aria-labelledby={headingId}>
+            <p class="text-xs uppercase tracking-[0.35em] text-primary/80">
+              {new Date(entry.date).toLocaleDateString('fr-FR')}
+            </p>
+            <h2 id={headingId} class="mt-2 text-xl font-semibold on-surface-strong">
+              {entry.title}
+            </h2>
+            <ul class="mt-4 space-y-2 text-sm leading-relaxed">
+              {entry.items.map((item) => (
+                <li class="flex items-start gap-3">
+                  <span class="mt-1 h-2 w-2 rounded-full bg-primary"></span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </article>
+        );
+      })}
+      </div>
     </section>
   </main>
   <Footer />

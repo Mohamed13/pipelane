@@ -8,28 +8,34 @@ const metaDescription = 'Informations légales, politique de confidentialité et
 ---
 <BaseLayout title={metaTitle} description={metaDescription} canonical="https://www.pipelane.app/mentions-legales">
   <Navbar currentPath={Astro.url.pathname} />
-  <main class="space-y-16 pt-32">
-    <section class="container space-y-6">
-      <h1 class="text-balance text-4xl font-semibold leading-tight text-onSurfaceStrong sm:text-5xl">Mentions légales & Privacy</h1>
-      <p class="max-w-3xl text-lg leading-relaxed text-onSurface">Ces informations seront complétées lors de la mise en production. Contactez-nous à <a href='mailto:legal@pipelane.app' class='underline text-primary'>legal@pipelane.app</a> pour toute question.</p>
+  <main class="space-y-20">
+    <section class="section">
+      <div class="container-page space-y-6">
+        <h1 class="text-balance font-semibold on-surface-strong text-4xl sm:text-5xl">Mentions légales & Privacy</h1>
+        <p class="max-w-3xl text-lg leading-relaxed on-surface">
+          Ces informations seront complétées lors de la mise en production. Contactez-nous à <a href='mailto:legal@pipelane.app' class='underline text-primary'>legal@pipelane.app</a> pour toute question.
+        </p>
+      </div>
     </section>
-    <section class="container space-y-8 text-sm leading-relaxed text-onSurface">
+    <section class="section">
+      <div class="container-page space-y-8 text-sm leading-relaxed on-surface">
       <article class="space-y-2">
-        <h2 class="text-lg font-semibold text-onSurfaceStrong">Éditeur</h2>
+        <h2 class="text-lg font-semibold on-surface-strong">Éditeur</h2>
         <p>Pipelane SAS – 10 rue des Startups, 75011 Paris – RCS Paris 000 000 000 – TVA FR00 000000000.</p>
       </article>
       <article class="space-y-2">
-        <h2 class="text-lg font-semibold text-onSurfaceStrong">Hébergement</h2>
+        <h2 class="text-lg font-semibold on-surface-strong">Hébergement</h2>
         <p>OVHcloud – 2 rue Kellermann, 59100 Roubaix, France. Les données applicatives peuvent être hébergées en France ou dans la région UE choisie par le client.</p>
       </article>
       <article class="space-y-2">
-        <h2 class="text-lg font-semibold text-onSurfaceStrong">Données personnelles</h2>
+        <h2 class="text-lg font-semibold on-surface-strong">Données personnelles</h2>
         <p>Les informations collectées via le formulaire « Demander une démo » sont utilisées pour répondre à votre demande commerciale. Vous pouvez exercer vos droits (accès, rectification, suppression) en écrivant à <a href='mailto:dpo@pipelane.app' class='underline text-primary'>dpo@pipelane.app</a>.</p>
       </article>
       <article class="space-y-2">
-        <h2 class="text-lg font-semibold text-onSurfaceStrong">Cookies</h2>
+        <h2 class="text-lg font-semibold on-surface-strong">Cookies</h2>
         <p>Un bandeau de consentement permet d’accepter ou refuser le dépôt des cookies de mesure d’audience et de retargeting. Sans consentement, aucun tag n’est chargé.</p>
       </article>
+      </div>
     </section>
   </main>
   <Footer />

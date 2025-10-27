@@ -16,6 +16,18 @@ body {
   font-feature-settings: "ss01" on, "zero" on;
   min-height: 100vh;
   overflow-x: hidden;
+  padding-bottom: max(0px, var(--safe-bottom, 0px));
+}
+
+h1 {
+  font-size: clamp(28px, 5vw, 56px);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+}
+
+h2 {
+  font-size: clamp(22px, 3.6vw, 36px);
+  line-height: 1.12;
 }
 
 a {
@@ -69,6 +81,76 @@ main {
 .reveal.reveal-in {
   opacity: 1;
   transform: translateY(0);
+}
+
+.container-page {
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-inline: clamp(16px, 4vw, 32px);
+}
+
+.section {
+  padding-block: 56px;
+}
+
+@media (min-width: 1024px) {
+  .section {
+    padding-block: 72px;
+  }
+}
+
+[id] {
+  scroll-margin-top: 96px;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 16px;
+}
+
+.on-surface {
+  color: var(--on-surface);
+}
+
+.on-surface-strong {
+  color: var(--on-surface-strong);
+}
+
+.animate-gradient-slow {
+  animation: gradientShift 18s ease-in-out infinite alternate;
+}
+
+.animate-pulse-slow {
+  animation: pulseSoft 3.5s ease-in-out infinite;
+}
+
+@keyframes gradientShift {
+  0% {
+    transform: translate3d(-6%, -8%, 0) scale(1);
+    filter: hue-rotate(0deg);
+  }
+  50% {
+    transform: translate3d(4%, 6%, 0) scale(1.05);
+    filter: hue-rotate(12deg);
+  }
+  100% {
+    transform: translate3d(-2%, 4%, 0) scale(0.98);
+    filter: hue-rotate(-8deg);
+  }
+}
+
+@keyframes pulseSoft {
+  0%, 100% {
+    opacity: 0.55;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 0.88;
+    transform: scale(1.08);
+  }
 }
 
 .nav-link.active {

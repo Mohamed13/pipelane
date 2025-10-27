@@ -54,15 +54,19 @@ module.exports = {
     plugin(function ({ addUtilities, addComponents, theme }) {
       addUtilities({
         ".glass": {
-          backgroundColor: "var(--surface)",
-          backdropFilter: "blur(22px)",
-          border: `1px solid ${theme("colors.line")}`,
-          boxShadow: theme("boxShadow.soft")
+          backgroundColor: "rgba(255,255,255,0.06)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          backdropFilter: "blur(10px)",
+          WebkitBackdropFilter: "blur(10px)",
+          borderRadius: "16px",
+          boxShadow: "0 18px 42px rgba(2,10,22,0.45)"
         },
         ".glass-strong": {
-          backgroundColor: "var(--surface-strong)",
-          backdropFilter: "blur(28px)",
-          border: `1px solid ${theme("colors.line")}`,
+          backgroundColor: "rgba(12,18,32,0.72)",
+          border: "1px solid rgba(255,255,255,0.12)",
+          backdropFilter: "blur(14px)",
+          WebkitBackdropFilter: "blur(14px)",
+          borderRadius: "20px",
           boxShadow: theme("boxShadow.raised")
         },
         ".on-surface": {

@@ -3,13 +3,22 @@ const gaId = import.meta.env.PUBLIC_GA_ID ?? "";
 const linkedinId = import.meta.env.PUBLIC_LINKEDIN_ID ?? "";
 const bannerMessage = "Nous utilisons des cookies pour mesurer l’audience et améliorer nos campagnes.";
 ---
-<div class="fixed inset-x-0 bottom-4 z-50 flex justify-center px-4" data-consent-banner hidden>
-  <div class="glass max-w-2xl rounded-3xl border border-line/35 bg-surfaceOverlay/95 p-5 shadow-soft">
-    <div class="flex flex-col gap-4 text-sm leading-relaxed text-onSurface md:flex-row md:items-center md:justify-between">
+<div
+  class="fixed left-[clamp(8px,3vw,24px)] right-[clamp(8px,3vw,24px)] bottom-[max(8px,var(--safe-bottom))] z-[var(--z-banner)]"
+  data-consent-banner
+  hidden
+>
+  <div
+    role="dialog"
+    aria-live="polite"
+    tabindex="-1"
+    class="glass pointer-events-auto max-w-2xl rounded-3xl border border-white/12 bg-surfaceOverlay/95 p-5 shadow-soft"
+  >
+    <div class="flex flex-col gap-4 text-sm leading-relaxed on-surface md:flex-row md:items-center md:justify-between">
       <p>{bannerMessage}</p>
       <div class="flex shrink-0 gap-3">
-        <button type="button" class="btn-primary" data-consent-accept>Accepter</button>
-        <button type="button" class="btn-ghost" data-consent-reject>Refuser</button>
+        <button type="button" class="btn-primary min-h-[44px] rounded-xl px-5" data-consent-accept>Accepter</button>
+        <button type="button" class="btn-ghost min-h-[44px] rounded-xl px-5" data-consent-reject>Refuser</button>
       </div>
     </div>
   </div>
@@ -23,6 +32,30 @@ const bannerMessage = "Nous utilisons des cookies pour mesurer l’audience et a
     const banner = document.querySelector('[data-consent-banner]');
     const acceptBtn = document.querySelector('[data-consent-accept]');
     const rejectBtn = document.querySelector('[data-consent-reject]');
+
+    const applySafePadding = () => {
+      document.body.style.paddingBottom = 'calc(16px + var(--safe-bottom, 0px))';
+    };
+
+    const resetSafePadding = () => {
+      document.body.style.paddingBottom = '';
+    };
+
+    const showBanner = () => {
+      if (!(banner instanceof HTMLElement)) return;
+      banner.hidden = false;
+      applySafePadding();
+      requestAnimationFrame(() => {
+        (acceptBtn instanceof HTMLElement ? acceptBtn : null)?.focus({ preventScroll: true });
+      });
+    };
+
+    const dismissBanner = () => {
+      resetSafePadding();
+      if (banner instanceof HTMLElement) {
+        banner.remove();
+      }
+    };
 
     const loadScripts = () => {
       if (window.__pipelaneTagsLoaded) return;
@@ -66,18 +99,18 @@ const bannerMessage = "Nous utilisons des cookies pour mesurer l’audience et a
     } else if (stored === 'rejected') {
       // rien
     } else if (banner) {
-      banner.hidden = false;
+      showBanner();
     }
 
     acceptBtn?.addEventListener('click', () => {
       localStorage.setItem(storageKey, 'accepted');
-      banner?.remove();
+      dismissBanner();
       loadScripts();
     });
 
     rejectBtn?.addEventListener('click', () => {
       localStorage.setItem(storageKey, 'rejected');
-      banner?.remove();
+      dismissBanner();
     });
   })();
 </script>
