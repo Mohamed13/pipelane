@@ -26,6 +26,18 @@
         <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
         <mat-date-range-picker #picker></mat-date-range-picker>
       </mat-form-field>
+      <button
+        mat-flat-button
+        color="primary"
+        class="export-button"
+        (click)="downloadSummary()"
+        [disabled]="loading() || exporting()"
+        matTooltip="Download a PDF summary for the selected range"
+        data-tour="analytics-export"
+      >
+        <mat-icon aria-hidden="true">picture_as_pdf</mat-icon>
+        <span>Export PDF</span>
+      </button>
     </div>
   </header>
 
@@ -53,7 +65,7 @@
 
   <ng-template #kpiSkeleton>
     <section class="kpi-grid skeleton" plRevealOnScroll="stagger">
-      <div class="kpi-skeleton glass" *ngFor="let placeholder of [1, 2, 3, 4]">
+      <div class="kpi-skeleton glass" *ngFor="let placeholder of [1, 2, 3, 4, 5]">
         <div class="kpi-skeleton__icon"></div>
         <div class="kpi-skeleton__label"></div>
         <div class="kpi-skeleton__value"></div>

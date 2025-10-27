@@ -1,6 +1,6 @@
-import { API_BASE_URL } from './env.generated';
+import { API_BASE_URL, DEMO_MODE } from './env.generated';
 
 export const environment = {
   API_BASE_URL,
-  USE_DEMO_DATA: false,
+  DEMO_MODE,
 };

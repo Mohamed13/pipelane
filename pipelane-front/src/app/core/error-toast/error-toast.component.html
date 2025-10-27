@@ -1,0 +1,13 @@
+<div class="toast">
+  <mat-icon aria-hidden="true" class="toast__icon">warning</mat-icon>
+  <div class="toast__body">
+    <strong>{{ data.context }}</strong>
+    <span>Impossible de terminer l’action. Vous pouvez réessayer ou consulter les détails.</span>
+  </div>
+  <div class="toast__actions">
+    <button mat-button type="button" (click)="retry()">Réessayer</button>
+    <button mat-stroked-button color="primary" type="button" (click)="openDetails()">
+      Voir détails
+    </button>
+  </div>
+</div>

@@ -61,6 +61,19 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'inbox',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/prospecting/prospecting-inbox.component').then(
+        (m) => m.ProspectingInboxComponent,
+      ),
+    data: {
+      title: 'Inbox',
+      breadcrumb: 'Inbox',
+      breadcrumbTrail: [{ label: 'Inbox' }],
+    },
+  },
+  {
     path: 'prospecting/inbox',
     canActivate: [authGuard],
     loadComponent: () =>
@@ -134,11 +147,48 @@ export const routes: Routes = [
     data: { title: 'Analytics', breadcrumb: 'Analytics' },
   },
   {
+    path: 'hunter',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/hunter/hunter-page.component').then((m) => m.HunterPageComponent),
+    data: { title: 'Lead Hunter', breadcrumb: 'Hunter' },
+  },
+  {
+    path: 'lists',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/lists/lists-index.component').then((m) => m.ListsIndexComponent),
+    data: { title: 'Lists', breadcrumb: 'Lists' },
+  },
+  {
+    path: 'lists/:id',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/lists/list-detail.component').then((m) => m.ListDetailComponent),
+    data: {
+      title: 'List detail',
+      breadcrumb: 'List detail',
+      breadcrumbTrail: [
+        { label: 'Lists', url: '/lists' },
+        { label: 'Detail' },
+      ],
+    },
+  },
+  {
     path: 'settings',
     canActivate: [authGuard],
     loadComponent: () =>
       import('./features/settings/settings.component').then((m) => m.SettingsComponent),
     data: { title: 'Settings', breadcrumb: 'Settings' },
+  },
+  {
+    path: 'playground',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/style-guide/design-playground.component').then(
+        (m) => m.DesignPlaygroundComponent,
+      ),
+    data: { title: 'Design playground', breadcrumb: 'Playground' },
   },
   { path: '**', redirectTo: 'analytics' },
 ];

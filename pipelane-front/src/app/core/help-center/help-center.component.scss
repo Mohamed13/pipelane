@@ -1,0 +1,46 @@
+.help-center {
+  display: grid;
+  gap: var(--space-4);
+  min-width: clamp(320px, 40vw, 480px);
+
+  section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+
+  mat-nav-list {
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.04);
+
+    a.mat-mdc-list-item {
+      min-height: 52px;
+      gap: var(--space-3);
+
+      &:hover {
+        background: rgba(117, 240, 255, 0.08);
+      }
+    }
+  }
+
+  .kbd {
+    min-width: 140px;
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.06);
+    font-family: 'Inter', 'Outfit', system-ui, sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+}

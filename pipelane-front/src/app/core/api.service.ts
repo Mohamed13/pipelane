@@ -2,10 +2,11 @@ import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http'
 import { inject, Injectable } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 
 import { AuthService } from './auth.service';
 import { environment } from './environment';
+import { ErrorToastComponent } from './error-toast/error-toast.component';
 import {
   CampaignCreatePayload,
   CampaignDetail,
@@ -37,6 +38,20 @@ import {
   AiClassifyReplyResponse,
   AiSuggestFollowupRequest,
   AiSuggestFollowupResponse,
+  DemoRunResponse,
+  ReportSummaryResponse,
+  ValidateFollowupRequestPayload,
+  ValidateFollowupResponse,
+  FollowupConversationPreviewResponse,
+  TopMessagesResponse,
+  HunterSearchCriteria,
+  HunterSearchResponse,
+  CreateListPayload,
+  AddToListPayload,
+  AddToListResponse,
+  ProspectListResponse,
+  ListSummary,
+  CadenceFromListPayload,
 } from './models';
 
 @Injectable({ providedIn: 'root' })
@@ -54,7 +69,17 @@ export class ApiService {
   private handleError(context: string) {
     return (error: HttpErrorResponse) => {
       const detail = this.extractErrorMessage(error);
-      this.snackbar?.open(`${context}: ${detail}`, 'Dismiss', { duration: 6000 });
+      if (typeof console !== 'undefined') {
+        console.error(`[API] ${context}`, error);
+      }
+      if (this.snackbar) {
+        this.snackbar.dismiss();
+        this.snackbar.openFromComponent(ErrorToastComponent, {
+          data: { context, detail },
+          duration: 7000,
+          panelClass: ['error-snackbar'],
+        });
+      }
       return throwError(() => error);
     };
   }
@@ -179,7 +204,79 @@ export class ApiService {
         params,
         headers: this.headers(tenantId),
       })
-      .pipe(catchError(this.handleError('Loading delivery analytics')));
+      .pipe(
+        map((res) => ({
+          ...res,
+          byChannel: res.byChannel ?? [],
+          byTemplate: res.byTemplate ?? [],
+          timeline: res.timeline ?? [],
+        })),
+        catchError(this.handleError('Loading delivery analytics')),
+      );
+  }
+
+  getTopMessages(
+    from?: string,
+    to?: string,
+    tenantId?: string,
+  ): Observable<TopMessagesResponse> {
+    const params = new HttpParams({
+      fromObject: {
+        from: from ?? '',
+        to: to ?? '',
+      },
+    });
+    return this.http
+      .get<TopMessagesResponse>(`${this.base}/analytics/top-messages`, {
+        params,
+        headers: this.headers(tenantId),
+      })
+      .pipe(
+        map((res) => ({
+          ...res,
+          topByReplies: res.topByReplies ?? [],
+          topByOpens: res.topByOpens ?? [],
+        })),
+        catchError(this.handleError('Loading top messages')),
+      );
+  }
+
+  getReportSummary(from?: string, to?: string, tenantId?: string): Observable<ReportSummaryResponse> {
+    const params = new HttpParams({
+      fromObject: {
+        from: from ?? '',
+        to: to ?? '',
+      },
+    });
+    return this.http
+      .get<ReportSummaryResponse>( `${this.base}/api/reports/summary`, { 
+        params,
+        headers: this.headers(tenantId),
+      })
+      .pipe(
+        map((res) => ({
+          ...res,
+          byChannel: res.byChannel ?? [],
+          topTemplates: res.topTemplates ?? [],
+        })),
+        catchError(this.handleError('Load report summary')),
+      );
+  }
+
+  downloadReportSummaryPdf(from?: string, to?: string, tenantId?: string): Observable<Blob> {
+    const params = new HttpParams({
+      fromObject: {
+        from: from ?? '',
+        to: to ?? '',
+      },
+    });
+    return this.http
+      .get<Blob>( `${this.base}/api/reports/summary.pdf`, { 
+        params,
+        headers: this.headers(tenantId),
+        responseType: 'blob' as 'json',
+      })
+      .pipe(catchError(this.handleError('Download report summary')));
   }
 
   getProspects(
@@ -437,5 +534,149 @@ export class ApiService {
         { headers: this.headers(tenantId) },
       )
       .pipe(catchError(this.handleError('Previewing follow-ups')));
+  }
+
+  validateFollowup(
+    payload: ValidateFollowupRequestPayload,
+    tenantId?: string,
+  ): Observable<ValidateFollowupResponse> {
+    return this.http
+      .post<ValidateFollowupResponse>(`${this.base}/api/followups/validate`, payload, {
+        headers: this.headers(tenantId),
+      })
+      .pipe(catchError(this.handleError('Valider la relance')));
+  }
+
+  getFollowupConversationPreview(
+    conversationId: string,
+    tenantId?: string,
+  ): Observable<FollowupConversationPreviewResponse> {
+    const params = new HttpParams().set('conversationId', conversationId);
+    return this.http
+      .get<FollowupConversationPreviewResponse>(`${this.base}/api/followups/preview`, {
+        params,
+        headers: this.headers(tenantId),
+      })
+      .pipe(catchError(this.handleError('Prévisualiser la relance')));
+  }
+
+  hunterSearch(criteria: HunterSearchCriteria, options?: { dryRun?: boolean }): Observable<HunterSearchResponse> {
+    let params = new HttpParams();
+    if (options?.dryRun) {
+      params = params.set('dryRun', 'true');
+    }
+    return this.http
+      .post<HunterSearchResponse>(`${this.base}/api/hunter/search`, criteria, {
+        headers: this.headers(),
+        params,
+      })
+      .pipe(
+        map((res) => ({
+          ...res,
+          items: (res.items ?? []).map((item) => ({
+            ...item,
+            why: item.why ?? [],
+          })),
+        })),
+        catchError(this.handleError('Hunter search')),
+      );
+  }
+
+  uploadHunterCsv(file: File): Observable<{ csvId: string }> {
+    const form = new FormData();
+    form.append('file', file, file.name);
+    return this.http
+      .post<{ csvId: string }>(`${this.base}/api/hunter/upload-csv`, form, {
+        headers: this.headers(),
+      })
+      .pipe(catchError(this.handleError('Upload hunter CSV')));
+  }
+
+  seedHunterDemo(): Observable<HunterSearchResponse> {
+    return this.http
+      .post<HunterSearchResponse>(`${this.base}/api/hunter/seed-demo`, {}, {
+        headers: this.headers(),
+      })
+      .pipe(
+        map((res) => ({
+          ...res,
+          items: (res.items ?? []).map((item) => ({
+            ...item,
+            why: item.why ?? [],
+          })),
+        })),
+        catchError(this.handleError('Charger les prospects de démo')),
+      );
+  }
+
+  listSummaries(): Observable<ListSummary[]> {
+    return this.http
+      .get<ListSummary[]>(`${this.base}/api/lists`, {
+        headers: this.headers(),
+      })
+      .pipe(catchError(this.handleError('Load lists')));
+  }
+
+  createList(payload: CreateListPayload): Observable<{ id: string }> {
+    return this.http
+      .post<{ id: string }>(`${this.base}/api/lists`, payload, {
+        headers: this.headers(),
+      })
+      .pipe(catchError(this.handleError('Create list')));
+  }
+
+  renameList(listId: string, payload: CreateListPayload): Observable<void> {
+    return this.http
+      .put<void>(`${this.base}/api/lists/${listId}`, payload, {
+        headers: this.headers(),
+      })
+      .pipe(catchError(this.handleError('Rename list')));
+  }
+
+  deleteList(listId: string): Observable<void> {
+    return this.http
+      .delete<void>(`${this.base}/api/lists/${listId}`, {
+        headers: this.headers(),
+      })
+      .pipe(catchError(this.handleError('Delete list')));
+  }
+
+  addToList(listId: string, payload: AddToListPayload): Observable<AddToListResponse> {
+    return this.http
+      .post<AddToListResponse>(`${this.base}/api/lists/${listId}/add`, payload, {
+        headers: this.headers(),
+      })
+      .pipe(catchError(this.handleError('Add prospects to list')));
+  }
+
+  getList(listId: string): Observable<ProspectListResponse> {
+    return this.http
+      .get<ProspectListResponse>(`${this.base}/api/lists/${listId}`, {
+        headers: this.headers(),
+      })
+      .pipe(
+        map((res) => ({
+          ...res,
+          items: (res.items ?? []).map((item) => ({
+            ...item,
+            why: item.why ?? [],
+          })),
+        })),
+        catchError(this.handleError('Load list detail')),
+      );
+  }
+
+  createCadenceFromList(payload: CadenceFromListPayload): Observable<void> {
+    return this.http
+      .post<void>(`${this.base}/api/cadences/from-list`, payload, {
+        headers: this.headers(),
+      })
+      .pipe(catchError(this.handleError('Create cadence from list')));
+  }
+
+  runDemo(tenantId?: string): Observable<DemoRunResponse> {
+    return this.http
+      .post<DemoRunResponse>(`${this.base}/api/demo/run`, {}, { headers: this.headers(tenantId) })
+      .pipe(catchError(this.handleError('Launch demo')));
   }
 }

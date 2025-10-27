@@ -1,0 +1,17 @@
+<h2 mat-dialog-title>{{ data.context }}</h2>
+
+<mat-dialog-content class="error-dialog">
+  <p>Une erreur est survenue. Voici le détail renvoyé par l’API :</p>
+  <pre>{{ data.detail }}</pre>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="copy()">
+    <mat-icon aria-hidden="true">content_copy</mat-icon>
+    Copier
+  </button>
+  <button mat-stroked-button mat-dialog-close color="primary">
+    <mat-icon aria-hidden="true">check_circle</mat-icon>
+    Fermer
+  </button>
+</mat-dialog-actions>

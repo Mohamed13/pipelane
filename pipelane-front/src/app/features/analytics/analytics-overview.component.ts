@@ -327,7 +327,7 @@ export class AnalyticsOverviewComponent implements AfterViewInit {
     const breakdown = data.byChannel ?? [];
 
     const series = breakdown.map((channel) => channel.delivered);
-    const labels = breakdown.map((channel) => readableChannel(channel.channel));
+    const labels = breakdown.map((channel) => readableChannel(channel.channel ?? ''));
 
     const baseOptions = baseChartOptions(palette, 'donut');
     const options: Partial<ApexOptions> = {
@@ -691,8 +691,8 @@ export class AnalyticsOverviewComponent implements AfterViewInit {
     }
     return {
       ...top,
-      topByReplies: [...(top.topByReplies ?? [])],
-      topByOpens: [...(top.topByOpens ?? [])],
+      topByReplies: [...(top.topByReplies ?? [])].filter(isValidTopMessage),
+      topByOpens: [...(top.topByOpens ?? [])].filter(isValidTopMessage),
     };
   }
 
@@ -700,7 +700,9 @@ export class AnalyticsOverviewComponent implements AfterViewInit {
     if (!top) {
       return [];
     }
-    const replies = [...(top.topByReplies ?? [])].sort((a, b) => {
+    const replies = [...(top.topByReplies ?? [])]
+      .filter(isValidTopMessage)
+      .sort((a, b) => {
       const replyDelta = b.replies - a.replies;
       if (replyDelta !== 0) {
         return replyDelta;
@@ -716,7 +718,9 @@ export class AnalyticsOverviewComponent implements AfterViewInit {
       return repliesWithActivity.slice(0, 6);
     }
 
-    const opens = [...(top.topByOpens ?? [])].sort((a, b) => {
+    const opens = [...(top.topByOpens ?? [])]
+      .filter(isValidTopMessage)
+      .sort((a, b) => {
       const openDelta = b.opened - a.opened;
       if (openDelta !== 0) {
         return openDelta;
@@ -800,6 +804,10 @@ function ratio(numerator: number, denominator: number): number {
   return numerator / denominator;
 }
 
+function isValidTopMessage(item: TopMessageItem | null | undefined): item is TopMessageItem {
+  return !!item && typeof item.label === 'string';
+}
+
 function failureRate(totals: DeliveryTotals): number {
   const failed = totals.failed + totals.bounced;
   return ratio(failed, totals.sent);
@@ -846,9 +854,10 @@ function mapChannelRow(entry: DeliveryChannelBreakdown): ChannelRow {
   const failure = entry.failed + entry.bounced;
   const successRate = ratio(entry.delivered, entry.sent) * 100;
   const failureRateValue = ratio(failure, entry.sent) * 100;
+  const channelCode = entry.channel ?? 'unknown';
   return {
-    channel: entry.channel,
-    label: readableChannel(entry.channel),
+    channel: channelCode,
+    label: readableChannel(channelCode),
     sent: entry.sent,
     delivered: entry.delivered,
     opened: entry.opened,

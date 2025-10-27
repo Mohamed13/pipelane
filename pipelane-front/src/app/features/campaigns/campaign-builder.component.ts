@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { debounceTime } from 'rxjs/operators';
+import { startWith } from 'rxjs';
 import { MatCardModule } from '@angular/material/card';
 import { MatStepperModule } from '@angular/material/stepper';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -21,7 +22,14 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 
 import { ApiService } from '../../core/api.service';
-import { CampaignCreatePayload, Channel, ChannelLabels, TemplateSummary } from '../../core/models';
+import {
+  AiSuggestFollowupRequest,
+  AiSuggestFollowupResponse,
+  CampaignCreatePayload,
+  Channel,
+  ChannelLabels,
+  TemplateSummary,
+} from '../../core/models';
 
 interface ActivityOption {
   label: string;
@@ -74,6 +82,8 @@ export class CampaignBuilderComponent {
   creating = signal(false);
   previewLoading = signal(false);
   previewCount = signal<number | null>(null);
+  followupPreview = signal<AiSuggestFollowupResponse | null>(null);
+  followupLoading = signal(false);
 
   readonly form = this.fb.group({
     audience: this.fb.group({
@@ -91,7 +101,7 @@ export class CampaignBuilderComponent {
       templateId: this.fb.control<string>('', Validators.required),
       primaryChannel: this.fb.control<Channel>('whatsapp', Validators.required),
       fallbackOrder: this.fb.control<Channel[]>([]),
-      smartFollowupDefault: this.fb.control<boolean>(false),
+      smartFollowupDefault: this.fb.control<boolean>(true),
     }),
     schedule: this.fb.group({
       scheduledDate: this.fb.control<Date | null>(null),
@@ -117,6 +127,10 @@ export class CampaignBuilderComponent {
     return this.form.get('schedule') as FormGroup;
   }
 
+  private get smartFollowupControl(): FormControl<boolean> {
+    return this.messageGroup.get('smartFollowupDefault') as FormControl<boolean>;
+  }
+
   selectedTemplate = computed<TemplateSummary | null>(() => {
     const id = this.messageGroup.get('templateId')?.value;
     if (!id) {
@@ -137,6 +151,56 @@ export class CampaignBuilderComponent {
     return this.buildPayload();
   });
 
+  private loadFollowupPreview(force = false): void {
+    if (!this.smartFollowupControl.value) {
+      return;
+    }
+
+    if (this.followupLoading() && !force) {
+      return;
+    }
+
+    const payload = this.buildFollowupPreviewRequest();
+
+    this.followupPreview.set(null);
+    this.followupLoading.set(true);
+    this.api
+      .suggestSmartFollowup(payload)
+      .pipe(takeUntilDestroyed())
+      .subscribe({
+        next: (preview) => {
+          this.followupPreview.set(preview);
+          this.followupLoading.set(false);
+        },
+        error: () => {
+          this.followupPreview.set(null);
+          this.followupLoading.set(false);
+        },
+      });
+  }
+
+  private buildFollowupPreviewRequest(): AiSuggestFollowupRequest {
+    const template = this.selectedTemplate();
+    const timezone =
+      typeof Intl !== 'undefined' && Intl.DateTimeFormat
+        ? Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC'
+        : 'UTC';
+
+    return {
+      channel: this.primaryChannelSelection(),
+      timezone,
+      lastInteractionAt: new Date().toISOString(),
+      read: true,
+      language: template?.lang ?? 'fr',
+      historySnippet: this.sampleHistorySnippet(template?.name ?? null),
+    };
+  }
+
+  private sampleHistorySnippet(templateName: string | null): string {
+    const label = templateName ?? 'votre message';
+    return `Client: Merci pour votre dernier message !\nVous (${label}): Ravi d'avoir de vos nouvelles, je vous prépare un rappel personnalisé.`;
+  }
+
   constructor() {
     this.api.getTemplates().subscribe({
       next: (templates) => this.templates.set(templates ?? []),
@@ -149,7 +213,31 @@ export class CampaignBuilderComponent {
     this.messageGroup
       .get('primaryChannel')
       ?.valueChanges.pipe(takeUntilDestroyed())
-      .subscribe((primary) => this.pruneFallback(primary as Channel));
+      .subscribe((primary) => {
+        this.pruneFallback(primary as Channel);
+        if (this.smartFollowupControl.value) {
+          this.loadFollowupPreview(true);
+        }
+      });
+
+    this.messageGroup
+      .get('templateId')
+      ?.valueChanges.pipe(debounceTime(120), takeUntilDestroyed())
+      .subscribe(() => {
+        if (this.smartFollowupControl.value) {
+          this.loadFollowupPreview();
+        }
+      });
+
+    this.smartFollowupControl.valueChanges
+      .pipe(startWith(this.smartFollowupControl.value), takeUntilDestroyed())
+      .subscribe((enabled) => {
+        if (enabled) {
+          this.loadFollowupPreview(true);
+        } else {
+          this.followupPreview.set(null);
+        }
+      });
 
     this.generateSegmentJson();
     this.updatePreview(this.audienceGroup.get('segmentJson')!.value ?? '{}');

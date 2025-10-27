@@ -1,0 +1,63 @@
+<div class="playground">
+  <header class="playground__header glass">
+    <div>
+      <span class="badge">Design playground</span>
+      <h1>Futuristic dark system</h1>
+      <p>
+        Guide rapide des tokens et composants partagés. Utilise ces classes utilitaires pour garder
+        une interface cohérente et accessible.
+      </p>
+    </div>
+    <button mat-stroked-button color="primary" (click)="window?.scrollTo?.({ top: 0 })">
+      <mat-icon aria-hidden="true">rocket_launch</mat-icon>
+      Documenter
+    </button>
+  </header>
+
+  <section class="playground__grid">
+    <mat-card class="glass palette-card">
+      <h2>Palette</h2>
+      <p class="muted">
+        Les variables SCSS/ CSS sont exposées dans <code>src/theme/_tokens.scss</code>. Chaque
+        couleur respecte un ratio de contraste &gt; 4.5:1 avec le texte.
+      </p>
+      <div class="palette-grid">
+        <div *ngFor="let color of colors" class="palette-chip">
+          <div class="palette-swatch" [style.background]="
+              'var(' + color.variable + ')'
+            "></div>
+          <div>
+            <span class="palette-name">{{ color.name }}</span>
+            <code>{{ color.variable }}</code>
+          </div>
+        </div>
+      </div>
+    </mat-card>
+
+    <mat-card class="glass sample-card" *ngFor="let card of glassCards">
+      <mat-icon aria-hidden="true">{{ card.icon }}</mat-icon>
+      <h3>{{ card.title }}</h3>
+      <p class="muted">{{ card.body }}</p>
+      <div class="sample-actions">
+        <span class="chip">
+          <mat-icon aria-hidden="true">check</mat-icon>
+          glass
+        </span>
+        <span class="chip">
+          <mat-icon aria-hidden="true">flare</mat-icon>
+          neon-focus
+        </span>
+      </div>
+    </mat-card>
+  </section>
+
+  <section class="playground__animations glass">
+    <h2>Animations</h2>
+    <div class="animations-grid">
+      <div *ngFor="let item of animations" class="animation-demo">
+        <div [class]="item.className"></div>
+        <span>{{ item.label }}</span>
+      </div>
+    </div>
+  </section>
+</div>

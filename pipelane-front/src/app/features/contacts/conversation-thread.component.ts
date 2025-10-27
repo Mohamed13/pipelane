@@ -10,6 +10,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -24,7 +25,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { debounceTime } from 'rxjs/operators';
 
 import { ApiService } from '../../core/api.service';
@@ -39,9 +40,9 @@ import {
   AiGenerateMessageRequest,
   AiGenerateMessageResponse,
   AiClassifyReplyResponse,
-  AiSuggestFollowupRequest,
-  AiSuggestFollowupResponse,
+  FollowupProposalPreview,
 } from '../../core/models';
+
 
 type ComposerMode = 'text' | 'template';
 type QuickActionKey = 'send-test' | 'import-contacts' | 'open-onboarding';
@@ -95,6 +96,7 @@ interface PendingMessageTracking {
     MatButtonToggleModule,
     MatMenuModule,
     MatSlideToggleModule,
+    MatSnackBarModule,
     NgIf,
   ],
   templateUrl: './conversation-thread.component.html',
@@ -107,6 +109,7 @@ export class ConversationThreadComponent {
   private readonly router = inject(Router);
   private readonly policy = inject(PolicyService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly snackbar = inject(MatSnackBar);
 
   @ViewChild('textComposer') private textComposer?: ElementRef<HTMLTextAreaElement>;
   @ViewChild('templateComposer') private templateComposer?: ElementRef<
@@ -144,15 +147,17 @@ export class ConversationThreadComponent {
   classifying = signal(false);
   classification = signal<AiClassifyReplyResponse | null>(null);
   smartFollowupEnabled = signal(this.initialFollowupState.enabled);
-  followupPreview = signal<AiSuggestFollowupResponse | null>(this.initialFollowupState.preview);
+  followupPreview = signal<FollowupProposalPreview | null>(this.initialFollowupState.preview);
+  followupHistorySnippet = signal<string>(this.initialFollowupState.history);
   followupLoading = signal(false);
 
   private readonly followupWatcher = effect(
     () => {
       const enabled = this.smartFollowupEnabled();
       const preview = this.followupPreview();
+      const snippet = this.followupHistorySnippet();
       if (!enabled) {
-        this.persistFollowupState(false, null);
+        this.persistFollowupState(false, null, '');
         return;
       }
       if (!preview && !this.followupLoading()) {
@@ -160,12 +165,11 @@ export class ConversationThreadComponent {
         return;
       }
       if (preview) {
-        this.persistFollowupState(true, preview);
+        this.persistFollowupState(true, preview, snippet);
       }
     },
     { allowSignalWrites: true },
   );
-
   readonly ChannelLabels = ChannelLabels;
   readonly templateVariables = [
     '{{firstName}}',
@@ -234,13 +238,30 @@ export class ConversationThreadComponent {
 
   onValidateFollowup(): void {
     const preview = this.followupPreview();
-    if (!preview) {
+    const conversationId = this.conversation()?.conversationId;
+    if (!preview || !preview.proposalId || !conversationId) {
+      this.followupPreview.set(null);
+      this.followupHistorySnippet.set('');
+      this.requestSmartFollowup();
       return;
     }
-    this.composerMode.set('text');
-    this.textControl.setValue(preview.previewText);
-    this.followupPreview.set(null);
-    this.smartFollowupEnabled.set(false);
+    this.followupLoading.set(true);
+    this.api
+      .validateFollowup({ conversationId, proposalId: preview.proposalId })
+      .pipe(takeUntilDestroyed())
+      .subscribe({
+        next: () => {
+          this.followupLoading.set(false);
+          this.smartFollowupEnabled.set(false);
+          this.followupPreview.set(null);
+          this.followupHistorySnippet.set('');
+          this.snackbar.open('Relance programmée', 'Fermer', { duration: 4000 });
+          this.fetchConversation({ skipSendingReset: true });
+        },
+        error: () => {
+          this.followupLoading.set(false);
+        },
+      });
   }
 
   onModifyFollowup(): void {
@@ -259,7 +280,7 @@ export class ConversationThreadComponent {
     }
     const next = new Date(preview.scheduledAtIso);
     next.setDate(next.getDate() + 1);
-    const updated: AiSuggestFollowupResponse = {
+    const updated: FollowupProposalPreview = {
       ...preview,
       scheduledAtIso: next.toISOString(),
     };
@@ -269,6 +290,7 @@ export class ConversationThreadComponent {
   onStopFollowup(): void {
     this.smartFollowupEnabled.set(false);
     this.followupPreview.set(null);
+    this.followupHistorySnippet.set('');
   }
 
   sendGeneratedMessage(): void {
@@ -775,34 +797,24 @@ export class ConversationThreadComponent {
     if (this.followupLoading()) {
       return;
     }
-    const convo = this.conversation();
-    if (!convo?.messages?.length) {
+    const conversationId = this.conversation()?.conversationId;
+    if (!conversationId) {
       return;
     }
-    const lastMessage = convo.messages.at(-1);
-    if (!lastMessage) {
-      return;
-    }
-    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC';
-    const payload: AiSuggestFollowupRequest = {
-      channel: lastMessage.channel,
-      timezone,
-      lastInteractionAt: lastMessage.createdAt,
-      read: this.latestInboundMessage()?.status === 'opened',
-      language: lastMessage.channel === 'email' ? 'fr' : 'en',
-      historySnippet: this.buildHistorySnippet(6) || undefined,
-      performanceHints: null,
-    };
     this.followupLoading.set(true);
-    this.api.suggestSmartFollowup(payload).subscribe({
-      next: (res) => {
-        this.followupLoading.set(false);
-        this.followupPreview.set(res);
-      },
-      error: () => {
-        this.followupLoading.set(false);
-      },
-    });
+    this.api
+      .getFollowupConversationPreview(conversationId)
+      .pipe(takeUntilDestroyed())
+      .subscribe({
+        next: (res) => {
+          this.followupLoading.set(false);
+          this.followupHistorySnippet.set(res.historySnippet ?? '');
+          this.followupPreview.set(res.proposal);
+        },
+        error: () => {
+          this.followupLoading.set(false);
+        },
+      });
   }
 
   private buildHistorySnippet(limit = 4): string {
@@ -848,32 +860,38 @@ export class ConversationThreadComponent {
 
   private readFollowupState(): {
     enabled: boolean;
-    preview: AiSuggestFollowupResponse | null;
+    preview: FollowupProposalPreview | null;
+    history: string;
   } {
     if (typeof window === 'undefined') {
-      return { enabled: false, preview: null };
+      return { enabled: true, preview: null, history: '' };
     }
     try {
       const raw = window.localStorage.getItem(this.followupStorageKey);
       if (!raw) {
-        return { enabled: false, preview: null };
+        return { enabled: true, preview: null, history: '' };
       }
       const parsed = JSON.parse(raw) as {
         enabled?: boolean;
-        preview?: AiSuggestFollowupResponse | null;
+        preview?: FollowupProposalPreview | null;
+        history?: string;
       };
+      const preview =
+        parsed.preview && typeof parsed.preview.proposalId === 'string' ? parsed.preview : null;
       return {
-        enabled: parsed.enabled ?? false,
-        preview: parsed.preview ?? null,
+        enabled: parsed.enabled ?? true,
+        preview,
+        history: typeof parsed.history === 'string' ? parsed.history : '',
       };
     } catch {
-      return { enabled: false, preview: null };
+      return { enabled: true, preview: null, history: '' };
     }
   }
 
   private persistFollowupState(
     enabled: boolean,
-    preview: AiSuggestFollowupResponse | null,
+    preview: FollowupProposalPreview | null,
+    history: string,
   ): void {
     if (typeof window === 'undefined') {
       return;
@@ -881,7 +899,7 @@ export class ConversationThreadComponent {
     try {
       window.localStorage.setItem(
         this.followupStorageKey,
-        JSON.stringify({ enabled, preview }),
+        JSON.stringify({ enabled, preview, history }),
       );
     } catch {
       // ignore storage errors
@@ -901,6 +919,21 @@ export class ConversationThreadComponent {
     }
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

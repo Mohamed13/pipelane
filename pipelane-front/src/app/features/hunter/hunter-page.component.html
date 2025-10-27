@@ -1,0 +1,512 @@
+<div class="hunter">
+  <mat-sidenav-container class="hunter__container">
+    <mat-sidenav
+      mode="side"
+      position="end"
+      class="hunter__drawer"
+      [opened]="!!activeProspect()"
+      disableClose
+    >
+      <ng-container *ngIf="activeProspect() as prospect; else drawerEmpty">
+        <header class="hunter-drawer__header">
+          <div>
+            <h3>{{ prospect.prospect.company || 'Prospect' }}</h3>
+            <p class="hunter-drawer__subtitle">
+              {{ prospect.prospect.city || 'Ville inconnue' }}
+              · Score
+              <span class="hunter-drawer__score" [style.background]="scoreColor(prospect.score)">
+                {{ prospect.score }}
+              </span>
+            </p>
+          </div>
+          <button mat-icon-button type="button" aria-label="Fermer" (click)="closeProspect()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </header>
+
+        <section class="hunter-drawer__section">
+          <h4>Coordonnées</h4>
+          <ul class="hunter-drawer__info">
+            <li *ngIf="prospect.prospect.email">
+              <mat-icon aria-hidden="true">mail</mat-icon>
+              <a [href]="'mailto:' + prospect.prospect.email">{{ prospect.prospect.email }}</a>
+            </li>
+            <li *ngIf="prospect.prospect.phone">
+              <mat-icon aria-hidden="true">call</mat-icon>
+              <a [href]="'tel:' + prospect.prospect.phone">{{ prospect.prospect.phone }}</a>
+            </li>
+            <li *ngIf="prospect.prospect.website">
+              <mat-icon aria-hidden="true">language</mat-icon>
+              <a [href]="prospect.prospect.website" target="_blank" rel="noreferrer">
+                {{ prospect.prospect.website }}
+              </a>
+            </li>
+            <li *ngIf="!prospect.prospect.email && !prospect.prospect.phone && !prospect.prospect.website">
+              Aucune coordonnée enrichie pour le moment.
+            </li>
+          </ul>
+        </section>
+
+        <section class="hunter-drawer__section">
+          <h4>Why this lead ?</h4>
+          <ul class="hunter-drawer__reasons">
+            <li *ngFor="let reason of prospect.why ?? []">{{ reason }}</li>
+            <li *ngIf="(prospect.why?.length ?? 0) === 0">Score disponible, mais aucune raison détaillée.</li>
+          </ul>
+        </section>
+
+        <section class="hunter-drawer__section">
+          <h4>Fenêtre idéale</h4>
+          <div class="hunter-heatmap">
+            <div class="hunter-heatmap__bar" *ngFor="let slot of heatmapFor(prospect)">
+              <span class="hunter-heatmap__hour">{{ slot.hour }}</span>
+              <div class="hunter-heatmap__fill" [style.width.%]="slot.intensity * 100"></div>
+              <span class="hunter-heatmap__label">{{ slot.label }}</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="hunter-drawer__section">
+          <h4>Signaux</h4>
+          <div class="hunter-drawer__chips">
+            <mat-chip color="primary" selected *ngIf="prospect.features.hasSite">Site en ligne</mat-chip>
+            <mat-chip color="primary" selected *ngIf="prospect.features.booking">Réservation en ligne</mat-chip>
+            <mat-chip color="primary" selected *ngIf="prospect.features.socialActive">Réseaux actifs</mat-chip>
+            <mat-chip color="accent" selected *ngIf="prospect.features.cms">CMS {{ prospect.features.cms }}</mat-chip>
+            <mat-chip color="warn" selected *ngIf="prospect.features.pixelPresent === false">Pixel manquant</mat-chip>
+            <mat-chip color="warn" selected *ngIf="prospect.features.mobileOk === false">Mobile KO</mat-chip>
+            <mat-chip color="warn" selected *ngIf="prospect.features.lcpSlow">Site lent</mat-chip>
+            <span
+              *ngIf="
+                !prospect.features.hasSite &&
+                !prospect.features.booking &&
+                !prospect.features.socialActive &&
+                !prospect.features.cms &&
+                prospect.features.pixelPresent !== false &&
+                prospect.features.mobileOk !== false &&
+                !prospect.features.lcpSlow
+              "
+              class="hunter-drawer__empty-chip"
+            >
+              Aucun signal noté.
+            </span>
+          </div>
+        </section>
+      </ng-container>
+      <ng-template #drawerEmpty>
+        <div class="hunter-drawer__empty">Sélectionnez un prospect pour voir le détail.</div>
+      </ng-template>
+    </mat-sidenav>
+
+    <mat-sidenav-content>
+      <div class="hunter__grid">
+        <mat-card class="hunter__criteria" data-tour="hunter-search">
+          <header class="hunter-criteria__header">
+            <div>
+              <h2>Lead Hunter</h2>
+              <p>Décrivez votre cible, laissez l’IA enrichir, scorer et proposer les meilleurs prospects.</p>
+            </div>
+            <mat-chip class="hunter-criteria__badge" color="primary" selected>
+              Nouvelle génération
+            </mat-chip>
+          </header>
+
+          <div class="hunter-criteria__personas">
+            <mat-chip
+              *ngFor="let persona of personas"
+              [selected]="persona.key === activePersona().key"
+              (click)="selectPersona(persona)"
+              [disableRipple]="true"
+            >
+              {{ persona.label }}
+            </mat-chip>
+          </div>
+
+          <div class="hunter-form__demo" *ngIf="demoMode">
+            <button
+              mat-stroked-button
+              color="accent"
+              type="button"
+              (click)="seedDemo()"
+              [disabled]="loading()"
+            >
+              <mat-icon aria-hidden="true">download</mat-icon>
+              Charger 50 prospects de démo
+            </button>
+            <p>Ils sont ajoutés à votre compte et visibles immédiatement dans Lead Hunter.</p>
+          </div>
+
+          <form [formGroup]="filtersForm" class="hunter-form" (ngSubmit)="search(false)">
+            <mat-form-field appearance="outline" class="hunter-form__field hunter-form__field--full">
+              <mat-label>Décrivez en français…</mat-label>
+              <textarea
+                matInput
+                rows="3"
+                placeholder="Ex : Restaurants à Paris avec bonnes notes, réseaux actifs, pas de pixel"
+                [value]="naturalLanguage()"
+                (input)="onDescriptionInput($event)"
+              ></textarea>
+              <button
+                mat-icon-button
+                matSuffix
+                type="button"
+                aria-label="Interpréter la description"
+                (click)="interpretDescription()"
+              >
+                <mat-icon>auto_fix_high</mat-icon>
+              </button>
+            </mat-form-field>
+
+            <div class="hunter-form__row">
+              <mat-form-field appearance="outline" class="hunter-form__field">
+                <mat-label>Industrie cible</mat-label>
+                <input matInput formControlName="industry" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="hunter-form__field">
+                <mat-label>Ville / zone</mat-label>
+                <input matInput formControlName="city" placeholder="Paris, Lyon…" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="hunter-form__field hunter-form__field--sm">
+                <mat-label>Rayon (km)</mat-label>
+                <input matInput type="number" formControlName="radiusKm" min="1" max="50" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="hunter-form__field hunter-form__field--sm">
+                <mat-label>Source</mat-label>
+                <mat-select formControlName="source">
+                  <mat-option value="mapsStub">Cartographie simulée</mat-option>
+                  <mat-option value="directoryStub">Annuaire simulé</mat-option>
+                  <mat-option value="csv">Import CSV</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+            <div class="hunter-form__row">
+              <mat-form-field appearance="outline" class="hunter-form__field">
+                <mat-label>Note minimale</mat-label>
+                <input matInput type="number" formControlName="ratingMin" min="0" max="5" step="0.1" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="hunter-form__field">
+                <mat-label>Avis minimum</mat-label>
+                <input matInput type="number" formControlName="reviewsMin" min="0" />
+              </mat-form-field>
+
+              <mat-slide-toggle formControlName="hasSite">Site web requis</mat-slide-toggle>
+              <mat-slide-toggle formControlName="booking">Réservation en ligne</mat-slide-toggle>
+              <mat-slide-toggle formControlName="socialActive">Réseaux actifs</mat-slide-toggle>
+              <mat-slide-toggle formControlName="siteIssuesOnly">
+                Problèmes site uniquement
+              </mat-slide-toggle>
+            </div>
+
+            <div class="hunter-form__csv">
+              <div class="hunter-form__csv-info">
+                <button mat-stroked-button type="button" (click)="csvInput.click()">
+                  <mat-icon aria-hidden="true">upload</mat-icon>
+                  Importer un CSV
+                </button>
+                <span *ngIf="csvFileName() as fileName" class="hunter-form__csv-name">
+                  {{ fileName }}
+                  <button
+                    mat-icon-button
+                    type="button"
+                    aria-label="Retirer le CSV"
+                    (click)="clearCsv()"
+                  >
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </span>
+                <span *ngIf="!csvFileName()" class="hunter-form__csv-hint">
+                  Colonnes supportées : email, phone, city, rating, reviews…
+                </span>
+              </div>
+              <input #csvInput type="file" accept=".csv" hidden (change)="importCsv($event)" />
+            </div>
+
+            <div class="hunter-form__actions">
+              <button mat-raised-button color="primary" type="submit" [disabled]="loading()">
+                <mat-icon aria-hidden="true">radar</mat-icon>
+                Trouver
+              </button>
+              <button mat-stroked-button type="button" (click)="search(true)" [disabled]="loading()">
+                <mat-icon aria-hidden="true">science</mat-icon>
+                Simulation
+              </button>
+            </div>
+          </form>
+        </mat-card>
+
+        <section class="hunter__results">
+          <mat-card class="hunter-map">
+            <header class="hunter-map__header">
+              <div>
+                <h3>Carte des prospects</h3>
+                <p>
+                  {{ total() }} prospects · {{ duplicates() }} doublons ignorés
+                  <span *ngIf="lastRunMode() === 'dry'">· Simulation</span>
+                </p>
+              </div>
+              <button
+                mat-stroked-button
+                type="button"
+                (click)="magicPick()"
+                [disabled]="visibleResults().length === 0"
+                matTooltip="Sélection auto de bons prospects, répartis par zones"
+              >
+                <mat-icon aria-hidden="true">auto_awesome</mat-icon>
+                Magic Pick
+              </button>
+            </header>
+
+            <div class="hunter-map__canvas">
+              <div
+                class="hunter-map__point"
+                *ngFor="let point of mapPoints(); trackBy: trackPoint"
+                [style.top]="point.top"
+                [style.left]="point.left"
+                [style.background]="point.color"
+                matTooltip="{{ point.label }} · Score {{ point.score }}"
+              >
+                <span>{{ point.score }}</span>
+              </div>
+
+              <div class="hunter-map__empty" *ngIf="mapPoints().length === 0">
+                Lancez une recherche pour visualiser la carte.
+              </div>
+            </div>
+          </mat-card>
+
+          <mat-card class="hunter-list">
+            <header class="hunter-list__header">
+              <div>
+                <h3>Liste des résultats</h3>
+                <p>
+                  Sélection : {{ selectionCount() }} ·
+                  {{ visibleResults().length }} affichés (filtre “problèmes site” :
+                  {{ siteIssuesOnly() ? 'actif' : 'désactivé' }})
+                </p>
+              </div>
+              <button
+                mat-button
+                type="button"
+                (click)="toggleAll()"
+                [disabled]="visibleResults().length === 0"
+              >
+                {{
+                  selectionCount() === visibleResults().length
+                    ? 'Tout désélectionner'
+                    : 'Tout sélectionner'
+                }}
+              </button>
+            </header>
+
+            <div class="hunter-list__table" *ngIf="!loading(); else loadingTpl">
+              <div class="hunter-list__columns">
+                <div class="col col--select"></div>
+                <div class="col col--company">Prospect</div>
+                <div class="col col--city">Ville</div>
+                <div class="col col--rating">Notes</div>
+                <div class="col col--site">Site</div>
+                <div class="col col--booking">Booking</div>
+                <div class="col col--social">IG</div>
+                <div class="col col--score">Score</div>
+                <div class="col col--actions">Actions</div>
+              </div>
+
+              <cdk-virtual-scroll-viewport itemSize="84" class="hunter-list__viewport">
+                <div
+                  class="hunter-list__row"
+                  *cdkVirtualFor="let row of visibleResults(); trackBy: trackRow"
+                >
+                  <div class="col col--select">
+                    <mat-checkbox
+                      color="primary"
+                      [checked]="selection.isSelected(row.prospectId)"
+                      (change)="toggleRow(row)"
+                    ></mat-checkbox>
+                  </div>
+
+                  <div class="col col--company">
+                    <div class="hunter-list__company">
+                      <strong>{{ row.prospect.company || 'Sans raison sociale' }}</strong>
+                      <span class="hunter-list__contact">
+                        {{ row.prospect.email || row.prospect.phone || 'Coordonnées indisponibles' }}
+                      </span>
+                    </div>
+                    <div class="hunter-list__why">
+                      <mat-chip *ngFor="let reason of row.why" color="primary" selected>
+                        {{ reason }}
+                      </mat-chip>
+                    </div>
+                  </div>
+
+                  <div class="col col--city">
+                    {{ row.prospect.city || '—' }}
+                  </div>
+
+                  <div class="col col--rating">
+                    <span *ngIf="row.features.rating as rating">{{ rating | number: '1.1-1' }} ★</span>
+                    <span class="muted">({{ row.features.reviews || 0 }})</span>
+                  </div>
+
+                  <div class="col col--site">
+                    <mat-icon [class.hunter-positive]="row.features.hasSite" aria-hidden="true">
+                      {{ row.features.hasSite ? 'check_circle' : 'cancel' }}
+                    </mat-icon>
+                  </div>
+
+                  <div class="col col--booking">
+                    <mat-icon [class.hunter-positive]="row.features.booking" aria-hidden="true">
+                      {{ row.features.booking ? 'check_circle' : 'cancel' }}
+                    </mat-icon>
+                  </div>
+
+                  <div class="col col--social">
+                    <mat-icon [class.hunter-positive]="row.features.socialActive" aria-hidden="true">
+                      share
+                    </mat-icon>
+                  </div>
+
+                  <div class="col col--score">
+                    <span
+                      class="hunter-list__score"
+                      [style.background]="scoreColor(row.score)"
+                      matTooltip="Score = priorité 0–100"
+                    >
+                      {{ row.score }}
+                    </span>
+                  </div>
+
+                  <div class="col col--actions">
+                    <button
+                      mat-icon-button
+                      type="button"
+                      aria-label="Voir la fiche"
+                      (click)="openProspect(row)"
+                    >
+                      <mat-icon>visibility</mat-icon>
+                    </button>
+                    <button
+                      mat-icon-button
+                      type="button"
+                      aria-label="Ajouter à la liste sélectionnée"
+                      (click)="addProspectToCurrentList(row)"
+                      [disabled]="!selectedListId() || loading()"
+                    >
+                      <mat-icon>playlist_add</mat-icon>
+                    </button>
+                    <button
+                      mat-icon-button
+                      type="button"
+                      aria-label="Exclure ce prospect"
+                      (click)="excludeProspect(row)"
+                    >
+                      <mat-icon>do_not_disturb_on</mat-icon>
+                    </button>
+                    <button
+                      mat-icon-button
+                      type="button"
+                      aria-label="Mettre en favori"
+                      (click)="toggleFavorite(row)"
+                    >
+                      <mat-icon>{{ isFavorite(row) ? 'star' : 'star_border' }}</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              </cdk-virtual-scroll-viewport>
+
+              <div class="hunter-list__empty" *ngIf="visibleResults().length === 0">
+                <mat-icon aria-hidden="true">travel_explore</mat-icon>
+                <h4>Commencez une recherche</h4>
+                <p class="muted">
+                  Décrivez votre cible puis lancez Hunter, ou
+                  <button type="button" class="link" (click)="csvInput.click()">
+                    importez un CSV
+                  </button>
+                  pour enrichir votre première liste.
+                  <a
+                    href="https://www.pipelane.app/prospection-ia"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Lire la doc
+                  </a>
+                </p>
+              </div>
+            </div>
+
+            <ng-template #loadingTpl>
+              <div class="hunter-list__loading">
+                <mat-progress-spinner diameter="42" mode="indeterminate"></mat-progress-spinner>
+                <span>Analyse en cours…</span>
+              </div>
+            </ng-template>
+          </mat-card>
+        </section>
+
+        <footer
+          class="hunter__action-bar"
+          *ngIf="visibleResults().length > 0"
+          data-tour="hunter-action-bar"
+        >
+          <span>Sélection : {{ selectionCount() }} prospects</span>
+          <div class="hunter__action-group">
+            <button
+              mat-stroked-button
+              type="button"
+              (click)="magicPick()"
+              [disabled]="visibleResults().length === 0"
+              matTooltip="Sélection auto de bons prospects, répartis par zones"
+            >
+              <mat-icon aria-hidden="true">auto_awesome</mat-icon>
+              Magic Pick
+            </button>
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              (click)="createListFromSelection()"
+              [disabled]="selectionCount() === 0 || loading()"
+            >
+              <mat-icon aria-hidden="true">playlist_add</mat-icon>
+              Créer une liste
+            </button>
+            <mat-form-field appearance="outline" class="hunter__list-select">
+              <mat-label>Ajouter à une liste</mat-label>
+              <mat-select
+                [value]="selectedListId()"
+                (selectionChange)="selectedListId.set($event.value)"
+              >
+                <mat-option *ngFor="let list of lists()" [value]="list.id">
+                  {{ list.name || 'Sans titre' }} · {{ list.count }} prospects
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+            <button
+              mat-stroked-button
+              type="button"
+              (click)="selectedListId() && addSelectionTo(selectedListId()!)"
+              [disabled]="!selectedListId() || selectionCount() === 0 || loading()"
+            >
+              <mat-icon aria-hidden="true">library_add</mat-icon>
+              Ajouter
+            </button>
+            <button
+              mat-raised-button
+              color="accent"
+              type="button"
+              (click)="createCadenceFromSelection()"
+              [disabled]="!selectedListId() || loading()"
+            >
+              <mat-icon aria-hidden="true">flag</mat-icon>
+              Créer une cadence
+            </button>
+          </div>
+        </footer>
+      </div>
+    </mat-sidenav-content>
+  </mat-sidenav-container>
+</div>

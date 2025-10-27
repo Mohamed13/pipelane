@@ -171,6 +171,29 @@
     flex-wrap: wrap;
     gap: var(--space-2);
   }
+
+  &__history {
+    background: rgba(10, 16, 28, 0.4);
+    border-radius: var(--radius-sm);
+    padding: var(--space-2);
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  &__history-label {
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+
+  &__history-text {
+    margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    white-space: pre-wrap;
+  }
 }
 
 .messages-section {
@@ -324,6 +347,25 @@
   gap: var(--space-2);
   align-items: flex-start;
   flex-wrap: wrap;
+}
+
+.coach-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  cursor: help;
+
+  mat-icon {
+    font-size: 18px;
+    height: 18px;
+    width: 18px;
+  }
 }
 
 .composer-field {
@@ -526,3 +568,4 @@
     width: 100%;
   }
 }
+

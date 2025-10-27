@@ -169,13 +169,35 @@
             <p class="smart-followup__preview">
               {{ preview.previewText }}
             </p>
+            <div class="smart-followup__history" *ngIf="followupHistorySnippet()">
+              <span class="smart-followup__history-label">Conversation récente</span>
+              <pre class="smart-followup__history-text">{{ followupHistorySnippet() }}</pre>
+            </div>
             <div class="smart-followup__actions">
-              <button mat-raised-button color="primary" type="button" (click)="onValidateFollowup()">
+              <button
+                mat-raised-button
+                color="primary"
+                type="button"
+                (click)="onValidateFollowup()"
+                [disabled]="followupLoading()"
+              >
                 Valider
               </button>
-              <button mat-button type="button" (click)="onModifyFollowup()">Modifier</button>
-              <button mat-button type="button" (click)="onDeferFollowup()">Reporter</button>
-              <button mat-button color="warn" type="button" (click)="onStopFollowup()">Stop</button>
+              <button mat-button type="button" (click)="onModifyFollowup()" [disabled]="followupLoading()">
+                Modifier
+              </button>
+              <button mat-button type="button" (click)="onDeferFollowup()" [disabled]="followupLoading()">
+                Reporter
+              </button>
+              <button
+                mat-button
+                color="warn"
+                type="button"
+                (click)="onStopFollowup()"
+                [disabled]="followupLoading()"
+              >
+                Stop
+              </button>
             </div>
           </div>
           <ng-template #followupEmpty>
@@ -269,6 +291,14 @@
             ></textarea>
             <mat-error *ngIf="textControl.invalid">Add at least 2 characters</mat-error>
           </mat-form-field>
+          <div
+            class="coach-hint"
+            matTooltip="👍 Propose 2 créneaux précis\n✍️ Reste en 1 phrase\n🚫 Évite le jargon"
+            matTooltipClass="coach-tooltip"
+          >
+            <mat-icon aria-hidden="true">tips_and_updates</mat-icon>
+            <span>Coach 30s</span>
+          </div>
           <button mat-raised-button color="primary" type="submit" [disabled]="sending()">
             <mat-icon>send</mat-icon>
             Send now
@@ -300,6 +330,14 @@
             </button>
             <mat-error *ngIf="templateControl.invalid">Template name required</mat-error>
           </mat-form-field>
+          <div
+            class="coach-hint"
+            matTooltip="👍 Personnalise l’objet\n✍️ Ajoute un bénéfice concret\n🚫 Pas plus de 3 variables"
+            matTooltipClass="coach-tooltip"
+          >
+            <mat-icon aria-hidden="true">tips_and_updates</mat-icon>
+            <span>Coach 30s</span>
+          </div>
           <mat-menu #variableMenu="matMenu">
             <button
               mat-menu-item

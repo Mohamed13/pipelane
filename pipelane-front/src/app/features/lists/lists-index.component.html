@@ -1,0 +1,90 @@
+<mat-card class="lists-index">
+  <header class="lists-index__header">
+    <div>
+      <h2>Listes de prospection</h2>
+      <p>{{ lists().length }} listes enregistrées.</p>
+    </div>
+    <div class="lists-index__header-actions">
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        (click)="createList()"
+        [disabled]="loading()"
+      >
+        <mat-icon aria-hidden="true">playlist_add</mat-icon>
+        Créer une liste
+      </button>
+      <button mat-icon-button type="button" (click)="refresh()" [disabled]="loading()" matTooltip="Actualiser">
+        <mat-icon aria-hidden="true">refresh</mat-icon>
+      </button>
+    </div>
+  </header>
+
+  <section class="lists-index__table" *ngIf="!loading(); else loadingTpl">
+    <table mat-table [dataSource]="lists()" class="mat-elevation-z1">
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>Nom</th>
+        <td mat-cell *matCellDef="let row">
+          <a [routerLink]="['/lists', row.id]">{{ row.name || 'Sans titre' }}</a>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="count">
+        <th mat-header-cell *matHeaderCellDef>Prospects</th>
+        <td mat-cell *matCellDef="let row">{{ row.count }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="created">
+        <th mat-header-cell *matHeaderCellDef>Créée le</th>
+        <td mat-cell *matCellDef="let row">{{ row.createdAtUtc | date: 'short' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="updated">
+        <th mat-header-cell *matHeaderCellDef>Mis à jour</th>
+        <td mat-cell *matCellDef="let row">{{ row.updatedAtUtc | date: 'short' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let row">
+          <a mat-icon-button [routerLink]="['/lists', row.id]" matTooltip="Voir la liste">
+            <mat-icon aria-hidden="true">open_in_new</mat-icon>
+          </a>
+          <button
+            mat-icon-button
+            [matMenuTriggerFor]="menu"
+            aria-label="Actions liste"
+            matTooltip="Renommer ou supprimer"
+          >
+            <mat-icon aria-hidden="true">more_vert</mat-icon>
+          </button>
+          <mat-menu #menu="matMenu">
+            <button mat-menu-item type="button" (click)="renameList(row)">
+              <mat-icon aria-hidden="true">edit</mat-icon>
+              <span>Renommer</span>
+            </button>
+            <button mat-menu-item type="button" (click)="deleteList(row)">
+              <mat-icon aria-hidden="true">delete</mat-icon>
+              <span>Supprimer</span>
+            </button>
+          </mat-menu>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+
+    <div class="lists-index__empty" *ngIf="lists().length === 0">
+      Aucune liste pour l'instant. Créez-en ici ou depuis Lead Hunter.
+    </div>
+  </section>
+
+  <ng-template #loadingTpl>
+    <div class="lists-index__loading">
+      <mat-progress-spinner diameter="40" mode="indeterminate"></mat-progress-spinner>
+      <span>Chargement…</span>
+    </div>
+  </ng-template>
+</mat-card>

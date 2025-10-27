@@ -4,6 +4,8 @@ import { animate, animation, style, transition, trigger, useAnimation } from '@a
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
+  HostListener,
   ViewChild,
   computed,
   inject,
@@ -27,11 +29,16 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs';
 import { I18nService } from './core/i18n.service';
 import { ThemeService } from './core/theme.service';
 import { TourService } from './core/tour.service';
+import { ApiService } from './core/api.service';
+import { environment } from './core/environment';
+import { HelpCenterComponent } from './core/help-center/help-center.component';
 
 interface NavItem {
   label: string;
@@ -47,7 +54,7 @@ interface Breadcrumb {
   label: string;
   url?: string;
 }
-type QuickActionKey = 'send-test' | 'create-campaign' | 'import-contacts';
+type QuickActionKey = 'send-test' | 'create-campaign' | 'import-contacts' | 'launch-demo';
 
 const fadeIn = animation([
   style({ opacity: 0, transform: 'translateY(12px)' }),
@@ -72,6 +79,8 @@ const fadeIn = animation([
     MatInputModule,
     MatMenuModule,
     MatTooltipModule,
+    MatSnackBarModule,
+    MatDialogModule,
   ],
   animations: [
     trigger('headerAnimate', [
@@ -115,6 +124,7 @@ const fadeIn = animation([
             [matTooltip]="item.tooltip"
             matTooltipPosition="right"
             [attr.data-tour]="item.tourKey || null"
+            [disableRipple]="true"
           >
             <mat-icon aria-hidden="true" class="nav-icon">{{ item.icon }}</mat-icon>
             <span class="nav-label">{{ item.label }}</span>
@@ -122,6 +132,7 @@ const fadeIn = animation([
         </mat-nav-list>
         <div class="rail-footer">
           <button
+            *ngIf="!demoMode"
             mat-stroked-button
             color="primary"
             (click)="onQuickAction('create-campaign')"
@@ -129,6 +140,19 @@ const fadeIn = animation([
           >
             <mat-icon aria-hidden="true">rocket_launch</mat-icon>
             <span>Launch campaign</span>
+          </button>
+          <button
+            *ngIf="demoMode"
+            mat-stroked-button
+            color="primary"
+            (click)="triggerDemoRun()"
+            [disabled]="demoRunning()"
+            class="launch-button launch-button--demo"
+          >
+            <mat-icon aria-hidden="true">{{
+              demoRunning() ? 'hourglass_top' : 'bolt'
+            }}</mat-icon>
+            <span>{{ demoRunning() ? 'Launching...' : 'Launch demo' }}</span>
           </button>
         </div>
       </mat-sidenav>
@@ -147,10 +171,25 @@ const fadeIn = animation([
           <div class="route-title">
             <span class="title route-underline is-active">{{ activeNavTitle() }}</span>
           </div>
+          <div class="demo-mode-chip" *ngIf="demoMode">
+            <mat-icon aria-hidden="true">bolt</mat-icon>
+            <span>Demo mode</span>
+          </div>
           <span class="spacer"></span>
-          <mat-form-field appearance="outline" class="search" floatLabel="never">
+          <mat-form-field
+            appearance="outline"
+            class="search"
+            floatLabel="never"
+            matTooltip="Rechercher (Ctrl+K)"
+          >
             <mat-icon matPrefix aria-hidden="true">search</mat-icon>
-            <input matInput placeholder="Search journeys, contacts…" [(ngModel)]="search" />
+            <input
+              #globalSearchField
+              matInput
+              type="search"
+              placeholder="Search journeys, contacts…"
+              [(ngModel)]="search"
+            />
           </mat-form-field>
           <div
             class="theme-toggle neon-outline"
@@ -186,27 +225,13 @@ const fadeIn = animation([
           </mat-menu>
           <button
             mat-icon-button
-            [matMenuTriggerFor]="helpMenu"
-            aria-label="Open help menu"
-            matTooltip="Help & tutorial"
+            aria-label="Open help center"
+            matTooltip="Help & shortcuts (Shift + ?)"
             class="neon-outline"
+            (click)="openHelpCenter()"
           >
             <mat-icon aria-hidden="true">help</mat-icon>
           </button>
-          <mat-menu #helpMenu="matMenu">
-            <button mat-menu-item (click)="replayTour()">
-              <mat-icon>play_circle</mat-icon>
-              <span>Replay tutorial</span>
-            </button>
-            <button mat-menu-item (click)="openDocs()">
-              <mat-icon>description</mat-icon>
-              <span>Docs</span>
-            </button>
-            <button mat-menu-item (click)="openSupport()">
-              <mat-icon>support_agent</mat-icon>
-              <span>Support</span>
-            </button>
-          </mat-menu>
         </mat-toolbar>
 
         <section
@@ -241,6 +266,20 @@ const fadeIn = animation([
             >
               <mat-icon aria-hidden="true">flag</mat-icon>
               <span>Create campaign</span>
+            </button>
+            <button
+              *ngIf="demoMode"
+              mat-stroked-button
+              color="primary"
+              (click)="triggerDemoRun()"
+              [disabled]="demoRunning()"
+              matTooltip="Inject demo conversations and stats"
+              data-tour="quick-action-demo"
+            >
+              <mat-icon aria-hidden="true">{{
+                demoRunning() ? 'hourglass_top' : 'bolt'
+              }}</mat-icon>
+              <span>{{ demoRunning() ? 'Running...' : 'Launch demo' }}</span>
             </button>
             <button
               mat-stroked-button
@@ -353,6 +392,15 @@ const fadeIn = animation([
         backdrop-filter: blur(6px);
       }
 
+      .launch-button--demo {
+        border-color: rgba(96, 247, 163, 0.6) !important;
+        color: #60f7a3;
+      }
+
+      .launch-button--demo[disabled] {
+        opacity: 0.6;
+      }
+
       .toolbar.glass {
         border-bottom: none;
       }
@@ -367,6 +415,20 @@ const fadeIn = animation([
         display: flex;
         flex-direction: column;
         gap: 0.25rem;
+      }
+
+      .demo-mode-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        border-radius: var(--radius-pill);
+        padding: 0.35rem 0.75rem;
+        border: 1px solid rgba(117, 240, 255, 0.35);
+        background: rgba(117, 240, 255, 0.12);
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: rgba(230, 234, 242, 0.92);
       }
 
       .header-band {
@@ -433,37 +495,37 @@ export class AppComponent {
   private readonly router = inject(Router);
   private readonly activatedRoute = inject(ActivatedRoute);
   private readonly tour = inject(TourService);
+  private readonly api = inject(ApiService);
+  private readonly snackbar = inject(MatSnackBar);
+  private readonly dialog = inject(MatDialog);
 
   @ViewChild('snav') private sidenav?: MatSidenav;
+  @ViewChild('globalSearchField') private globalSearchField?: ElementRef<HTMLInputElement>;
 
   readonly navItems: NavItem[] = [
     {
-      label: 'Analytics',
-      route: '/analytics',
-      icon: 'monitoring',
-      tooltip: 'Analytics overview',
-      tourKey: 'nav-analytics',
+      label: 'Hunter',
+      route: '/hunter',
+      icon: 'travel_explore',
+      tooltip: 'Lead Hunter AI',
+      tourKey: 'nav-hunter',
+      aliases: ['/lists'],
     },
     {
-      label: 'Onboarding',
-      route: '/onboarding',
-      icon: 'hub',
-      tooltip: 'Connect your channels',
-      tourKey: 'nav-onboarding',
+      label: 'Cadences',
+      route: '/campaigns',
+      icon: 'schema',
+      tooltip: 'Design and launch cadences',
+      tourKey: 'nav-cadences',
+      aliases: ['/campaigns/new', '/campaigns'],
     },
     {
-      label: 'Prospecting',
-      route: '/prospecting',
-      icon: 'rocket_launch',
-      tooltip: 'Prospecting workspace',
-      tourKey: 'nav-prospecting',
-    },
-    {
-      label: 'Templates',
-      route: '/templates',
-      icon: 'space_dashboard',
-      tooltip: 'Manage templates',
-      tourKey: 'nav-templates',
+      label: 'Inbox',
+      route: '/inbox',
+      icon: 'forum',
+      tooltip: 'Unified messaging inbox',
+      tourKey: 'nav-inbox',
+      aliases: ['/prospecting/inbox'],
     },
     {
       label: 'Contacts',
@@ -474,15 +536,16 @@ export class AppComponent {
       tourKey: 'nav-contacts',
     },
     {
-      label: 'Campaigns',
-      route: '/campaigns',
-      icon: 'flag',
-      tooltip: 'Build campaigns',
-      tourKey: 'nav-campaigns',
+      label: 'Analytics',
+      route: '/analytics',
+      icon: 'monitoring',
+      tooltip: 'Analytics overview',
+      tourKey: 'nav-analytics',
     },
     { label: 'Settings', route: '/settings', icon: 'tune', tooltip: 'Console settings' },
   ];
 
+  readonly demoMode = environment.DEMO_MODE;
   lang = this.i18n.lang;
   theme = this.themeSvc.theme;
   search = '';
@@ -492,11 +555,14 @@ export class AppComponent {
   isHandset = signal<boolean>(false);
   currentUrl = signal<string>(this.router.url);
   breadcrumbs = signal<Breadcrumb[]>([]);
+  demoRunning = signal(false);
   activeNavTitle = computed(() => {
     const url = this.currentUrl();
     const nav = this.navItems.find((item) => this.matchesRoute(url, item));
     return nav?.label ?? 'Pipelane Console';
   });
+  private shortcutBuffer: string | null = null;
+  private shortcutTimer: number | null = null;
 
   constructor() {
     this.bp
@@ -574,9 +640,125 @@ export class AppComponent {
       case 'import-contacts':
         this.router.navigate(['/contacts'], { queryParams: { view: 'import' } });
         break;
+      case 'launch-demo':
+        this.triggerDemoRun();
+        break;
     }
   }
 
+  triggerDemoRun(): void {
+    if (!this.demoMode || this.demoRunning()) {
+      return;
+    }
+
+    this.demoRunning.set(true);
+    this.api
+      .runDemo()
+      .pipe(takeUntilDestroyed())
+      .subscribe({
+        next: (response) => {
+          this.demoRunning.set(false);
+          const primary = response.messages[0];
+          if (primary?.contactId) {
+            this.router.navigate(['/conversations', primary.contactId], {
+              queryParams: { demo: 'true' },
+            });
+          }
+          const ref = this.snackbar.open(
+            'Demo launched - analytics refreshed.',
+            'View analytics',
+            { duration: 6000 },
+          );
+          ref
+            .onAction()
+            .pipe(takeUntilDestroyed())
+            .subscribe(() => {
+              this.router.navigate(['/analytics']);
+            });
+        },
+        error: () => {
+          this.demoRunning.set(false);
+        },
+      });
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  handleShortcut(event: KeyboardEvent): void {
+    const target = event.target as HTMLElement | null;
+    const tag = target?.tagName.toLowerCase();
+    const isEditable = target?.isContentEditable;
+    const isFormField =
+      !!tag && (tag === 'input' || tag === 'textarea' || tag === 'select' || isEditable);
+
+    const key = event.key.toLowerCase();
+
+    if ((event.ctrlKey || event.metaKey) && key === 'k') {
+      event.preventDefault();
+      this.focusGlobalSearch();
+      this.resetShortcutBuffer();
+      return;
+    }
+
+    if (event.shiftKey && event.key === '?') {
+      event.preventDefault();
+      this.openHelpCenter();
+      this.resetShortcutBuffer();
+      return;
+    }
+
+    if (isFormField || event.altKey || event.ctrlKey || event.metaKey) {
+      this.resetShortcutBuffer();
+      return;
+    }
+
+    const setBuffer = (value: string) => {
+      this.shortcutBuffer = value;
+      if (this.shortcutTimer !== null && typeof window !== 'undefined') {
+        window.clearTimeout(this.shortcutTimer);
+      }
+      if (typeof window !== 'undefined') {
+        this.shortcutTimer = window.setTimeout(() => this.resetShortcutBuffer(), 800);
+      }
+    };
+
+    if (this.shortcutBuffer === 'g' && key === 'h') {
+      event.preventDefault();
+      this.router.navigate(['/hunter']);
+      this.resetShortcutBuffer();
+      return;
+    }
+
+    if (this.shortcutBuffer === 'g' && key === 'a') {
+      event.preventDefault();
+      this.router.navigate(['/analytics']);
+      this.resetShortcutBuffer();
+      return;
+    }
+
+    if (this.shortcutBuffer === 'n' && key === 'c') {
+      event.preventDefault();
+      this.onQuickAction('create-campaign');
+      this.resetShortcutBuffer();
+      return;
+    }
+
+    setBuffer(key);
+  }
+
+  private focusGlobalSearch(): void {
+    if (!this.globalSearchField) {
+      return;
+    }
+    queueMicrotask(() => this.globalSearchField?.nativeElement.focus());
+  }
+
+  private resetShortcutBuffer(): void {
+    if (this.shortcutTimer !== null && typeof window !== 'undefined') {
+      window.clearTimeout(this.shortcutTimer);
+    }
+    this.shortcutTimer = null;
+    this.shortcutBuffer = null;
+  }
   openDocs(): void {
     if (typeof window !== 'undefined') {
       window.open('https://docs.pipelane.dev', '_blank', 'noopener');
@@ -587,6 +769,12 @@ export class AppComponent {
     if (typeof window !== 'undefined') {
       window.open('https://support.pipelane.dev', '_blank', 'noopener');
     }
+  }
+
+  openHelpCenter(): void {
+    this.dialog.open(HelpCenterComponent, {
+      panelClass: 'help-center-dialog',
+    });
   }
 
   replayTour(): void {

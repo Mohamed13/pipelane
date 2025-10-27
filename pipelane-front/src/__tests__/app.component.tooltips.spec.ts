@@ -5,12 +5,15 @@ import { BreakpointObserver } from '@angular/cdk/layout';
 import { signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { MatTooltip } from '@angular/material/tooltip';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatDialog } from '@angular/material/dialog';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 
 import { AppComponent } from '../app/app.component';
 import { I18nService } from '../app/core/i18n.service';
 import { ThemeService } from '../app/core/theme.service';
 import { TourService } from '../app/core/tour.service';
+import { ApiService } from '../app/core/api.service';
 
 class BreakpointObserverStub {
   observe() {
@@ -42,6 +45,13 @@ class TourStub {
 
 describe('AppComponent tooltips', () => {
   beforeEach(async () => {
+    const apiStub = {
+      runDemo: jest.fn(() => of({ triggeredAtUtc: new Date().toISOString(), messages: [] })),
+    };
+    const snackbarStub = {
+      open: jest.fn(() => ({ onAction: () => of(void 0) })),
+    };
+
     await TestBed.configureTestingModule({
       imports: [AppComponent],
       providers: [
@@ -50,6 +60,8 @@ describe('AppComponent tooltips', () => {
         { provide: I18nService, useClass: I18nStub },
         { provide: ThemeService, useClass: ThemeStub },
         { provide: TourService, useClass: TourStub },
+        { provide: ApiService, useValue: apiStub },
+        { provide: MatSnackBar, useValue: snackbarStub },
         provideNoopAnimations(),
       ],
     }).compileComponents();
@@ -67,12 +79,12 @@ describe('AppComponent tooltips', () => {
     expect(tooltip.message).toBe('Send yourself a test message');
   });
 
-  it('exposes tooltip for onboarding navigation item', () => {
+  it('exposes tooltip for hunter navigation item', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
 
-    const navItem = fixture.debugElement.query(By.css('a[data-tour="nav-onboarding"]'));
+    const navItem = fixture.debugElement.query(By.css('a[data-tour="nav-hunter"]'));
     const tooltip = navItem.injector.get(MatTooltip);
-    expect(tooltip.message).toBe('Connect your channels');
+    expect(tooltip.message).toBe('Lead Hunter AI');
   });
 });

@@ -67,18 +67,72 @@ export interface DeliveryTotals {
 }
 
 export interface DeliveryChannelBreakdown extends DeliveryTotals {
-  channel: string;
+  channel: string | null;
 }
 
 export interface DeliveryTemplateBreakdown extends DeliveryTotals {
-  template: string;
-  channel: string;
+  template: string | null;
+  channel: string | null;
 }
 
 export interface DeliveryAnalyticsResponse {
   totals: DeliveryTotals;
-  byChannel: DeliveryChannelBreakdown[];
-  byTemplate: DeliveryTemplateBreakdown[];
+  byChannel?: DeliveryChannelBreakdown[] | null;
+  byTemplate?: DeliveryTemplateBreakdown[] | null;
+  timeline?: DeliveryTimelinePoint[] | null;
+}
+
+export interface DemoRunMessage {
+  contactId: string;
+  conversationId: string;
+  messageId: string;
+  channel: Channel;
+  contactName: string;
+  status: MessageStatus;
+  createdAtUtc: string;
+}
+
+export interface DemoRunResponse {
+  triggeredAtUtc: string;
+  messages: DemoRunMessage[];
+}
+
+export interface ReportSummaryResponse {
+  from: string;
+  to: string;
+  totals: DeliveryTotals;
+  byChannel?: DeliveryChannelBreakdown[] | null;
+  topTemplates?: DeliveryTemplateBreakdown[] | null;
+  meetingsBooked: number;
+}
+
+export interface DeliveryTimelinePoint {
+  date: string;
+  queued: number;
+  sent: number;
+  delivered: number;
+  opened: number;
+  failed: number;
+  bounced: number;
+}
+
+export interface TopMessageItem {
+  key: string | null;
+  label: string | null;
+  channel: string | null;
+  sent: number;
+  delivered: number;
+  opened: number;
+  failed: number;
+  bounced: number;
+  replies: number;
+}
+
+export interface TopMessagesResponse {
+  from: string;
+  to: string;
+  topByReplies: TopMessageItem[] | null;
+  topByOpens: TopMessageItem[] | null;
 }
 
 export interface SendMessageRequestPayload {
@@ -395,7 +449,157 @@ export interface AiSuggestFollowupRequest {
 }
 
 export interface AiSuggestFollowupResponse {
+  proposalId: string;
   scheduledAtIso: string;
   angle: 'reminder' | 'value' | 'social' | 'question';
   previewText: string;
+}
+
+export interface ValidateFollowupRequestPayload {
+  conversationId: string;
+  proposalId: string;
+  sendNow?: boolean;
+}
+
+export interface ValidateFollowupResponse {
+  scheduledAt: string;
+  conversationId: string;
+}
+
+export interface FollowupProposalPreview {
+  proposalId: string;
+  scheduledAtIso: string;
+  angle: 'reminder' | 'value' | 'social' | 'question';
+  previewText: string;
+}
+
+export interface FollowupConversationPreviewResponse {
+  historySnippet: string;
+  lastInteractionAt: string;
+  read: boolean;
+  timezone: string;
+  proposal: FollowupProposalPreview;
+}
+export interface HunterGeoCriteria {
+  lat: number;
+  lng: number;
+  radiusKm: number;
+}
+
+export interface HunterFilters {
+  reviewsMin?: number;
+  priceBand?: string;
+  hasSite?: boolean;
+  booking?: boolean;
+  socialActive?: boolean;
+  ratingMin?: number;
+}
+
+export type HunterSource = 'csv' | 'mapsStub' | 'directoryStub';
+
+export interface HunterSearchCriteria {
+  industry?: string;
+  geo?: HunterGeoCriteria;
+  filters?: HunterFilters;
+  source?: HunterSource;
+  textQuery?: string;
+  csvId?: string;
+}
+
+export interface HunterSocial {
+  instagram?: string | null;
+  linkedIn?: string | null;
+  facebook?: string | null;
+}
+
+export interface HunterProspect {
+  firstName?: string | null;
+  lastName?: string | null;
+  company?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  whatsAppMsisdn?: string | null;
+  website?: string | null;
+  city?: string | null;
+  country?: string | null;
+  social?: HunterSocial | null;
+}
+
+export interface HunterFeatures {
+  rating?: number | null;
+  reviews?: number | null;
+  hasSite?: boolean | null;
+  booking?: boolean | null;
+  socialActive?: boolean | null;
+  cms?: string | null;
+  mobileOk?: boolean | null;
+  pixelPresent?: boolean | null;
+  lcpSlow?: boolean | null;
+}
+
+export interface HunterResult {
+  prospectId: string;
+  prospect: HunterProspect;
+  features: HunterFeatures;
+  score: number;
+  why: string[] | null;
+}
+
+export interface HunterSearchResponse {
+  total: number;
+  duplicates: number;
+  items: HunterResult[] | null;
+}
+
+export interface ListSummary {
+  id: string;
+  name: string | null;
+  count: number;
+  createdAtUtc: string;
+  updatedAtUtc: string;
+}
+
+export interface ProspectListItem {
+  prospectId: string;
+  prospect: HunterProspect;
+  score: number;
+  features: HunterFeatures;
+  why: string[] | null;
+  addedAtUtc: string;
+}
+
+export interface ProspectListResponse {
+  id: string;
+  name: string | null;
+  createdAtUtc: string;
+  updatedAtUtc: string;
+  items: ProspectListItem[] | null;
+}
+
+export interface CreateListPayload {
+  name: string | null;
+}
+
+export interface AddToListPayload {
+  prospectIds: string[] | null;
+}
+
+export interface AddToListResponse {
+  added: number;
+  skipped: number;
+}
+
+export interface CadenceStepPayload {
+  offsetDays: number;
+  channel: Channel;
+  templateId?: string | null;
+  prompt?: string | null;
+}
+
+export interface CadenceFromListPayload {
+  listId: string;
+  name?: string | null;
+  dailyCap?: number | null;
+  window?: string | null;
+  steps?: CadenceStepPayload[] | null;
 }

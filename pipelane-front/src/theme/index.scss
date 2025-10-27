@@ -20,10 +20,10 @@
 
 .glass {
   position: relative;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: var(--shadow-soft);
-  backdrop-filter: blur(12px) saturate(125%);
+  background: var(--glass-background);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(12px) saturate(120%);
 }
 
 .scrim {
@@ -70,6 +70,37 @@
   color: var(--color-text-muted);
 }
 
+.on-surface-strong {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--color-text);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 0.85rem;
+  line-height: 1.2;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, rgba(117, 240, 255, 0.18), rgba(155, 140, 255, 0.18));
+  color: var(--color-text);
+}
+
 .grid-responsive {
   display: grid;
   gap: var(--space-4);
@@ -84,4 +115,56 @@
 
 .neon-focus {
   box-shadow: var(--focus-ring);
+}
+
+.fade-up {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity var(--transition-medium),
+    transform var(--transition-medium);
+
+  &.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.scale-in {
+  opacity: 0;
+  transform: scale(0.96);
+  transition:
+    opacity var(--transition-medium),
+    transform var(--transition-medium);
+
+  &.is-visible {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.shimmer {
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      110deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.12) 45%,
+      rgba(117, 240, 255, 0.16) 55%,
+      transparent 100%
+    );
+    transform: translateX(-100%);
+    animation: shimmer-slide 1.6s infinite;
+  }
+}
+
+@keyframes shimmer-slide {
+  100% {
+    transform: translateX(100%);
+  }
 }

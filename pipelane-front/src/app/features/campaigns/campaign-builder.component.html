@@ -225,6 +225,42 @@
         </mat-slide-toggle>
       </div>
 
+      <section
+        class="smart-followup-preview glass"
+        *ngIf="messageGroup.get('smartFollowupDefault')?.value"
+      >
+        <header class="smart-followup-preview__header">
+          <h3>Relance intelligente · aperçu</h3>
+          <span class="muted">Lecture seule</span>
+        </header>
+        <div class="smart-followup-preview__content" *ngIf="followupLoading(); else followupReady">
+          <mat-progress-spinner diameter="28" mode="indeterminate"></mat-progress-spinner>
+          <span class="muted">Calcul de la prochaine relance…</span>
+        </div>
+        <ng-template #followupReady>
+          <div
+            class="smart-followup-preview__content"
+            *ngIf="followupPreview() as preview; else followupEmpty"
+          >
+            <div class="smart-followup-preview__meta">
+              <mat-chip color="primary" selected>{{ preview.angle }}</mat-chip>
+              <span>
+                {{ preview.scheduledAtIso | date: 'fullDate' }} ·
+                {{ preview.scheduledAtIso | date: 'shortTime' }}
+              </span>
+            </div>
+            <p class="smart-followup-preview__text">
+              {{ preview.previewText }}
+            </p>
+          </div>
+          <ng-template #followupEmpty>
+            <div class="smart-followup-preview__content">
+              <span class="muted">Aucune suggestion disponible pour l'instant.</span>
+            </div>
+          </ng-template>
+        </ng-template>
+      </section>
+
       <div class="step-actions">
         <button mat-stroked-button matStepperPrevious>
           <mat-icon>arrow_back</mat-icon>
