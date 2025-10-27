@@ -1,11 +1,11 @@
-import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 
-import { AnalyticsOverviewComponent } from '../app/features/analytics/analytics-overview.component';
 import { ApiService } from '../app/core/api.service';
-import { ThemeService } from '../app/core/theme.service';
 import { DeliveryAnalyticsResponse, DeliveryTotals } from '../app/core/models';
+import { ThemeService } from '../app/core/theme.service';
+import { AnalyticsOverviewComponent } from '../app/features/analytics/analytics-overview.component';
 
 class ApiStub {
   getDeliveryAnalytics() {
@@ -110,10 +110,10 @@ describe('AnalyticsOverviewComponent mapping', () => {
 
     const areaChart = component.areaChart();
     const series = (areaChart?.series as Array<{ name: string; data: number[] }>) || [];
-    expect(series[0].name).toBe('Sent');
-    expect(series[0].data).toEqual([10, 10]);
-    expect(series[1].name).toBe('Delivered');
-    expect(series[1].data).toEqual([8, 8]);
+    expect(series[0]!.name).toBe('Sent');
+    expect(series[0]!.data).toEqual([10, 10]);
+    expect(series[1]!.name).toBe('Delivered');
+    expect(series[1]!.data).toEqual([8, 8]);
   });
 
   it('maps channel breakdown to donut chart', () => {
@@ -185,8 +185,8 @@ describe('AnalyticsOverviewComponent mapping', () => {
 
     const chart = component.templateBar();
     const series = (chart?.series as Array<{ name: string; data: number[] }>) || [];
-    expect(series[0].name).toBe('Replies');
-    expect(series[0].data).toEqual([3, 1]);
+    expect(series[0]!.name).toBe('Replies');
+    expect(series[0]!.data).toEqual([3, 1]);
     expect(chart?.options?.xaxis?.['categories']).toEqual(['Template A', 'Template B']);
   });
 
@@ -234,8 +234,8 @@ describe('AnalyticsOverviewComponent mapping', () => {
 
     const chart = component.templateBar();
     const series = (chart?.series as Array<{ name: string; data: number[] }>) || [];
-    expect(series[0].name).toBe('Opened');
-    expect(series[0].data).toEqual([6]);
+    expect(series[0]!.name).toBe('Opened');
+    expect(series[0]!.data).toEqual([6]);
     expect(chart?.options?.xaxis?.['categories']).toEqual(['Template B']);
   });
 
@@ -280,8 +280,57 @@ describe('AnalyticsOverviewComponent mapping', () => {
 
     const chart = component.templateBar();
     const series = (chart?.series as Array<{ name: string; data: number[] }>) || [];
-    expect(series[0].name).toBe('Delivered');
-    expect(series[0].data).toEqual([4, 1]);
+    expect(series[0]!.name).toBe('Delivered');
+    expect(series[0]!.data).toEqual([4, 1]);
     expect(chart?.options?.xaxis?.['categories']).toEqual(['Template C', 'Template D']);
+  });
+
+  it('uses fallback label when top message is missing label text', () => {
+    const fixture = TestBed.createComponent(AnalyticsOverviewComponent);
+    const component = fixture.componentInstance;
+
+    component['analytics'].set({
+      totals: DEFAULT_TOTALS,
+      byChannel: [],
+      byTemplate: [],
+      timeline: [],
+    });
+
+    const rawTop = {
+      from: '',
+      to: '',
+      topByReplies: [
+        {
+          key: 'template:a',
+          label: '',
+          channel: 'email',
+          sent: 5,
+          delivered: 4,
+          opened: 3,
+          failed: 0,
+          bounced: 0,
+          replies: 2,
+        },
+      ],
+      topByOpens: [],
+    };
+    const normalized = (component as unknown as { normalizeTopMessages: Function }).normalizeTopMessages(rawTop);
+    component['topMessages'].set(normalized);
+
+    const chart = component.templateBar();
+    const categories = chart?.options?.xaxis?.['categories'] as string[] | undefined;
+    expect(categories).toEqual(['(sans libellé)']);
+  });
+
+  it('does not throw in ngAfterViewInit when paginator or sort are absent', () => {
+    const fixture = TestBed.createComponent(AnalyticsOverviewComponent);
+    const component = fixture.componentInstance;
+
+    component['paginator'] = undefined;
+    component['sort'] = undefined;
+
+    expect(() =>
+      TestBed.runInInjectionContext(() => component.ngAfterViewInit()),
+    ).not.toThrow();
   });
 });

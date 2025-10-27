@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { ShepherdService } from 'angular-shepherd';
 
 import { TourService } from '../app/core/tour.service';
-import { ShepherdService } from 'angular-shepherd';
 
 class ShepherdStub {
   start = jest.fn();

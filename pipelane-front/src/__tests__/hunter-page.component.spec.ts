@@ -1,10 +1,10 @@
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { of } from 'rxjs';
 
-import { HunterPageComponent } from '../app/features/hunter/hunter-page.component';
 import { ApiService } from '../app/core/api.service';
 import { HunterResult } from '../app/core/models';
+import { HunterPageComponent } from '../app/features/hunter/hunter-page.component';
 
 const snackbarStub = { open: jest.fn() };
 
@@ -127,5 +127,17 @@ describe('HunterPageComponent', () => {
     expect(api.seedHunterDemo).toHaveBeenCalled();
     expect(component.visibleResults().length).toBe(2);
     expect(component.total()).toBe(2);
+  });
+
+  it('provides stable track keys even when map point data is incomplete', () => {
+    const undefinedKey = component.trackPoint(3, null as unknown as any);
+    expect(undefinedKey).toBe('point-3');
+
+    const fallbackKey = component.trackPoint(1, {
+      label: '',
+      lat: Number.NaN,
+      lng: undefined,
+    } as unknown as any);
+    expect(fallbackKey).toBe('Prospect-0-0');
   });
 });

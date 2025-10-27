@@ -1,0 +1,14 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pipelane icon">
+  <defs>
+    <linearGradient id="plFaviconFlow" x1="8" y1="20" x2="56" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#28C0B0" />
+      <stop offset="100%" stop-color="#7CE4D9" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="18" fill="#0D0F12" />
+  <path d="M12 34 C18 20, 26 44, 34 34 S50 20, 56 32" stroke="url(#plFaviconFlow)" stroke-width="5" fill="none" stroke-linecap="round" />
+  <circle cx="22" cy="27" r="3" fill="#28C0B0" />
+  <circle cx="34" cy="34" r="3" fill="#28C0B0" />
+  <circle cx="46" cy="27" r="3" fill="#28C0B0" />
+  <path d="M56 32 l7 -4 v8 z" fill="#7CE4D9" />
+</svg>

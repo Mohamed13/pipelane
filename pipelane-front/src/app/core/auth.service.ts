@@ -1,6 +1,7 @@
-import { Injectable, computed, signal, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Injectable, computed, signal, inject } from '@angular/core';
 import { Router } from '@angular/router';
+
 import { environment } from './environment';
 
 type LoginResponse = { token: string; tenantId: string; role: string };
@@ -40,7 +41,11 @@ export class AuthService {
   private decodeTid(token: string | null): string | null {
     if (!token) return null;
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
+      const segments = token.split('.');
+      if (segments.length < 2 || !segments[1]) {
+        return null;
+      }
+      const payload = JSON.parse(atob(segments[1]));
       return payload['tid'] ?? null;
     } catch {
       return null;

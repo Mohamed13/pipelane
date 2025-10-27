@@ -44,6 +44,7 @@ import {
   ValidateFollowupResponse,
   FollowupConversationPreviewResponse,
   TopMessagesResponse,
+  TopMessageItem,
   HunterSearchCriteria,
   HunterSearchResponse,
   CreateListPayload,
@@ -258,11 +259,18 @@ export class ApiService {
         headers: this.headers(tenantId),
       })
       .pipe(
-        map((res) => ({
-          ...res,
-          topByReplies: res.topByReplies ?? [],
-          topByOpens: res.topByOpens ?? [],
-        })),
+        map((res) => {
+          const normalize = (source: TopMessageItem[] | null | undefined) =>
+            (source ?? []).map((item) => ({
+              ...item,
+              label: item.label?.trim() || '(sans libellé)',
+            }));
+          return {
+            ...res,
+            topByReplies: normalize(res.topByReplies),
+            topByOpens: normalize(res.topByOpens),
+          };
+        }),
         catchError(this.handleError('Loading top messages')),
       );
   }
@@ -669,7 +677,14 @@ export class ApiService {
         headers: this.headers(),
       })
       .pipe(
-        map((res) => (Array.isArray(res) ? res : [])),
+        map((res) =>
+          Array.isArray(res)
+            ? res.map((list) => ({
+                ...list,
+                name: list.name?.trim() || 'Sans titre',
+              }))
+            : [],
+        ),
         catchError((error: HttpErrorResponse) => {
           if (error.status === 400) {
             this.warnOnce('lists-tenant-missing', error);

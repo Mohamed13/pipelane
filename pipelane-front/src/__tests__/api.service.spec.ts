@@ -1,6 +1,6 @@
-import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { ApiService } from '../app/core/api.service';
@@ -246,6 +246,46 @@ describe('ApiService', () => {
     expect(result?.topByOpens).toEqual([]);
   });
 
+  it('applies fallback labels when top messages omit label fields', () => {
+    let result: TopMessagesResponse | undefined;
+    service.getTopMessages().subscribe((res) => (result = res));
+
+    const req = http.expectOne((request) => request.url === 'https://localhost:56667/analytics/top-messages');
+    req.flush({
+      from: '2025-01-01T00:00:00Z',
+      to: '2025-01-07T00:00:00Z',
+      topByReplies: [
+        {
+          key: 'template:a',
+          label: null,
+          channel: 'email',
+          sent: 5,
+          delivered: 4,
+          opened: 3,
+          failed: 0,
+          bounced: 0,
+          replies: 2,
+        },
+      ],
+      topByOpens: [
+        {
+          key: null,
+          label: '',
+          channel: 'sms',
+          sent: 2,
+          delivered: 2,
+          opened: 1,
+          failed: 0,
+          bounced: 0,
+          replies: 0,
+        },
+      ],
+    });
+
+    expect(result?.topByReplies?.[0]?.label).toBe('(sans libellé)');
+    expect(result?.topByOpens?.[0]?.label).toBe('(sans libellé)');
+  });
+
   it('maps null reasons to empty arrays in list detail', () => {
     let response: ProspectListResponse | undefined;
     service.getList('list-42').subscribe((res) => (response = res));
@@ -289,7 +329,7 @@ describe('ApiService', () => {
       ],
     });
 
-    expect(response?.items?.[0].why).toEqual([]);
+    expect(response?.items?.[0]?.why).toEqual([]);
   });
 
   it('returns empty list when API responds with null', () => {
@@ -300,6 +340,24 @@ describe('ApiService', () => {
     req.flush(null);
 
     expect(lists).toEqual([]);
+  });
+
+  it('ensures list summaries expose a fallback name', () => {
+    let lists: unknown;
+    service.listSummaries().subscribe((res) => (lists = res));
+
+    const req = http.expectOne('https://localhost:56667/api/lists');
+    req.flush([
+      { id: 'list-1', name: null, count: 0, createdAtUtc: '2025-01-01', updatedAtUtc: '2025-01-01' },
+      { id: 'list-2', name: '  ', count: 5, createdAtUtc: '2025-01-02', updatedAtUtc: '2025-01-03' },
+      { id: 'list-3', name: 'Demand Gen', count: 7, createdAtUtc: '2025-01-02', updatedAtUtc: '2025-01-04' },
+    ]);
+
+    expect(lists).toEqual([
+      { id: 'list-1', name: 'Sans titre', count: 0, createdAtUtc: '2025-01-01', updatedAtUtc: '2025-01-01' },
+      { id: 'list-2', name: 'Sans titre', count: 5, createdAtUtc: '2025-01-02', updatedAtUtc: '2025-01-03' },
+      { id: 'list-3', name: 'Demand Gen', count: 7, createdAtUtc: '2025-01-02', updatedAtUtc: '2025-01-04' },
+    ]);
   });
 
   it('shows reconnect toast when list summaries returns 400', () => {

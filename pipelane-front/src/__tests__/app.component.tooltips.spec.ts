@@ -1,19 +1,19 @@
-import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { signal } from '@angular/core';
-import { By } from '@angular/platform-browser';
-import { MatTooltip } from '@angular/material/tooltip';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatTooltip } from '@angular/material/tooltip';
+import { By } from '@angular/platform-browser';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 
 import { AppComponent } from '../app/app.component';
+import { ApiService } from '../app/core/api.service';
 import { I18nService } from '../app/core/i18n.service';
 import { ThemeService } from '../app/core/theme.service';
 import { TourService } from '../app/core/tour.service';
-import { ApiService } from '../app/core/api.service';
 
 class BreakpointObserverStub {
   observe() {

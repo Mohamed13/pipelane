@@ -1,6 +1,6 @@
-import { CommonModule } from '@angular/common';
-import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { animate, animation, style, transition, trigger, useAnimation } from '@angular/animations';
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -13,6 +13,17 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatListModule } from '@angular/material/list';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import {
   ActivatedRoute,
   Router,
@@ -20,25 +31,15 @@ import {
   RouterLinkActive,
   RouterOutlet,
 } from '@angular/router';
-import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatListModule } from '@angular/material/list';
-import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs';
-import { I18nService } from './core/i18n.service';
-import { ThemeService } from './core/theme.service';
-import { TourService } from './core/tour.service';
+
 import { ApiService } from './core/api.service';
 import { environment } from './core/environment';
 import { HelpCenterComponent } from './core/help-center/help-center.component';
+import { I18nService } from './core/i18n.service';
+import { ThemeService } from './core/theme.service';
+import { TourService } from './core/tour.service';
 import { PipelaneLogoComponent } from './shared/ui/pipelane-logo/pipelane-logo.component';
 
 interface NavItem {
@@ -566,12 +567,13 @@ export class AppComponent {
   private shortcutTimer: number | null = null;
 
   constructor() {
-    this.bp
+    const _breakpointSubscription = this.bp
       .observe([Breakpoints.Medium, Breakpoints.Small, Breakpoints.Handset])
       .pipe(takeUntilDestroyed())
       .subscribe((state) => {
         const handset =
-          state.breakpoints[Breakpoints.Handset] || state.breakpoints[Breakpoints.Small];
+          Boolean(state.breakpoints[Breakpoints.Handset]) ||
+          Boolean(state.breakpoints[Breakpoints.Small]);
         this.isHandset.set(handset);
         this.sidenavMode.set(handset ? 'over' : 'side');
         if (handset) {
@@ -583,7 +585,7 @@ export class AppComponent {
         }
       });
 
-    this.router.events
+    const _routerSubscription = this.router.events
       .pipe(
         filter((event) => event instanceof NavigationEnd),
         takeUntilDestroyed(),
@@ -653,7 +655,7 @@ export class AppComponent {
     }
 
     this.demoRunning.set(true);
-    this.api
+    const _demoRunSubscription = this.api
       .runDemo()
       .pipe(takeUntilDestroyed())
       .subscribe({
@@ -670,7 +672,7 @@ export class AppComponent {
             'View analytics',
             { duration: 6000 },
           );
-          ref
+          const _demoActionSubscription = ref
             .onAction()
             .pipe(takeUntilDestroyed())
             .subscribe(() => {
@@ -822,20 +824,35 @@ export class AppComponent {
       if (Array.isArray(trail) && trail.length) {
         trail.forEach((crumb, index) => {
           const isLast = index === trail.length - 1;
-          breadcrumbs.push({
-            label: crumb.label,
-            url: isLast ? undefined : (crumb.url ?? url),
-          });
+          const crumbLabel =
+            (typeof crumb?.label === 'string' && crumb.label.trim().length
+              ? crumb.label.trim()
+              : this.toTitleCase(segment.replace(/-/g, ' ')));
+          const breadcrumb: Breadcrumb = { label: crumbLabel };
+          if (!isLast) {
+            breadcrumb.url = crumb.url ?? url;
+          }
+          breadcrumbs.push(breadcrumb);
         });
         continue;
       }
 
-      const label = labelFromData ?? navItem?.label ?? this.toTitleCase(segment.replace(/-/g, ' '));
+      const labelCandidate =
+        (typeof labelFromData === 'string' && labelFromData.trim().length
+          ? labelFromData.trim()
+          : null) ??
+        (typeof navItem?.label === 'string' && navItem.label.trim().length
+          ? navItem.label.trim()
+          : null);
+      const label = labelCandidate ?? this.toTitleCase(segment.replace(/-/g, ' '));
       breadcrumbs.push({ label, url });
     }
 
     if (breadcrumbs.length) {
-      breadcrumbs[breadcrumbs.length - 1].url = undefined;
+      const last = breadcrumbs[breadcrumbs.length - 1];
+      if (last) {
+        delete last.url;
+      }
     }
 
     return breadcrumbs;

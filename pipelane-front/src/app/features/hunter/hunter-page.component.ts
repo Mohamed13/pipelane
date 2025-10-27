@@ -28,6 +28,8 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { finalize } from 'rxjs';
 
+import { ApiService } from '../../core/api.service';
+import { environment } from '../../core/environment';
 import {
   AddToListPayload,
   HunterFilters,
@@ -35,8 +37,6 @@ import {
   HunterSearchCriteria,
   ListSummary,
 } from '../../core/models';
-import { ApiService } from '../../core/api.service';
-import { environment } from '../../core/environment';
 
 interface HunterFormValue {
   industry: string;
@@ -138,7 +138,7 @@ function scoreToColor(score: number): string {
 
 function titleCase(input: string): string {
   return input
-    .split(/[\s\-]/)
+    .split(/[\s-]/)
     .filter(Boolean)
     .map((word) => word[0]?.toUpperCase() + word.slice(1))
     .join(' ');
@@ -212,7 +212,9 @@ export class HunterPageComponent {
     },
   ];
 
-  readonly activePersona = signal<PersonaShortcut>(this.personas[1]);
+  private readonly defaultPersona: PersonaShortcut =
+    this.personas[1] ?? this.personas[0] ?? { key: 'default', label: 'Général', industry: '' };
+  readonly activePersona = signal<PersonaShortcut>(this.defaultPersona);
   readonly naturalLanguage = signal('');
   readonly uploadedCsvId = signal<string | null>(null);
   readonly csvFileName = signal<string | null>(null);
@@ -379,23 +381,27 @@ export class HunterPageComponent {
     }
 
     const cityMatch = lower.match(/(?:à|a|sur)\s+([a-zàâçéèêëîïôûùüÿñ\- ]{2,})/);
-    if (cityMatch) {
-      updates.city = titleCase(cityMatch[1].trim());
+    const city = cityMatch?.[1];
+    if (city) {
+      updates.city = titleCase(city.trim());
     }
 
     const radiusMatch = lower.match(/(\d{1,2})\s*(?:km|kilom)/);
-    if (radiusMatch) {
-      updates.radiusKm = Number(radiusMatch[1]);
+    const radiusValue = radiusMatch?.[1];
+    if (radiusValue) {
+      updates.radiusKm = Number(radiusValue);
     }
 
     const ratingMatch = lower.match(/(?:note|min(?:imale)?)\s*(?:de)?\s*(\d(?:[.,]\d)?)/);
-    if (ratingMatch) {
-      updates.ratingMin = Number(ratingMatch[1].replace(',', '.'));
+    const ratingValue = ratingMatch?.[1];
+    if (ratingValue) {
+      updates.ratingMin = Number(ratingValue.replace(',', '.'));
     }
 
     const reviewsMatch = lower.match(/(?:au moins|min(?:imum)?)\s*(\d{1,4})\s*(?:avis)/);
-    if (reviewsMatch) {
-      updates.reviewsMin = Number(reviewsMatch[1]);
+    const reviewsValue = reviewsMatch?.[1];
+    if (reviewsValue) {
+      updates.reviewsMin = Number(reviewsValue);
     }
 
     if (/sans site|pas de site/.test(lower)) {
@@ -493,7 +499,15 @@ export class HunterPageComponent {
   }
 
   trackRow = (_: number, item: HunterResult) => item.prospectId;
-  trackPoint = (_: number, point: MapPoint) => `${point.label}-${point.lat}-${point.lng}`;
+  trackPoint = (index: number, point?: MapPoint | null) => {
+    if (!point) {
+      return `point-${index}`;
+    }
+    const safeLabel = point.label?.trim() || 'Prospect';
+    const safeLat = Number.isFinite(point.lat) ? point.lat : 0;
+    const safeLng = Number.isFinite(point.lng) ? point.lng : 0;
+    return `${safeLabel}-${safeLat}-${safeLng}`;
+  };
 
   openProspect(row: HunterResult): void {
     this.activeProspect.set(row);
@@ -658,11 +672,10 @@ export class HunterPageComponent {
 
   importCsv(event: Event): void {
     const input = event.target as HTMLInputElement;
-    if (!input.files || input.files.length === 0) {
+    const file = input.files?.item(0);
+    if (!file) {
       return;
     }
-
-    const file = input.files[0];
     this.loading.set(true);
     this.api
       .uploadHunterCsv(file)

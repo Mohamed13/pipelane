@@ -1,12 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { ActivatedRoute } from '@angular/router';
 import { EMPTY, Subject, forkJoin } from 'rxjs';
 import { switchMap, takeUntil, tap } from 'rxjs/operators';
 
@@ -41,7 +41,6 @@ export class ProspectingCampaignDetailComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.route.paramMap
       .pipe(
-        takeUntil(this.destroy$),
         tap(() => this.loading.set(true)),
         switchMap((params) => {
           const id = params.get('id');
@@ -53,6 +52,7 @@ export class ProspectingCampaignDetailComponent implements OnInit, OnDestroy {
             preview: this.api.previewProspectingCampaign(id),
           });
         }),
+        takeUntil(this.destroy$),
       )
       .subscribe({
         next: (result) => {

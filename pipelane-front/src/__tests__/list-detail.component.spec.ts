@@ -1,11 +1,11 @@
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { convertToParamMap, ActivatedRoute } from '@angular/router';
+import { of } from 'rxjs';
 
-import { ListDetailComponent } from '../app/features/lists/list-detail.component';
 import { ApiService } from '../app/core/api.service';
 import { ProspectListResponse } from '../app/core/models';
+import { ListDetailComponent } from '../app/features/lists/list-detail.component';
 
 const snackbarStub = { open: jest.fn() };
 

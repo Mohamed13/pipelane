@@ -13,7 +13,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatNativeDateModule } from '@angular/material/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
@@ -21,8 +23,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatNativeDateModule } from '@angular/material/core';
-import { MatFormFieldModule } from '@angular/material/form-field';
+import { ApexAxisChartSeries, ApexOptions, ChartType } from 'ng-apexcharts';
 import { forkJoin, of } from 'rxjs';
 import { catchError, debounceTime, finalize } from 'rxjs/operators';
 
@@ -37,10 +38,9 @@ import {
   TopMessagesResponse,
 } from '../../core/models';
 import { ThemeService } from '../../core/theme.service';
-import { KpiCardComponent, KpiSparklineConfig } from '../../shared/ui/kpi-card.component';
 import { ChartCardComponent, ChartCardConfig } from '../../shared/ui/chart-card.component';
+import { KpiCardComponent, KpiSparklineConfig } from '../../shared/ui/kpi-card.component';
 import { RevealOnScrollDirective } from '../../shared/ui/reveal-on-scroll.directive';
-import { ApexAxisChartSeries, ApexOptions, ChartType } from 'ng-apexcharts';
 
 type RangePreset = 'today' | '7d' | '30d' | 'custom';
 
@@ -550,7 +550,7 @@ export class AnalyticsOverviewComponent implements AfterViewInit {
       const breakdown = this.analytics()?.byChannel ?? [];
       this.table.data = breakdown.map(mapChannelRow);
       if (this.table.paginator) {
-        this.table.paginator.firstPage();
+        Promise.resolve().then(() => this.table.paginator?.firstPage());
       }
     });
   }
@@ -650,7 +650,7 @@ export class AnalyticsOverviewComponent implements AfterViewInit {
           this.summary.set(null);
           this.previousSummary.set(null);
           this.timeline.set([]);
-           this.topMessages.set(null);
+          this.topMessages.set(null);
           this.loading.set(false);
           return;
         }
@@ -689,11 +689,9 @@ export class AnalyticsOverviewComponent implements AfterViewInit {
     if (!top) {
       return null;
     }
-    return {
-      ...top,
-      topByReplies: [...(top.topByReplies ?? [])].filter(isValidTopMessage),
-      topByOpens: [...(top.topByOpens ?? [])].filter(isValidTopMessage),
-    };
+    const sanitize = (source: TopMessageItem[] | null | undefined) =>
+      (source ?? []).map(ensureLabel).filter(isValidTopMessage);
+    return { ...top, topByReplies: sanitize(top.topByReplies), topByOpens: sanitize(top.topByOpens) };
   }
 
   private rankTopMessages(top: TopMessagesResponse | null): TopMessageItem[] {
@@ -804,8 +802,17 @@ function ratio(numerator: number, denominator: number): number {
   return numerator / denominator;
 }
 
+function ensureLabel(item: TopMessageItem): TopMessageItem {
+  const fallback = item.label?.trim() || '(sans libellé)';
+  return { ...item, label: fallback };
+}
+
 function isValidTopMessage(item: TopMessageItem | null | undefined): item is TopMessageItem {
-  return !!item && typeof item.label === 'string';
+  if (!item) {
+    return false;
+  }
+  const label = typeof item.label === 'string' ? item.label.trim() : '';
+  return label.length > 0;
 }
 
 function failureRate(totals: DeliveryTotals): number {

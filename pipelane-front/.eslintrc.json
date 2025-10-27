@@ -9,14 +9,56 @@
         "project": ["tsconfig.json"],
         "sourceType": "module"
       },
-      "plugins": ["@angular-eslint", "@typescript-eslint"],
+      "plugins": [
+        "@angular-eslint",
+        "@typescript-eslint",
+        "import",
+        "rxjs",
+        "jsdoc"
+      ],
       "extends": [
         "eslint:recommended",
         "plugin:@typescript-eslint/recommended",
         "plugin:@angular-eslint/recommended",
+        "plugin:rxjs/recommended",
+        "plugin:jsdoc/recommended",
         "prettier"
       ],
       "rules": {
+        "eqeqeq": ["error", "smart"],
+        "import/order": [
+          "error",
+          {
+            "alphabetize": { "order": "asc", "caseInsensitive": true },
+            "newlines-between": "always",
+            "groups": [
+              "builtin",
+              "external",
+              "internal",
+              ["parent", "sibling", "index"]
+            ]
+          }
+        ],
+        "rxjs/no-ignored-subscription": "warn",
+        "rxjs/no-nested-subscribe": "warn",
+        "rxjs/no-unsafe-takeuntil": [
+          "error",
+          {
+            "alias": ["takeUntilDestroyed"]
+          }
+        ],
+        "rxjs/no-implicit-any-catch": "warn",
+        "jsdoc/check-tag-names": "warn",
+        "jsdoc/require-jsdoc": "off",
+        "@angular-eslint/prefer-inject": "off",
+        "@typescript-eslint/explicit-function-return-type": [
+          "warn",
+          {
+            "allowExpressions": true,
+            "allowTypedFunctionExpressions": true,
+            "allowHigherOrderFunctions": true
+          }
+        ],
         "@typescript-eslint/no-unused-vars": [
           "warn",
           { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }
@@ -30,6 +72,18 @@
       "plugins": ["@angular-eslint/template"],
       "extends": ["plugin:@angular-eslint/template/recommended"],
       "rules": {}
+    },
+    {
+      "files": ["**/*.spec.ts", "cypress/**/*.ts"],
+      "rules": {
+        "@typescript-eslint/explicit-function-return-type": "off",
+        "@typescript-eslint/ban-types": "off",
+        "@typescript-eslint/no-unused-vars": [
+          "warn",
+          { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }
+        ],
+        "rxjs/no-ignored-subscription": "off"
+      }
     }
   ]
 }
