@@ -2,121 +2,91 @@
 import BaseLayout from "@layouts/Base.astro";
 import Navbar from "@components/Navbar.astro";
 import Footer from "@components/Footer.astro";
-import Section from "@components/Section.astro";
 import CTA from "@components/CTA.astro";
+import FlowStep from "@components/FlowStep.astro";
+import FeatureCard from "@components/FeatureCard.astro";
 import StatCard from "@components/StatCard.astro";
-import DemoForm from "@components/DemoForm.astro";
 import NeonBadge from "@components/NeonBadge.astro";
-import Icon from "@components/Icon.astro";
 
-const heroBullets = [
-  { label: "+ de réponses", icon: "sparkle" },
-  { label: "Zéro oubli", icon: "calendar" },
-  { label: "Tout au même endroit", icon: "multiTenant" }
+const heroChips = [
+  "+ de réponses (+ more replies)",
+  "Zéro oubli (+ zero missed follow-up)",
+  "Tout au même endroit (+ everything in one place)",
 ];
 
-const gains = [
-  {
-    title: "Gain de temps",
-    description: "Fini les emails manuels et les relances oubliées. L’agent prépare et envoie pour vous.",
-    icon: "automation"
-  },
-  {
-    title: "Régularité",
-    description: "Chaque jour, aux meilleures heures, votre pipe avance sans effort ni charge mentale.",
-    icon: "calendar"
-  },
-  {
-    title: "Résultats",
-    description: "Plus de réponses, plus de rendez-vous qualifiés, sans sacrifier la personnalisation.",
-    icon: "chartTrend"
-  }
+const leadHunterBullets = [
+  "Critères simples (secteur, zone, avis, site, réseaux) (Simple criteria: vertical, area, reviews, site, socials)",
+  "Liste scorée + raison claire (Scored list + transparent why)",
+  "1-clic : créer la liste → créer la cadence (1-click list → cadence)",
 ];
 
-const workflowSteps = [
-  {
-    title: "Connectez vos canaux",
-    description: "Email, WhatsApp, SMS : tout est prêt en quelques minutes.",
-    icon: "message"
-  },
-  {
-    title: "Importez vos contacts et votre pitch",
-    description: "CSV ou CRM, l’agent s’adapte et prépare vos messages.",
-    icon: "headset"
-  },
-  {
-    title: "L’agent écrit, envoie, relance",
-    description: "Toujours au bon moment, avec le bon angle, sans relance agressive.",
-    icon: "sparkle"
-  },
-  {
-    title: "Vous ne gérez que les rendez-vous",
-    description: "L’agent classe les réponses et vous alerte dès qu’un prospect est chaud.",
-    icon: "target"
-  }
+const cadenceColumns = [
+  { channel: "Email", icon: "mail" },
+  { channel: "WhatsApp", icon: "smartphone" },
+  { channel: "SMS", icon: "sms" },
 ];
 
-const relancePoints = [
-  {
-    copy: "Choisit automatiquement le meilleur créneau.",
-    icon: "calendar"
-  },
-  {
-    copy: "Adapte l’angle : rappel, valeur, preuve sociale ou question.",
-    icon: "sparkle"
-  },
-  {
-    copy: "Message court (3–6 lignes) et modifiable à tout moment.",
-    icon: "message"
-  },
-  {
-    copy: "Explique son choix : \"Pourquoi ce timing ?\" pour rester transparent.",
-    icon: "analytics"
-  }
+const cadenceHighlights = [
+  "Caps/jour protégés (Daily caps protected)",
+  "Fenêtres horaires (Quiet hours windows)",
+  "Variantes A/B légères (Lightweight A/B variants)",
 ];
 
-const dashboardStats = [
-  { metric: "+48 %", description: "de réponses sur 30 jours grâce aux relances ciblées", icon: "spark" },
-  { metric: "11 min", description: "de paramétrage pour lancer une séquence complète", icon: "clock" },
-  { metric: "92 %", description: "des réponses qualifiées transformées en rendez-vous", icon: "target" }
+const bookingBullets = [
+  "Intent 0–100 (intent score 0–100)",
+  "2-slot offer (2 time-slot offer)",
+  "Ajout auto au calendrier/CRM (Auto calendar/CRM update)",
 ];
 
-const testimonials = [
+const followupWhy = [
+  "Ancienneté de l’échange (Age of last exchange)",
+  "Heure locale qui performe (Local time that converts)",
+  "Angle valeur pour ce secteur (Value angle tuned to vertical)",
+];
+
+const followupReasons = [
+  "Respect opt-out/STOP (Respect opt-out/STOP)",
+  "Policy WhatsApp 24h (WhatsApp 24h policy – HSM if needed)",
+];
+
+const timelineFlow = [
   {
-    name: "Camille, COO",
-    quote: "On a doublé nos prises de rendez-vous sans recruter. L’agent gère le volume, l’équipe gère les deals."
+    title: "Trouver",
+    description: "Lead Hunter IA → liste scorée (Lead Hunter AI → scored list)",
+    icon: "search",
   },
   {
-    name: "Jules, Head of Growth",
-    quote: "La relance intelligente est un no-brainer : bon moment, bon ton, pas de spam."
+    title: "Prospecter",
+    description: "Cadence Email/WA/SMS (Email/WA/SMS cadence)",
+    icon: "send",
   },
   {
-    name: "Sonia, SDR Lead",
-    quote: "Je ne perds plus de temps à classer les réponses. Tout arrive déjà trié dans la console."
-  }
+    title: "Relancer",
+    description: "Moment + angle + message court (Timing + angle + short message)",
+    icon: "bolt",
+  },
+  {
+    title: "Booker",
+    description: "2 créneaux → confirmation → CRM (Two slots → confirm → CRM)",
+    icon: "calendar",
+  },
 ];
 
-const logos = ["NovaOps", "Shiftly", "QuantLeap", "Beryl", "Clarity"];
-
-const securityHighlights = [
-  "Données chiffrées au repos et en transit",
-  "Opt-out et consentements respectés par canal",
-  "Hébergement UE disponible sur demande",
-  "Journal complet des actions et accès RBAC"
+const statHighlights = [
+  { label: "TTR", value: "26 s", hint: "réponse inbound moyenne (avg inbound time-to-reply)" },
+  { label: "Reply rate", value: "12 %", hint: "sur 30 jours (last 30 days)" },
+  { label: "RDV / 100", value: "8", hint: "dépend du secteur (per 100 leads, varies by vertical)" },
 ];
 
-const pageTitle = "Pipelane – Votre assistant commercial qui ne dort jamais";
+const pageTitle = "Pipelane – Lead Hunter → Cadences → Relance → 2 créneaux";
 const pageDescription =
-  "Pipelane centralise WhatsApp, Email et SMS, rédige et envoie des messages personnalisés, relance intelligemment et vous amène des rendez-vous qualifiés.";
-
-const demoMode = (import.meta.env.PUBLIC_DEMO_MODE ?? "false") === "true";
-const consoleUrl = (import.meta.env.PUBLIC_CONSOLE_URL ?? "http://localhost:4200").replace(/\/$/, "");
+  "Pipelane repère les bons prospects, lance vos cadences multi-canales, relance intelligemment et propose 2 créneaux. Vous ne gérez que les rendez-vous chauds.";
 
 const productSchema = {
   "@context": "https://schema.org",
   "@type": "Product",
   name: "Pipelane",
-  description: pageDescription,
+  description: "Qualify • Relaunch • Book",
   brand: { "@type": "Brand", name: "Pipelane" },
   offers: [
     {
@@ -124,9 +94,9 @@ const productSchema = {
       priceCurrency: "EUR",
       price: "290",
       availability: "https://schema.org/InStock",
-      url: "https://www.pipelane.app/prix"
-    }
-  ]
+      url: "https://www.pipelane.app/prix",
+    },
+  ],
 };
 
 const faqSchema = {
@@ -135,320 +105,314 @@ const faqSchema = {
   mainEntity: [
     {
       "@type": "Question",
-      name: "Comment fonctionne l’agent de prospection IA ?",
+      name: "Comment fonctionne le flux Lead Hunter → Booking ?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Vous connectez vos canaux, importez votre pitch et vos contacts. L’agent écrit, envoie, relance et classe les réponses ; vous validez ou modifiez les propositions avant envoi."
-      }
+        text: "L’agent repère vos prospects, crée la cadence multi-canale, relance intelligemment et propose 2 créneaux. Vous n’intervenez que pour les réponses chaudes.",
+      },
     },
     {
       "@type": "Question",
-      name: "La relance intelligente respecte-t-elle les opt-out ?",
+      name: "Quid de la conformité (email, SMS, WhatsApp) ?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Oui, l’agent intègre les consentements canal par canal, respecte les quiet hours et explique chaque choix de relance avant validation."
-      }
+        text: "Caps journaliers, STOP SMS, lien de désinscription email et règles WhatsApp 24h/CTA HSM sont appliqués automatiquement.",
+      },
     },
     {
       "@type": "Question",
-      name: "Ai-je besoin d’autres outils (n8n, Zapier) pour commencer ?",
+      name: "Aurai-je besoin d’autres outils pour commencer ?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Non, tout tourne dans Pipelane. Des ports optionnels (événements sortants, actions entrantes) sont disponibles plus tard si vous souhaitez des intégrations spécifiques."
-      }
-    }
-  ]
+        text: "Non. Pipelane gère sourcing, cadences, relances et booking. Des ports optionnels existent si vous devez pousser vers votre CRM.",
+      },
+    },
+  ],
 };
 ---
-<BaseLayout title={pageTitle} description={pageDescription} canonical="https://www.pipelane.app/">
-  <Fragment slot="head">
-    <script type="application/ld+json">{JSON.stringify(productSchema)}</script>
-    <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
-  </Fragment>
+<BaseLayout title={pageTitle} description={pageDescription} canonical="https://www.pipelane.app">
   <Navbar currentPath={Astro.url.pathname} />
   <main class="space-y-32 lg:space-y-44">
     <section id="hero" class="section relative overflow-hidden">
-      <div class="container-page">
-        <div class="grid items-center gap-10 md:grid-cols-2 md:gap-12">
-          <div class="space-y-7 lg:space-y-8">
-            <NeonBadge text="Console omni-canale + Agent IA" />
-            <h1 class="text-balance font-semibold on-surface-strong max-w-[42ch]">
-              Votre assistant commercial qui ne dort jamais
-            </h1>
-            <p class="max-w-[42ch] text-lg leading-relaxed on-surface">
-              Pipelane centralise WhatsApp, Email et SMS, rédige et envoie des messages personnalisés, relance intelligemment et vous amène des rendez-vous qualifiés — sans charge mentale.
-            </p>
-            <ul class="flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.3em]">
-              {heroBullets.map((item) => (
-                <li
-                  key={item.label}
-                  class="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.28em] on-surface-strong"
-                >
-                  <span class="text-primary">
-                    <Icon name={item.icon} size={16} />
-                  </span>
-                  {item.label}
-                </li>
-              ))}
-            </ul>
-            <div class="flex flex-col gap-3 pt-4 sm:flex-row sm:items-center">
-              <a
-                href="#demo"
-                class="btn-primary min-h-[44px] rounded-xl px-5 shadow-glow focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-                data-analytics="cta_click"
-                data-location="hero-primary"
-              >
-                Demander une démo
-              </a>
-              {demoMode && (
-                <a
-                  href={`${consoleUrl}/login?demo=1`}
-                  class="btn-ghost min-h-[44px] rounded-xl px-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-                  data-analytics="cta_click"
-                  data-location="hero-demo"
-                >
-                  Lancer la démo
-                </a>
-              )}
-              <a
-                href="/prospection-ia"
-                class="btn-ghost min-h-[44px] rounded-xl px-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-                data-analytics="cta_click"
-                data-location="hero-secondary"
-              >
-                Voir l’agent de prospection
-              </a>
-            </div>
-            <div class="glass max-w-xl rounded-2xl border border-line/25 p-6 shadow-soft">
-              <DemoForm idPrefix="hero" compact />
-            </div>
+      <div class="container-page grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)]">
+        <div class="space-y-8">
+          <NeonBadge text="Lead Hunter → Cadences → Relance → Booking" />
+          <h1 class="text-balance font-semibold on-surface-strong max-w-[42ch]">
+            Votre agent qui trouve des clients et remplit votre agenda (EN: The agent that finds clients and fills your calendar)
+          </h1>
+          <p class="max-w-[48ch] text-lg leading-relaxed on-surface">
+            Pipelane repère les bons prospects avec une recherche intelligente, lance des séquences multi-canales (Email/WhatsApp/SMS), relance au bon moment et propose 2 créneaux — vous ne gérez que les RDV chauds. (EN: Smart lead hunting + multi-channel cadences + smart follow-ups + 2-slot booking.)
+          </p>
+          <ul class="flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.3em]">
+            {heroChips.map((chip) => (
+              <li class="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.28em] on-surface-strong">
+                <span class="h-1.5 w-1.5 rounded-full bg-primary/90"></span>
+                {chip}
+              </li>
+            ))}
+          </ul>
+          <div class="flex flex-col gap-3 pt-4 sm:flex-row sm:items-center">
+            <a
+              href="/#demo"
+              class="btn-primary min-h-[44px] rounded-xl px-6 shadow-glow focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+              data-analytics="cta_click"
+              data-location="hero-primary"
+            >
+              Demander une démo (EN: Request a demo)
+            </a>
+            <a
+              href="#de-a-a-z"
+              class="btn-ghost min-h-[44px] rounded-xl px-6 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+              data-analytics="cta_click"
+              data-location="hero-secondary"
+            >
+              Voir comment ça marche (EN: See how it works)
+            </a>
           </div>
-          <div class="relative isolate" data-parallax data-parallax-speed="0.24">
-            <div class="absolute -left-12 -top-16 h-52 w-52 rounded-full bg-primary/28 blur-3xl"></div>
-            <div class="absolute -bottom-12 right-0 h-56 w-56 rounded-full bg-secondary/28 blur-3xl"></div>
-            <div class="relative space-y-5">
-              <figure class="glass overflow-hidden rounded-2xl border border-line/25 shadow-soft">
-                <div class="relative aspect-[16/10] md:aspect-[4/3]">
-                  <img
-                    src="/og-cover.png"
-                    alt="Console Pipelane"
-                    loading="lazy"
-                    decoding="async"
-                    class="h-full w-full object-cover"
-                  />
+        </div>
+        <div class="relative isolate" data-parallax data-parallax-speed="0.22">
+          <div class="absolute -left-16 -top-20 h-56 w-56 rounded-full bg-primary/28 blur-3xl"></div>
+          <div class="absolute -bottom-16 right-0 h-60 w-60 rounded-full bg-secondary/24 blur-3xl"></div>
+          <div class="relative space-y-5">
+            <div class="glass overflow-hidden rounded-[28px] border border-line/25 p-6 shadow-soft">
+              <div class="space-y-5">
+                <div class="flex items-center justify-between rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-primary">
+                  <span>Lead Hunter IA</span>
+                  <span>Score 0–100</span>
                 </div>
-              </figure>
-              <div class="grid gap-4 text-sm">
-                <div class="glass flex items-center gap-3 rounded-2xl border border-line/30 px-4 py-3 on-surface">
-                  <span class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/14 text-primary">
-                    <Icon name="sparkle" size={22} />
-                  </span>
-                  <div>
-                    <p class="text-xs uppercase tracking-[0.3em] text-primary">Séquence en direct</p>
-                    <p class="on-surface-strong">Campagne “Scale Series A” · 132 prospects actifs</p>
+                <div class="grid gap-3 text-sm on-surface">
+                  <div class="glass flex items-center justify-between rounded-2xl border border-line/25 bg-surfaceOverlay/80 px-4 py-3">
+                    <div>
+                      <p class="font-semibold on-surface-strong">Maison Nova · 94</p>
+                      <p class="text-xs text-textMuted">Paris · Site lent mobile (EN: Slow mobile site)</p>
+                    </div>
+                    <span class="rounded-full bg-primary/15 px-3 py-1 text-xs text-primary/90">Why this lead?</span>
                   </div>
-                </div>
-                <div class="glass flex items-center justify-between rounded-2xl border border-line/25 px-4 py-3 on-surface">
-                  <div>
-                    <p class="text-xs uppercase tracking-[0.3em] text-primary">Prochaine relance</p>
-                    <p class="mt-1 on-surface-strong">Jeudi 14:30 · angle preuve sociale</p>
-                  </div>
-                  <div class="text-right text-xs text-textMuted">
-                    <p>score IA : 92</p>
-                    <p>fenêtre WhatsApp OK</p>
+                  <div class="glass flex items-center justify-between rounded-2xl border border-line/25 bg-surfaceOverlay/70 px-4 py-3">
+                    <div>
+                      <p class="font-semibold on-surface-strong">Bistro Lumen · 88</p>
+                      <p class="text-xs text-textMuted">Lyon · Pas de réservation en ligne (EN: No online booking)</p>
+                    </div>
+                    <span class="rounded-full bg-primary/15 px-3 py-1 text-xs text-primary/90">Score élevé</span>
                   </div>
                 </div>
-                <div class="glass flex items-start gap-3 rounded-2xl border border-line/20 px-4 py-3 on-surface">
-                  <span class="mt-1 flex h-8 w-8 items-center justify-center rounded-full bg-secondary/15 text-secondary">
-                    <Icon name="rocket" size={20} />
-                  </span>
-                  <div>
-                    <p class="text-sm font-semibold on-surface-strong">Camille a répondu “Let’s book 30 min”</p>
-                    <p class="text-xs text-textMuted">L’agent a proposé 3 créneaux, joint la fiche CRM et noté la température (4/5).</p>
-                  </div>
+                <div class="rounded-2xl border border-line/30 bg-surfaceOverlay/70 p-4 text-sm on-surface">
+                  <p class="text-xs uppercase tracking-[0.3em] text-primary">Cadence active</p>
+                  <p class="mt-2 on-surface-strong">Email → WhatsApp → SMS</p>
+                  <p class="text-xs text-textMuted">Caps/jour OK · Quiet hours respectées · Variantes A/B légères</p>
                 </div>
-                <div class="glass flex items-start gap-3 rounded-2xl border border-line/20 px-4 py-3 on-surface">
-                  <span class="mt-1 flex h-8 w-8 items-center justify-center rounded-full bg-accent/15 text-accent">
-                    <Icon name="calendar" size={20} />
-                  </span>
-                  <div>
-                    <p class="text-sm font-semibold on-surface-strong">2 créneaux proposés</p>
-                    <p class="text-xs text-textMuted">Emails, WhatsApp & SMS sont alignés. L’agent respecte vos quiet hours.</p>
-                  </div>
+                <div class="rounded-2xl border border-line/30 bg-surfaceOverlay/70 p-5 text-sm on-surface">
+                  <p class="text-xs uppercase tracking-[0.3em] text-primary">Relance intelligente</p>
+                  <p class="mt-2 font-semibold on-surface-strong">“Bonjour Camille, voici le cas NovaOps qui a doublé ses RDV en 5 semaines, je vous l’envoie ?”</p>
+                  <p class="mt-2 text-xs text-textMuted">Dernier échange lu · Pas de réponse depuis 3 jours</p>
                 </div>
               </div>
             </div>
           </div>
+        </div>
       </div>
     </section>
 
-    <Section
-      id="gains"
-      eyebrow="Ce que vous gagnez"
-      title="Trois résultats dès la première semaine"
-      description="L’agent IA travaille à votre place, avec votre ton, et vous libère du suivi quotidien."
-      contentClass="mt-12 grid gap-7 md:grid-cols-3"
-    >
-      {gains.map((gain) => (
-        <div class="reveal glass group relative overflow-hidden rounded-3xl border border-line/30 p-6 transition hover:-translate-y-1 hover:border-primary/40 hover:shadow-glow">
-          <div class="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-primary/10 opacity-70 blur-3xl transition group-hover:opacity-100"></div>
-          <span class="relative inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/15 text-primary">
-            <Icon name={gain.icon} size={26} />
-          </span>
-          <h3 class="relative mt-6 text-xl font-semibold on-surface-strong">{gain.title}</h3>
-          <p class="relative mt-3 text-sm leading-relaxed on-surface">{gain.description}</p>
+    <section id="lead-hunter" class="section">
+      <div class="container-page grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+        <div class="space-y-6">
+          <NeonBadge text="Lead Hunter IA" />
+          <h2 class="text-balance text-3xl font-semibold tracking-tight on-surface-strong sm:text-4xl">
+            Trouvez les bons prospects en 60 secondes (EN: Find the right prospects in 60 seconds)
+          </h2>
+          <p class="text-base leading-relaxed on-surface">
+            Décrivez votre cible ou choisissez un secteur. L’agent analyse cartes, annuaires et données publiques, enrichit (site/email/réseaux), applique un scoring 0–100 et affiche des raisons claires “Pourquoi ce lead ?”. (EN: Describe your target or pick a vertical. The agent enriches, scores 0–100 and explains why each lead matters.)
+          </p>
+          <ul class="space-y-3 text-sm leading-relaxed on-surface">
+            {leadHunterBullets.map((bullet) => (
+              <li class="flex items-start gap-2">
+                <span class="mt-1 h-2 w-2 rounded-full bg-primary/80"></span>
+                <span>{bullet}</span>
+              </li>
+            ))}
+          </ul>
         </div>
-      ))}
-    </Section>
+        <FeatureCard
+          title="Why this lead?"
+          badge="Score 0–100"
+          bullets={["Pas de réservation en ligne", "Site lent mobile", "Instagram actif"]}
+        />
+        <div class="lg:col-span-2">
+          <a
+            href="/prospection-ia"
+            class="inline-flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.3em] text-primary transition hover:text-primary/80"
+            data-analytics="cta_click"
+            data-location="lead-hunter-link"
+          >
+            Voir l’agent de prospection (EN: Explore the prospecting agent)
+            <span aria-hidden="true">→</span>
+          </a>
+        </div>
+      </div>
+    </section>
 
-    <Section
-      id="marche"
-      eyebrow="Comment ça marche"
-      title="L’agent s’occupe de tout, vous ne gérez que les rendez-vous"
-      description="Une mise en route simple pour une prospection qui tourne en continu."
-      contentClass="mt-12 grid gap-6 md:grid-cols-2"
-    >
-      {workflowSteps.map((step, index) => (
-        <div class="reveal glass group rounded-3xl border border-line/30 p-6 transition hover:border-primary/40 hover:shadow-soft">
-          <div class="flex items-start gap-4">
-            <span class="flex h-11 w-11 items-center justify-center rounded-full bg-primary/15 text-primary font-semibold">
-              {String(index + 1).padStart(2, "0")}
-            </span>
-            <div class="space-y-3">
-              <div class="flex items-center gap-2 text-xs uppercase tracking-[0.32em] text-primary/80">
-                <Icon name={step.icon} size={18} />
-                Étape {index + 1}
-              </div>
-              <h3 class="text-lg font-semibold on-surface-strong">{step.title}</h3>
-              <p class="text-sm leading-relaxed on-surface">{step.description}</p>
+    <section id="cadences" class="section bg-surface/40">
+      <div class="container-page space-y-10">
+        <div class="space-y-4 text-center">
+          <NeonBadge text="Cadences multi-canales" />
+          <h2 class="text-3xl font-semibold tracking-tight on-surface-strong sm:text-4xl">
+            Prospectez en Email, WhatsApp et SMS en gardant la main (EN: Multi-channel cadences without losing control)
+          </h2>
+          <p class="mx-auto max-w-3xl text-base leading-relaxed on-surface">
+            L’IA rédige des messages courts et utiles (≤120 mots), FR/EN. (EN: AI writes short, useful messages (≤120 words) in FR/EN.)
+          </p>
+        </div>
+        <div class="grid gap-6 md:grid-cols-3">
+          {cadenceColumns.map((column) => (
+            <div class="glass rounded-3xl border border-line/30 p-6 text-left shadow-soft">
+              <p class="text-sm font-semibold uppercase tracking-[0.3em] text-primary">{column.channel}</p>
+              <ul class="mt-4 space-y-3 text-sm leading-relaxed on-surface">
+                {cadenceHighlights.map((highlight) => (
+                  <li class="flex items-start gap-2">
+                    <span class="mt-1 h-1.5 w-1.5 rounded-full bg-primary/80"></span>
+                    <span>{highlight}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+        <div class="rounded-3xl border border-primary/25 bg-primary/10 p-5 text-sm text-primary">
+          Conformité : Email (désinscription), SMS (STOP), WhatsApp 24h (HSM si hors fenêtre). (EN: Compliance: Email unsubscribe, SMS STOP, WhatsApp 24h/HSM if outside the window.)
+        </div>
+      </div>
+    </section>
+
+    <section id="qualification" class="section">
+      <div class="container-page grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
+        <div class="space-y-6">
+          <NeonBadge text="Qualification & Booking" />
+          <h2 class="text-3xl font-semibold tracking-tight on-surface-strong sm:text-4xl">
+            Qualifiez en 3–5 questions, proposez 2 créneaux (EN: Qualify in 3–5 questions, offer 2 slots)
+          </h2>
+          <p class="text-base leading-relaxed on-surface">
+            Dès qu’un prospect répond, l’agent pose 3–5 questions, score l’intention, puis propose 2 créneaux (ou un lien) et confirme le RDV. (EN: Once a reply lands, the agent qualifies with a few questions, scores intent and offers two slots or a booking link.)
+          </p>
+          <ul class="space-y-3 text-sm leading-relaxed on-surface">
+            {bookingBullets.map((bullet) => (
+              <li class="flex items-start gap-2">
+                <span class="mt-1 h-2 w-2 rounded-full bg-primary/80"></span>
+                <span>{bullet}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div class="glass rounded-3xl border border-line/30 p-6 shadow-soft">
+          <p class="text-xs uppercase tracking-[0.3em] text-primary">Offre 2 créneaux (EN: Two-slot offer)</p>
+          <div class="mt-5 space-y-4 text-sm on-surface">
+            <div class="flex items-center justify-between rounded-2xl border border-line/30 bg-surfaceOverlay/70 px-4 py-3">
+              <p class="font-semibold on-surface-strong">Mar 10:00–10:30</p>
+              <button class="rounded-full border border-primary/30 px-3 py-1 text-xs text-primary">
+                Confirmer (EN: Confirm)
+              </button>
+            </div>
+            <div class="flex items-center justify-between rounded-2xl border border-line/30 bg-surfaceOverlay/60 px-4 py-3">
+              <p class="font-semibold on-surface-strong">Mer 15:30–16:00</p>
+              <button class="rounded-full border border-primary/30 px-3 py-1 text-xs text-primary">
+                Confirmer (EN: Confirm)
+              </button>
             </div>
           </div>
+          <div class="mt-6 rounded-2xl border border-primary/25 bg-primary/10 p-4 text-xs text-primary">
+            Synchronisation calendrier & CRM automatisée (EN: Calendar & CRM sync handled automatically)
+          </div>
         </div>
-      ))}
-    </Section>
+      </div>
+    </section>
 
-    <Section
-      id="relance"
-      eyebrow="Relance intelligente"
-      title="La relance qui ne saoule pas"
-      description="Bon moment, bon angle, 3–6 lignes utiles. Modifiable à tout instant avec explication « Pourquoi ce choix ? »."
-      variant="panel"
-      contentClass="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
-    >
-      <div class="space-y-4 text-sm leading-relaxed on-surface">
-        <ul class="space-y-3">
-          {relancePoints.map((point) => (
-            <li class="flex items-start gap-3">
-              <span class="mt-1 text-primary">
-                <Icon name={point.icon} size={18} />
-              </span>
-              <span>{point.copy}</span>
-            </li>
+    <section id="relance" class="section bg-surface/40">
+      <div class="container-page grid gap-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+        <div class="glass rounded-3xl border border-line/30 p-6 shadow-soft">
+          <p class="text-xs uppercase tracking-[0.3em] text-primary">Relance mardi 10:30 · angle valeur (EN: Follow-up Tuesday 10:30 · value angle)</p>
+          <p class="mt-4 text-base leading-relaxed on-surface">
+            « Bonjour Camille, vous m’indiquiez chercher un moyen d’automatiser vos relances.
+            Voici comment NovaOps a doublé ses RDV en 5 semaines, je vous envoie le cas ? » (EN: “Hi Camille, you were looking to automate follow-ups. NovaOps doubled meetings in 5 weeks — want the case study?”)
+          </p>
+          <p class="mt-4 text-xs text-textMuted">Dernier échange lu · Pas de réponse depuis 3 jours (Last exchange read · No reply for 3 days)</p>
+        </div>
+        <div class="space-y-5">
+          <div class="glass rounded-3xl border border-line/30 p-6 shadow-soft">
+            <p class="text-xs uppercase tracking-[0.3em] text-primary">Pourquoi ce choix ? (Why this choice?)</p>
+            <ul class="mt-4 space-y-3 text-sm leading-relaxed on-surface">
+              {followupWhy.map((item) => (
+                <li class="flex items-start gap-2">
+                  <span class="mt-1 h-2 w-2 rounded-full bg-primary/80"></span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div class="rounded-3xl border border-primary/25 bg-primary/10 p-4 text-xs text-primary">
+            {followupReasons.join(" · ")}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="de-a-a-z" class="section">
+      <div class="container-page space-y-10">
+        <div class="space-y-3 text-center">
+          <NeonBadge text="De A à Z" />
+          <h2 class="text-3xl font-semibold tracking-tight on-surface-strong sm:text-4xl">
+            De la recherche au RDV, en 4 étapes (EN: From discovery to booked meeting in 4 steps)
+          </h2>
+          <p class="text-sm uppercase tracking-[0.3em] text-textMuted">(Find → Prospect → Nurture → Book)</p>
+        </div>
+        <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+          {timelineFlow.map((step, index) => (
+            <FlowStep title={step.title} description={step.description} icon={step.icon} index={index} />
           ))}
-        </ul>
-        <div class="rounded-3xl border border-line/40 bg-surfaceOverlay/80 p-5">
-          <p class="text-xs uppercase tracking-[0.3em] text-primary">Carte d’exemple</p>
-          <p class="mt-2 text-sm on-surface-strong">Prochaine relance : Jeudi 15:00 · angle preuve sociale</p>
-          <p class="mt-2 text-xs text-textMuted">Suggestion : “Nous venons d’accompagner NovaOps sur le même enjeu, voici le retour en 2 points…”</p>
         </div>
       </div>
-      <div class="rounded-3xl border border-line/30 bg-surfaceOverlay/60 p-6 text-sm leading-relaxed on-surface">
-        <p class="text-xs uppercase tracking-[0.3em] text-primary">Pourquoi vous allez aimer</p>
-        <p class="mt-3 on-surface-strong">
-          L’agent connaît l’historique, respecte les quiet hours, intègre vos opt-out et vous laisse la main. Vous validez en un clic ou modifiez avant envoi.
-        </p>
-      </div>
-    </Section>
+    </section>
 
-    <Section
-      id="mvp"
-      eyebrow="MVP sans n8n"
-      title="Tout tourne dans Pipelane"
-      description="Pas besoin d’un stack complexe pour démarrer. Consolidez votre prospection dans un seul outil, prêt à l’emploi."
-      contentClass="mt-12 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
-    >
-      <div class="reveal glass rounded-3xl border border-line/30 p-6 text-sm leading-relaxed on-surface">
-        <p>
-          L’agent écrit, envoie, relance et classe les réponses au sein de la console. Besoin d’intégrations spécifiques ?
-          Activez nos deux ports optionnels (événements sortants, actions entrantes) quand vous le souhaitez.
-        </p>
-        <ul class="mt-4 space-y-2 text-sm">
-          <li class="flex items-center gap-2 text-primary"><span class="h-2 w-2 rounded-full bg-primary"></span>Ports optionnels prêts mais désactivés par défaut</li>
-          <li class="flex items-center gap-2 text-primary"><span class="h-2 w-2 rounded-full bg-primary"></span>Relances et suivi natifs, sans n8n</li>
-          <li class="flex items-center gap-2 text-primary"><span class="h-2 w-2 rounded-full bg-primary"></span>Console unique pour le support, la vente et la réussite client</li>
-        </ul>
-      </div>
-      <div class="reveal rounded-3xl border border-dashed border-primary/40 bg-primary/10 p-6 text-sm leading-relaxed text-primary">
-        <p class="font-semibold uppercase tracking-[0.3em]">Ports optionnels</p>
-        <p class="mt-2">• Webhooks sortants (événements conversation, réponses, relances)</p>
-        <p>• Actions entrantes (créer un ticket, pousser un événement CRM)</p>
-        <p class="mt-3 text-primary/70">Activez-les quand vous voulez, sans toucher au cœur du produit.</p>
-      </div>
-    </Section>
-
-    <Section
-      id="dashboard"
-      eyebrow="Tableau de bord"
-      title="Pilotez vos conversations et vos conversions"
-      description="Envoyés, délivrés, ouverts, réponses, rendez-vous : tout est suivi en temps réel avec des vues prêtes."
-      center
-      contentClass="mt-12 grid gap-6 md:grid-cols-3"
-    >
-      {dashboardStats.map((stat) => (
-        <StatCard metric={stat.metric} description={stat.description} icon={stat.icon} />
-      ))}
-    </Section>
-
-    <Section
-      id="preuve"
-      eyebrow="Preuve & réassurance"
-      title="Des équipes commerciales & growth qui dorment mieux"
-      description="Ils nous utilisent déjà pour garder le rythme sans épuiser les équipes."
-      contentClass="mt-12 grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]"
-    >
-      <div class="space-y-6">
+    <section id="preuves" class="section bg-surface/40">
+      <div class="container-page space-y-10">
+        <div class="space-y-4 text-center">
+          <NeonBadge text="Preuve & réassurance" />
+          <h2 class="text-3xl font-semibold tracking-tight on-surface-strong sm:text-4xl">
+            Des métriques qui montent sans complexité (EN: Metrics up, friction down)
+          </h2>
+        </div>
         <div class="grid gap-6 md:grid-cols-3">
-          {testimonials.map((testimonial) => (
-            <div class="reveal glass group rounded-3xl border border-line/30 p-6 text-sm leading-relaxed on-surface transition hover:-translate-y-1 hover:border-primary/35 hover:shadow-soft">
-              <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-secondary/15 text-secondary transition group-hover:rotate-3">
-                <Icon name="sparkle" size={20} />
-              </span>
-              <p class="mt-4 text-textMuted">“{testimonial.quote}”</p>
-              <p class="mt-5 text-xs uppercase tracking-[0.3em] text-primary">{testimonial.name}</p>
-            </div>
+          {statHighlights.map((stat) => (
+            <StatCard label={stat.label} value={stat.value} hint={stat.hint} />
           ))}
         </div>
-        <div class="flex flex-wrap items-center gap-4 text-xs uppercase tracking-[0.35em] text-textMuted">
-          {logos.map((logo) => (
-            <span class="rounded-full border border-line/20 px-4 py-2 transition hover:border-primary/40 hover:text-primary">
-              {logo}
-            </span>
-          ))}
+        <div class="flex justify-center">
+          <a
+            href="/securite-rgpd"
+            class="inline-flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.3em] text-primary transition hover:text-primary/80"
+          >
+            Sécurité & RGPD (Security & GDPR)
+            <span aria-hidden="true">→</span>
+          </a>
         </div>
       </div>
-      <div class="reveal glass-strong space-y-4 rounded-3xl border border-line/30 p-6 text-sm leading-relaxed on-surface">
-        <p class="text-xs uppercase tracking-[0.3em] text-primary">Sécurité & RGPD</p>
-        <ul class="space-y-3">
-          {securityHighlights.map((item) => (
-            <li class="flex items-start gap-3">
-              <span class="mt-1 text-primary">
-                <Icon name="shield" size={18} />
-              </span>
-              <span>{item}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </Section>
+    </section>
 
     <CTA
       id="demo"
-      title="Remplissez votre pipe sans écrire un seul email"
-      description="Réservez une démo : on connecte vos canaux, on importe votre pitch et votre agent IA est prêt en moins d’une heure."
-      primaryLabel="Demander une démo"
-      secondaryLabel="Voir la prospection IA"
-      secondaryHref="/prospection-ia"
+      title="Remplissez votre pipe sans écrire un seul email."
+      description="Activez Lead Hunter, cadences multi-canales et booking 2 créneaux en moins d’une heure."
+      primary={{
+        label: "Demander une démo",
+        href: "/#demo",
+        analyticsId: "cta-demo-primary",
+      }}
+      secondary={{
+        label: "Voir l’agent de prospection",
+        href: "/prospection-ia",
+        analyticsId: "cta-demo-secondary",
+      }}
     />
   </main>
   <Footer />
+  <script type="application/ld+json">{JSON.stringify(productSchema)}</script>
+  <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
 </BaseLayout>
