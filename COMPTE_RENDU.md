@@ -1,63 +1,147 @@
-# Compte rendu – Projet Pipelane
+Tu travailles dans pipelane-front (Angular 20 standalone + Angular Material + ng-apexcharts).
+Objectif: surélever l’ergonomie, rendre l’app futuriste, simple et agréable, avec interactions, tutoriel mis à jour, accessibilité et performances au vert.
 
-## Vue d’ensemble
-- Monorepo articulé autour de trois applications : **pipelane-api** (ASP.NET 8 multi-tenant), **pipelane-front** (Angular 20, standalone + Angular Material) et **pipelane-marketing** (Astro + Tailwind).
-- Positionnement produit : console omni-canal pilotant WhatsApp, Email et SMS, avec relances intelligentes assistées par IA, analytics consolidés et parcours marketing orientés conversion.
-- Environnement local : SQL Server via `docker compose`, API sur `http://localhost:56667`, front sur `http://localhost:4200`, marketing sur `http://localhost:4321`. Les scripts `tools/inject-env.mjs` et `scripts/dev.*` synchronisent les bases d’URL et les env vars.
+RÈGLES GÉNÉRALES
+- Procède SECTION par SECTION. Pour chaque section:
+  1) ouvre les fichiers concernés, 2) résume les tâches, 3) exécute-les par petits commits explicites,
+  4) vérifie build/tests (npm run build, npm run ui:test), 5) exécute /compact.
+- Ne casse pas les features existantes. Utilise Angular Material (MatToolbar, MatSidenav, MatButton, MatMenu, MatTooltip, MatDialog, MatTabs, MatSnackBar, MatStepper).
+- Respecte dark-only; contraste AA; responsive; performances (lazy, CDK Virtual Scroll pour longues listes).
 
-## Avancement global (tests au 24/10/2025)
-- **Backend** : `dotnet test` (45 tests xUnit) OK, warnings NU1603 toujours bénins (QuestPDF auto-résolu en 2024.3.0).
-- **Front Angular** : `npm run ui:test` (21 tests Jest) OK ; lint/format regroupés dans `npm run ui:check`.
-- **Marketing** : `npm run test:a11y` + `npm run test:lighthouse` OK (accessibilité ≥ 0,95) et build Astro stable.
-- Intégration continue : `.github/workflows/marketing-ci.yml` orchestre build + pa11y + Lighthouse ; backend/front workflows inchangés.
+========================================================
+SECTION A — Design System & Theme (dark-only futuriste)
+========================================================
+Tâches
+1) Tokens SCSS: enrichir `src/theme/_tokens.scss`:
+   - Couleurs: bg:#0b0f17, surface:#101726, surface-strong:#0e1524, primary:#75F0FF, secondary:#9B8CFF, accent:#60F7A3, text:#E6EAF2, text-muted:#A6B0C3, success:#60F7A3, warn:#F59E0B, error:#F87171.
+   - Effets: glass (blur(12px) + border 1px rgba(255,255,255,.08)), neon ring focus (outline offset).
+   - Gradients: `--grad-main: linear-gradient(135deg,#75F0FF 0%,#9B8CFF 45%,#60F7A3 100%)`.
+   - Radii (12/16/24), spacers (4/8/12/16/24/32), elevations (soft shadows).
+2) Material Theming: définir palette dark + typography (Inter/Outfit) + density comfortable.
+3) Utilitaires SCSS:
+   - .glass, .scrim (overlay pour contraste sur images/gradients),
+   - .on-surface, .on-surface-strong, .chip, .badge (score/status/provider),
+   - Animations CSS: .fade-up, .scale-in, .shimmer (skeleton).
 
-## Réalisations majeures
+Acceptance
+- Build OK, variables accessibles dans composants, story-exemple dans un playground (demo-page vite-fait).
+/compact
 
-### Backend (.NET 8)
-- **Canaux réels** : WhatsApp Cloud (`WhatsAppChannel`) et Twilio SMS (`SmsChannel`) gèrent envois, vérifications HMAC (`X-Hub-Signature-256`, `X-Twilio-Signature`), idempotence et stockage inbound/outbound (`WebhooksController`). Email s’appuie sur Resend avec vérif signature existante.
-- **Relance intelligente** : `AiController` applique quiet hours, cap journalier, opt-out et enregistre les propositions dans `FollowupProposalStore`. `FollowupsController` valide les propositions (`proposalId`) en les enfilant dans l’Outbox. Nouveau rapport PDF via `ReportService` et endpoints `/api/reports/summary(.pdf)`.
-- **Analytics enrichies** : `AnalyticsService.GetDeliveryAsync` retourne totaux, breakdowns et timeline ; `GetTopMessagesAsync` alimente `/api/analytics/top-messages`. Logs contextualisés (tenant, provider) + rate limiting (`MessageSendRateLimiter`, polices `RateLimiterOptions`).
-- **Demo & Ports** : `DemoExperienceService` préseed 20 contacts et campagne de démo ; endpoint `POST /api/demo/run` protégé par `DEMO_MODE`. Ports automations (events sortants + actions entrantes) configurables via `AUTOMATIONS_*`.
-- **Sécurité multi-tenant** : `TenantScopeMiddleware` refuse les `X-Tenant-Id` hors portée JWT (`tenant_ids`). Chiffrement AES-GCM pour secrets de canaux, PBKDF2 pour mots de passe.
-- **Couverture ajoutée** : tests `FollowupsControllerTests` (validation, send-now, not-found) + stabilisation `AiControllerTests` (options messaging).
+========================================================
+SECTION B — App Shell & Navigation (simplicité + repères)
+========================================================
+Tâches
+1) App Shell:
+   - Top App Bar “glass” avec: logo, champ recherche globale (Ctrl+K), actions rapides (Créer campagne, Importer, Lancer démo), avatar menu (Profil, Aide, Rejouer tutoriel).
+   - Left rail (sidenav) large sur desktop, icon-only en compact; items: Hunter, Cadences, Inbox, Contacts, Analytics, Settings.
+   - Breadcrumb sous la barre pour pages profondes.
+2) États responsives:
+   - Mobile: sidenav over + bottom action bar contextuelle pour listes (selection).
+3) Micro-interactions:
+   - Hover underline animée, press states, transitions 150–200ms, disable ripple agressif.
 
-### Frontend (Angular 20)
-- **Console opérateur** : navigation latérale responsive avec quick actions (campagne, import, démo). Onboarding guidé par ngx-shepherd (`TourService`). Mode démo distinct (badge + CTA).
-- **Conversations** : `ConversationThreadComponent` expose carte “Prochaine relance” (angle, preview, actions) et maintenant valide via API (`proposalId`). Génération de message IA et classement IA accessibles, historique affiché avec statut provider.
-- **Campaign Builder** : wizard 4 étapes avec réglage “Relance intelligente par défaut” + aperçu IA. Segment builder génère automatiquement le JSON et prévisualise la taille d’audience (`/api/followups/preview`).
-- **Analytics** : vue enrichie avec filtres (Aujourd’hui / 7j / 30j / custom), graphes ng-apexcharts (area timeline, donut canal, bar top templates/sujets), KPI cards et états vides ; la barre “Top messages” hiérarchise désormais replies puis opens, avec fallback sur les templates livrés.
-- **Infra front** : `ApiService` centralise headers (X-Tenant-Id), toasts snack-bar, endpoints demo/reports/followups ; tests Jest couvrent base URL, preview/validate follow-up, analytics mapping et toasts.
+Acceptance
+- Navigation cohérente desktop/mobile; shortcuts Ctrl+K ouvre la recherche.
+/compact
 
-### Marketing (Astro)
-- **Pages clés** : landing `/` refondue (hero, relance intelligente, workflow, preuves, CTA), `/prospection-ia`, `/relance-intelligente`, `/prix`, `/securite-rgpd`, blog structuré par `PostLayout`. Navbar adaptée (Produit, Prospection IA, Relance, Prix, Sécurité & RGPD, Ressources, Demander une démo).
-- **Conversion & tracking** : `DemoForm` avec champs UTM cachés, message de succès, intégration `/api/demo-request`. `ConsentManager` charge GA4/LinkedIn uniquement après consentement (localStorage). Boutons “Lancer la démo” conditionnés par `PUBLIC_DEMO_MODE`.
-- **Design system** : glassmorphism, tokens Tailwind on-surface/on-surface-strong, sections “Ce que vous gagnez”, “Comment ça marche”, carte relance intelligente, plan marketing (Good/Better/Best, essai 14 jours).
+========================================================
+SECTION C — Patterns UI transverses
+========================================================
+Tâches
+1) Tooltips intelligents (MatTooltip) partout où c’est utile: boutons principaux, colonnes obscures, icônes statut.
+2) États vides utiles:
+   - Hunter vide: illustration + “Commencer une recherche” + lien doc; bouton Importer CSV.
+   - Inbox vide: “Aucun message encore — lancez une cadence”.
+3) Skeletons:
+   - kpi-card, chart-card, tables (cdk-virtual-scroll). Ajouter shimmer.
+4) Erreurs compréhensibles:
+   - Toast + “Réessayer / Voir détails” (MatDialog pour stack).
+5) Raccourcis clavier:
+   - Ctrl+K (recherche), g+h (Hunter), g+a (Analytics), n+c (Nouvelle cadence), ? (ouvrir “Raccourcis”).
+6) Accessibilité:
+   - Focus visible (neon ring); roles ARIA pour nav et tables; labels sur inputs; support tab/esc dans modals; `prefers-reduced-motion`.
 
-## Reste à faire / Points d’attention
-1. **Preview réaliste côté Campaign Builder** : remplacer le `historySnippet` mocké par un extrait conversationnel réel dès que l’API exposera un endpoint de preview sécurisé.
-2. **Monitoring & files d’attente** : `MessageSendRateLimiter` garde l’état en mémoire ; prévoir persistance et métriques (queue depth, temps d’attente) pour charges élevées.
-3. **Analytics downstream** : vérifier exports, dashboards et API partenaires pour s’assurer qu’ils consomment le nouveau format (`timeline`, `TopMessagesResponse`) sans régression.
-4. **Marketing QA continue** : surveiller les rapports `marketing-ci` (pa11y/Lighthouse) et corriger rapidement toute chute <95 ou contraste limite.
-5. **Observabilité avancée** : brancher OpenTelemetry (traces/logs) vers un collecteur (OTLP/Seq) et envisager des dashboards (e.g. timeline d’erreurs webhooks).
-6. **RBAC & secrets** : étendre les rôles (actuellement `role` unique) et s’assurer que les secrets de démo ne restent pas en clair dans `docker-compose.yml`.
+Acceptance
+- Lint a11y OK (si présent), parcours uniquement clavier possible pour actions clés.
+/compact
 
-## Commandes utiles
-- **Backend** : `cd pipelane-api && dotnet restore && dotnet run` (ou `./scripts/dev.ps1|.sh`), tests `dotnet test`.
-- **Front Angular** : `cd pipelane-front && npm ci && npm start`; qualité `npm run ui:check`, tests `npm run ui:test`, e2e `npm run ui:e2e` (serveur requis).
-- **Marketing** : `cd pipelane-marketing && npm install && npm run dev`; QA `npm run test:a11y`, `npm run test:lighthouse`.
-- **Demo** : activer `DEMO_MODE=true`, lancer `POST /api/demo/run` (via Postman/cURL) ou bouton “Launch demo” dans l’UI lorsque le flag est présent.
+========================================================
+SECTION D — Pages clés (ergonomie & beauté)
+========================================================
+D1) Hunter (/hunter)
+- Layout split: Panneau critères sticky (gauche) + Carte+Liste (droite).
+- Critères: objectifs chips (Sites web/Restaurants/Plomberie/Formation), adresse+rayon, filtres (rating, avis, site, booking, social actif, “problèmes site”).
+- ResultList: table virtualisée; colonnes: Company, City, ★rating(reviews), Site ✓/✗, Booking ✓/✗, IG ✓/✗, Score (badge dégradé).
+- Drawer “Fiche prospect”: coordonnées, tags features, **Why this lead?** (3 bullets), **Heatmap heures** mini (ng-apexcharts bar simple 10–12/14–16).
+- Barre d’action inférieure (glass): “Magic Pick” (selection auto équilibrée), “Créer une liste”, “Ajouter à une liste”, “Créer une cadence →”.
+- Tooltips clairs (“Score = priorité 0–100”, “Magic Pick = sélection auto diversifiée”).
 
-## Variables d’environnement (extraits)
-- **Backend** (`pipelane-api/.env.example`) : `DB_CONNECTION`, `ENCRYPTION_KEY`, `JWT_KEY`, `OPENAI_API_KEY`, `OPENAI_MODEL`, `AI_DAILY_BUDGET_EUR`, `DAILY_SEND_CAP`, `QUIET_START`, `QUIET_END`, `AUTOMATIONS_*`, `DEMO_MODE`. Les credentials Meta/Twilio/Resend sont stockés chiffrés par tenant (`WA_*`, `TWILIO_*`, `RESEND_API_KEY`).
-- **Front** (`pipelane-front/.env.example`) : `API_BASE_URL`, `DEMO_MODE`.
-- **Marketing** (`pipelane-marketing/README.md`) : `PUBLIC_GA_ID`, `PUBLIC_LINKEDIN_ID`, `PUBLIC_DEMO_MODE`, `PUBLIC_CONSOLE_URL`.
+D2) Cadence Builder (/campaigns/new)
+- Stepper 4 étapes: Cibles → Canaux → Séquence → Review.
+- UI simple: preview messages (cards), fenêtres horaires, caps/jour, variantes A/B minimalistes.
+- Résumé final compact avec warning compliance (unsubscribe/STOP/WA24h).
 
-## Santé du code & tests
-- Tests unitaires et Jest passent systématiquement ; attention au fichier généré `pipelane-front/src/app/core/env.generated.ts` à ne pas valider en SCM.
-- Warnings NU1603 (QuestPDF) sont bénins mais bruit : surveiller les mises à jour NuGet pour verrouiller la version désirée.
-- Aucun e2e Cypress récent ; prévoir une passe “smart follow-up” & “analytics dashboards” avant livraison client.
+D3) Inbox (/inbox)
+- Thread à bulles verre, badges provider & statut, composer simplifié (texte / template).
+- Side panel contact: tags, score, dernières actions.
+- Boutons rapides: Proposer 2 créneaux, Classer la réponse (IA), Relance intelligente.
 
-## Prochaines étapes
-1. **Brancher la preview de follow-up sur des conversations réelles** (attente d’un service backend dédié à la campagne).
-2. **Instrumenter l’observabilité** : choisir une cible OTLP (Seq, Grafana Tempo…) et étendre `/health/metrics` si nécessaire.
-3. **Élargir la couverture end-to-end** : lancer Cypress sur le flux “Smart follow-up”/analytics et vérifier que les exports PDF/top messages restent cohérents.
+D4) Analytics (/analytics)
+- KPI strip + area (series jour), donut (par canal), bar (top sujets/templates), selectors de période; boutons Export (PDF).
+- Interactions: hover tooltips clairs, légendes cliquables.
+
+D5) Settings (/settings)
+- Cartes canaux (Email/WA/SMS) avec chip Connected/Not connected + “Envoyer un test”.
+- Section IA (plafond budget), Caps & Quiet Hours visuels (slider + preview).
+
+Acceptance
+- Navigation entre pages sans charges inutiles, no layout shift visible; mobile OK.
+/compact
+
+========================================================
+SECTION E — Didacticiel & Aide (ngx-shepherd + Help Center)
+========================================================
+Tâches
+1) Tutoriel (onboarding) remis à jour:
+   - 6 étapes: 1) Connecter canaux 2) Écrire pitch 3) Hunter: lancer recherche 4) Créer liste & cadence 5) Générer un message IA & envoyer 6) Voir analytics & exporter PDF.
+   - Bouton “Rejouer le tutoriel” dans Aide.
+   - Stockage localStorage `pipelane_tour_done`.
+2) Panneau “?” (Help Center):
+   - Raccourcis clavier (liste), liens docs (marketing /prospection-ia), “Contacter le support”.
+3) Micro-coach:
+   - Avant envoi: bulle “Coach 30s” (MatTooltip large ou mini-dialog): “+ propose 2 créneaux précis”, “– 1 phrase”, “évite jargon”.
+
+Acceptance
+- Tutoriel fonctionne, accessible clavier; Help Center ouvert via “?” ou Shift+/.
+/compact
+
+========================================================
+SECTION F — Performance & charge
+========================================================
+Tâches
+1) Virtual scroll par défaut pour listes >100 items.
+2) Lazy loading de modules lourds (charts/tour).
+3) ChangeDetection OnPush sur pages liste & charts.
+4) Mémoïsation sélecteurs (signals/rx) pour éviter rerenders.
+
+Acceptance
+- Lighthouse (front served) perf non régressée; scroll fluide gros volumes.
+/compact
+
+========================================================
+SECTION G — Tests & Qualité
+========================================================
+Tâches
+1) Jest
+   - Tooltips présents sur actions clés (Hunter, Inbox).
+   - Magic Pick: sélection équilibrée (répartition par city + top scores).
+   - Tutoriel: flag localStorage; “Rejouer” démarre le tour.
+   - Analytics: mappers vers apexcharts options corrects; export PDF bouton appelle API.
+2) (Option) Cypress smoke
+   - Hunter → recherche → Magic Pick → Créer liste → Créer cadence.
+   - Inbox → Classer la réponse → Proposer 2 créneaux.
+   - Analytics → changer période → Export PDF.
+
+Acceptance
+- npm run ui:test OK; (option) e2e vert; /compact final.
+/compact
