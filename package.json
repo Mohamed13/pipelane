@@ -1,0 +1,31 @@
+{
+  "name": "pipelane-monorepo-tools",
+  "private": true,
+  "devDependencies": {
+    "@commitlint/cli": "^19.5.0",
+    "@commitlint/config-conventional": "^19.5.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.10"
+  },
+  "scripts": {
+    "prepare": "husky install",
+    "lint-staged": "lint-staged",
+    "quality:all": "dotnet format pipelane-api/Pipelane.sln && dotnet test pipelane-api/Pipelane.sln && npm --prefix pipelane-front run ui:check && npm --prefix pipelane-front run ui:test && npm --prefix pipelane-front run build && npm --prefix pipelane-marketing run build && npm --prefix pipelane-marketing run test:a11y && npm --prefix pipelane-marketing run test:lighthouse",
+    "smoke:api": "pwsh -File scripts/smoke-api.ps1",
+    "smoke:front": "pwsh -File scripts/smoke-front.ps1",
+    "ci:local": "npm run quality:all"
+  },
+  "lint-staged": {
+    "pipelane-api/**/*.cs": [
+      "dotnet format pipelane-api/Pipelane.sln --include"
+    ],
+    "pipelane-front/**/*.{ts,html,scss,css,json,md}": [
+      "cd pipelane-front && npx --yes prettier@3.3.3 --write",
+      "cd pipelane-front && npx --yes eslint@8.57.0 --max-warnings=0 --fix"
+    ],
+    "pipelane-marketing/**/*.{ts,astro,css,md}": [
+      "cd pipelane-marketing && npx --yes prettier@3.3.3 --write",
+      "cd pipelane-marketing && npx --yes eslint@8.57.0 --fix"
+    ]
+  }
+}

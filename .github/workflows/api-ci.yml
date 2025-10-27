@@ -1,0 +1,45 @@
+name: api-ci
+
+on:
+  push:
+    paths:
+      - 'pipelane-api/**'
+      - '.github/workflows/api-ci.yml'
+  pull_request:
+    paths:
+      - 'pipelane-api/**'
+  workflow_dispatch:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        configuration: [Debug]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        working-directory: pipelane-api
+        run: dotnet restore Pipelane.sln
+
+      - name: Build
+        working-directory: pipelane-api
+        run: dotnet build Pipelane.sln --configuration ${{ matrix.configuration }} --no-restore
+
+      - name: Test with coverage
+        working-directory: pipelane-api
+        run: dotnet test Pipelane.sln --configuration ${{ matrix.configuration }} --no-build
+
+      - name: Upload coverage artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-coverage
+          path: pipelane-api/tests/coverage/

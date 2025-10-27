@@ -1,0 +1,48 @@
+name: front-ci
+
+on:
+  push:
+    paths:
+      - 'pipelane-front/**'
+      - '.github/workflows/front-ci.yml'
+  pull_request:
+    paths:
+      - 'pipelane-front/**'
+  workflow_dispatch:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: pipelane-front/package-lock.json
+
+      - name: Install dependencies
+        working-directory: pipelane-front
+        run: npm ci
+
+      - name: Lint & format check
+        working-directory: pipelane-front
+        run: npm run ui:check
+
+      - name: Unit tests
+        working-directory: pipelane-front
+        run: npm run ui:test
+
+      - name: Build
+        working-directory: pipelane-front
+        run: npm run build
+
+      - name: Upload Jest coverage
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: front-coverage
+          path: pipelane-front/coverage/

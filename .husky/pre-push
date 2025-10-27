@@ -1,0 +1,6 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+dotnet test pipelane-api/Pipelane.sln
+npm --prefix pipelane-front run ui:test
+npm --prefix pipelane-marketing run test:a11y
