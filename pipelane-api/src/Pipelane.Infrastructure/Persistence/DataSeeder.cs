@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+
 using Pipelane.Application.Storage;
 using Pipelane.Domain.Entities;
 using Pipelane.Domain.Entities.Prospecting;
@@ -259,5 +261,472 @@ public class DataSeeder
         }
 
         await _db.SaveChangesAsync(ct);
+
+        await SeedAdditionalArtifactsAsync(tenantId, ct);
+
+        await _db.SaveChangesAsync(ct);
+    }
+
+    private async Task SeedAdditionalArtifactsAsync(Guid tenantId, CancellationToken ct)
+    {
+        var now = DateTime.UtcNow;
+        var random = new Random(HashCode.Combine(tenantId, now.DayOfYear));
+
+        var contacts = await _db.Contacts.AsNoTracking()
+            .Where(c => c.TenantId == tenantId)
+            .OrderBy(c => c.CreatedAt)
+            .Take(25)
+            .ToListAsync(ct);
+
+        if (contacts.Count == 0)
+        {
+            return;
+        }
+
+        var contactIds = contacts.Select(c => c.Id).ToList();
+
+        var conversations = await _db.Conversations.AsNoTracking()
+            .Where(c => c.TenantId == tenantId && contactIds.Contains(c.ContactId))
+            .ToListAsync(ct);
+        var conversationByContact = conversations
+            .GroupBy(c => c.ContactId)
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(c => c.CreatedAt).First());
+
+        var conversationIds = conversations.Select(c => c.Id).ToList();
+
+        var messages = await _db.Messages.AsNoTracking()
+            .Where(m => m.TenantId == tenantId && conversationIds.Contains(m.ConversationId))
+            .OrderByDescending(m => m.CreatedAt)
+            .Take(100)
+            .ToListAsync(ct);
+        var firstInbound = messages.FirstOrDefault(m => m.Direction == MessageDirection.In);
+        var firstOutbound = messages.FirstOrDefault(m => m.Direction == MessageDirection.Out);
+
+        var template = await _db.Templates.AsNoTracking()
+            .Where(t => t.TenantId == tenantId)
+            .OrderBy(t => t.UpdatedAtUtc)
+            .FirstOrDefaultAsync(ct);
+
+        var prospects = await _db.Prospects.AsNoTracking()
+            .Where(p => p.TenantId == tenantId)
+            .OrderBy(p => p.CreatedAtUtc)
+            .Take(60)
+            .ToListAsync(ct);
+        var prospectIds = prospects.Select(p => p.Id).ToList();
+
+        var sequenceSteps = await _db.ProspectingSequenceSteps.AsNoTracking()
+            .Where(s => s.TenantId == tenantId)
+            .OrderBy(s => s.Order)
+            .ToListAsync(ct);
+        var firstStep = sequenceSteps.FirstOrDefault();
+
+        var campaign = await _db.ProspectingCampaigns.AsNoTracking()
+            .Where(c => c.TenantId == tenantId)
+            .OrderBy(c => c.CreatedAtUtc)
+            .FirstOrDefaultAsync(ct);
+
+        if (!await _db.ChannelSettings.AnyAsync(c => c.TenantId == tenantId, ct))
+        {
+            _db.ChannelSettings.AddRange(new[]
+            {
+                new ChannelSettings
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = tenantId,
+                    Channel = Channel.Email,
+                    SettingsJson = "{\"from\":\"hello@pipelane.app\",\"provider\":\"resend\"}"
+                },
+                new ChannelSettings
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = tenantId,
+                    Channel = Channel.Whatsapp,
+                    SettingsJson = "{\"businessNumber\":\"+33755551212\",\"provider\":\"meta\"}"
+                },
+                new ChannelSettings
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = tenantId,
+                    Channel = Channel.Sms,
+                    SettingsJson = "{\"senderId\":\"PIPELANE\",\"provider\":\"twilio\"}"
+                }
+            });
+        }
+
+        if (!await _db.Consents.AnyAsync(c => c.TenantId == tenantId, ct))
+        {
+            var consents = new List<Consent>();
+            foreach (var contact in contacts.Take(12))
+            {
+                consents.Add(new Consent
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = tenantId,
+                    ContactId = contact.Id,
+                    Channel = Channel.Email,
+                    OptInAtUtc = now.AddDays(-random.Next(5, 45)),
+                    Source = "demo_form",
+                    MetaJson = "{\"ip\":\"127.0.0.1\"}"
+                });
+                consents.Add(new Consent
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = tenantId,
+                    ContactId = contact.Id,
+                    Channel = Channel.Whatsapp,
+                    OptInAtUtc = now.AddDays(-random.Next(3, 30)),
+                    Source = "demo_whatsapp",
+                    MetaJson = "{\"keyword\":\"START\"}"
+                });
+            }
+
+            _db.Consents.AddRange(consents);
+        }
+
+        if (!await _db.Campaigns.AnyAsync(c => c.TenantId == tenantId, ct) && template is not null)
+        {
+            _db.Campaigns.Add(new Campaign
+            {
+                Id = Guid.NewGuid(),
+                TenantId = tenantId,
+                Name = "Relance WhatsApp J+2",
+                PrimaryChannel = Channel.Whatsapp,
+                TemplateId = template.Id,
+                SegmentJson = "{\"tags\":[\"segment:demo\"]}",
+                ScheduledAtUtc = now.AddHours(8),
+                Status = CampaignStatus.Pending,
+                CreatedAt = now.AddDays(-2)
+            });
+        }
+
+        if (!await _db.Events.AnyAsync(e => e.TenantId == tenantId, ct))
+        {
+            _db.Events.AddRange(new[]
+            {
+                new Event
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = tenantId,
+                    Source = EventSource.Email,
+                    PayloadJson = "{\"event\":\"opened\",\"campaign\":\"warm_saas\"}",
+                    CreatedAt = now.AddHours(-6)
+                },
+                new Event
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = tenantId,
+                    Source = EventSource.Whatsapp,
+                    PayloadJson = $"{{\"event\":\"reply\",\"contact\":\"{contacts[0].Email ?? "unknown"}\"}}",
+                    CreatedAt = now.AddHours(-2)
+                },
+                new Event
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = tenantId,
+                    Source = EventSource.Crm,
+                    PayloadJson = "{\"event\":\"deal_created\",\"amount\":1800}",
+                    CreatedAt = now.AddHours(-1)
+                }
+            });
+        }
+
+        if (!await _db.Conversions.AnyAsync(c => c.TenantId == tenantId, ct) && contacts.FirstOrDefault() is { } conversionContact)
+        {
+            _db.Conversions.Add(new Conversion
+            {
+                Id = Guid.NewGuid(),
+                TenantId = tenantId,
+                ContactId = conversionContact.Id,
+                CampaignId = template is null ? null : await _db.Campaigns
+                    .Where(c => c.TenantId == tenantId)
+                    .Select(c => (Guid?)c.Id)
+                    .FirstOrDefaultAsync(ct),
+                Amount = 1890m,
+                Currency = "EUR",
+                OrderId = $"DEMO-{random.Next(1000, 9999)}",
+                RevenueAtUtc = now.AddHours(-3)
+            });
+        }
+
+        if (!await _db.LeadScores.AnyAsync(l => l.TenantId == tenantId, ct))
+        {
+            var leadScores = new List<LeadScore>();
+            if (contacts.FirstOrDefault() is { } leadContact)
+            {
+                leadScores.Add(new LeadScore
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = tenantId,
+                    ContactId = leadContact.Id,
+                    Scope = "contact",
+                    Score = 82,
+                    ReasonsJson = "[\"Réponse rapide\",\"Ouverture campagne J+1\"]",
+                    Model = "contact_v1",
+                    UpdatedAtUtc = now.AddHours(-4)
+                });
+            }
+
+            if (prospects.FirstOrDefault() is { } leadProspect)
+            {
+                leadScores.Add(new LeadScore
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = tenantId,
+                    ProspectId = leadProspect.Id,
+                    Scope = "prospect",
+                    Score = 91,
+                    ReasonsJson = "[\"Score Hunter élevé\",\"Site web rapide\"]",
+                    Model = "hunter_v1",
+                    UpdatedAtUtc = now.AddHours(-2)
+                });
+            }
+
+            if (leadScores.Count > 0)
+            {
+                _db.LeadScores.AddRange(leadScores);
+            }
+        }
+
+        if (!await _db.FollowupTasks.AnyAsync(t => t.TenantId == tenantId, ct) && contacts.FirstOrDefault() is { } followContact)
+        {
+            var relatedConversation = conversationByContact.TryGetValue(followContact.Id, out var convo)
+                ? convo
+                : conversations.FirstOrDefault();
+
+            _db.FollowupTasks.AddRange(new[]
+            {
+                new FollowupTask
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = tenantId,
+                    ContactId = followContact.Id,
+                    MessageId = firstInbound?.Id,
+                    Title = "Relancer pour créneau de démo",
+                    DueAtUtc = now.AddHours(6),
+                    CreatedAtUtc = now.AddHours(-1),
+                    Completed = false,
+                    Notes = relatedConversation is null ? null : $"Conversation {relatedConversation.Id.ToString()[..8]}"
+                },
+                new FollowupTask
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = tenantId,
+                    ContactId = contacts.ElementAtOrDefault(1)?.Id ?? followContact.Id,
+                    MessageId = firstOutbound?.Id,
+                    Title = "Envoyer étude de cas",
+                    DueAtUtc = now.AddDays(1),
+                    CreatedAtUtc = now,
+                    Completed = true,
+                    CompletedAtUtc = now.AddHours(1),
+                    Notes = "Document partagé via email."
+                }
+            });
+        }
+
+        if (!await _db.Outbox.AnyAsync(o => o.TenantId == tenantId, ct) && contacts.FirstOrDefault() is { } outboxContact)
+        {
+            var relatedConversation = conversationByContact.TryGetValue(outboxContact.Id, out var convo)
+                ? convo
+                : conversations.FirstOrDefault();
+
+            _db.Outbox.AddRange(new[]
+            {
+                new OutboxMessage
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = tenantId,
+                    ContactId = outboxContact.Id,
+                    ConversationId = relatedConversation?.Id,
+                    Channel = Channel.Email,
+                    Type = MessageType.Text,
+                    TemplateId = template?.Id,
+                    PayloadJson = "{\"subject\":\"On boucle votre démo\",\"body\":\"Bonjour, voici le lien pour réserver.\"}",
+                    MetaJson = "{\"priority\":\"high\"}",
+                    ScheduledAtUtc = now.AddMinutes(30),
+                    Attempts = 0,
+                    MaxAttempts = 5,
+                    Status = OutboxStatus.Queued,
+                    CreatedAt = now
+                },
+                new OutboxMessage
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = tenantId,
+                    ContactId = contacts.ElementAtOrDefault(2)?.Id ?? outboxContact.Id,
+                    ConversationId = relatedConversation?.Id,
+                    Channel = Channel.Whatsapp,
+                    Type = MessageType.Template,
+                    TemplateId = template?.Id,
+                    PayloadJson = "{\"template\":\"welcome\",\"lang\":\"fr\"}",
+                    MetaJson = "{\"attempt\":1}",
+                    ScheduledAtUtc = now.AddMinutes(-15),
+                    Attempts = 1,
+                    MaxAttempts = 5,
+                    Status = OutboxStatus.Sending,
+                    CreatedAt = now.AddMinutes(-20),
+                    LockedUntilUtc = now.AddMinutes(5)
+                },
+                new OutboxMessage
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = tenantId,
+                    ContactId = contacts.ElementAtOrDefault(3)?.Id ?? outboxContact.Id,
+                    ConversationId = relatedConversation?.Id,
+                    Channel = Channel.Sms,
+                    Type = MessageType.Text,
+                    PayloadJson = "{\"text\":\"Rappel: réservez votre créneau\"}",
+                    MetaJson = "{\"quietHours\":true}",
+                    ScheduledAtUtc = now.AddHours(-5),
+                    Attempts = 2,
+                    MaxAttempts = 3,
+                    Status = OutboxStatus.Failed,
+                    LastError = "Quiet hours in effect",
+                    CreatedAt = now.AddHours(-6)
+                }
+            });
+        }
+
+        if (!await _db.RateLimitSnapshots.AnyAsync(r => r.TenantId == tenantId, ct))
+        {
+            _db.RateLimitSnapshots.Add(new RateLimitSnapshot
+            {
+                Id = Guid.NewGuid(),
+                TenantId = tenantId,
+                TargetTenantId = tenantId,
+                Scope = "whatsapp:messages",
+                HitsJson = "[{\"window\":\"2025-01-01T10:00:00Z\",\"count\":12},{\"window\":\"2025-01-01T11:00:00Z\",\"count\":8}]",
+                WindowStartUtc = now.AddHours(-1),
+                UpdatedAtUtc = now
+            });
+        }
+
+        if (!await _db.FailedWebhooks.AnyAsync(f => f.TenantId == tenantId, ct))
+        {
+            _db.FailedWebhooks.Add(new FailedWebhook
+            {
+                Id = Guid.NewGuid(),
+                TenantId = tenantId,
+                Channel = Channel.Email,
+                Provider = "resend",
+                Kind = "delivery",
+                Payload = "{\"event\":\"bounce\",\"messageId\":\"demo\"}",
+                HeadersJson = "{\"signature\":\"abc123\"}",
+                LastError = "HTTP 429 Too Many Requests",
+                RetryCount = 3,
+                NextAttemptUtc = now.AddMinutes(10),
+                CreatedAtUtc = now.AddMinutes(-30),
+                UpdatedAtUtc = now.AddMinutes(-5)
+            });
+        }
+
+        if (!await _db.ProspectLists.AnyAsync(l => l.TenantId == tenantId, ct) && prospects.Count >= 5)
+        {
+            var listId = Guid.NewGuid();
+            var list = new ProspectList
+            {
+                Id = listId,
+                TenantId = tenantId,
+                Name = "Top 20 Hunter",
+                CreatedAtUtc = now.AddDays(-1),
+                UpdatedAtUtc = now
+            };
+
+            _db.ProspectLists.Add(list);
+
+            var items = prospects.Take(20).Select((prospect, index) => new ProspectListItem
+            {
+                Id = Guid.NewGuid(),
+                TenantId = tenantId,
+                ProspectListId = listId,
+                ProspectId = prospect.Id,
+                AddedAtUtc = now.AddMinutes(-index * 3)
+            }).ToList();
+
+            _db.ProspectListItems.AddRange(items);
+        }
+
+        if (!await _db.EmailGenerations.AnyAsync(g => g.TenantId == tenantId, ct) && prospects.FirstOrDefault() is { } targetProspect && firstStep is not null)
+        {
+            var generationId = Guid.NewGuid();
+            var generation = new EmailGeneration
+            {
+                Id = generationId,
+                TenantId = tenantId,
+                ProspectId = targetProspect.Id,
+                StepId = firstStep.Id,
+                CampaignId = campaign?.Id,
+                Variant = "A",
+                Subject = $"Automatisation pipeline - {targetProspect.Company}",
+                HtmlBody = "<p>Bonjour {{firstName}},</p><p>On automatise votre prospection.</p>",
+                TextBody = "Bonjour, on automatise votre prospection.",
+                PromptUsed = "Write a friendly outreach message",
+                Model = "gpt-4o-mini",
+                Temperature = 0.3m,
+                PromptTokens = 420,
+                CompletionTokens = 181,
+                CostUsd = 0.08m,
+                Approved = true,
+                CreatedAtUtc = now.AddHours(-2),
+                MetadataJson = "{\"persona\":\"RevOps\"}"
+            };
+
+            _db.EmailGenerations.Add(generation);
+
+            if (!await _db.ProspectingSendLogs.AnyAsync(s => s.TenantId == tenantId, ct))
+            {
+                var sendLogId = Guid.NewGuid();
+                var sendLog = new SendLog
+                {
+                    Id = sendLogId,
+                    TenantId = tenantId,
+                    ProspectId = targetProspect.Id,
+                    CampaignId = campaign?.Id,
+                    StepId = firstStep.Id,
+                    GenerationId = generationId,
+                    Provider = "resend",
+                    ProviderMessageId = $"msg_{random.Next(100000, 999999)}",
+                    Status = SendLogStatus.Delivered,
+                    ScheduledAtUtc = now.AddHours(-1),
+                    SentAtUtc = now.AddMinutes(-50),
+                    DeliveredAtUtc = now.AddMinutes(-47),
+                    OpenedAtUtc = now.AddMinutes(-30),
+                    ClickedAtUtc = now.AddMinutes(-10),
+                    RetryCount = 0,
+                    RawPayloadJson = "{\"status\":\"delivered\"}",
+                    MetadataJson = "{\"utm\":\"demo\"}",
+                    CreatedAtUtc = now.AddHours(-1),
+                    UpdatedAtUtc = now.AddMinutes(-5)
+                };
+
+                _db.ProspectingSendLogs.Add(sendLog);
+
+                if (!await _db.ProspectReplies.AnyAsync(r => r.TenantId == tenantId, ct))
+                {
+                    _db.ProspectReplies.Add(new ProspectReply
+                    {
+                        Id = Guid.NewGuid(),
+                        TenantId = tenantId,
+                        ProspectId = targetProspect.Id,
+                        CampaignId = campaign?.Id,
+                        SendLogId = sendLogId,
+                        StepId = firstStep.Id,
+                        Provider = "imap",
+                        ProviderMessageId = $"reply_{random.Next(100000, 999999)}",
+                        ReceivedAtUtc = now.AddMinutes(-15),
+                        Subject = "Re: Automatisation pipeline",
+                        TextBody = "Intéressant, pouvez-vous partager un créneau ?",
+                        HtmlBody = "<p>Intéressant, pouvez-vous partager un créneau ?</p>",
+                        Intent = ReplyIntent.Interested,
+                        IntentConfidence = 0.82,
+                        ExtractedDatesJson = "[\"2025-11-02T10:00:00Z\"]",
+                        AutoReplySuggested = true,
+                        AutoReplyGenerationId = generationId,
+                        CreatedAtUtc = now.AddMinutes(-15),
+                        ProcessedAtUtc = now.AddMinutes(-5),
+                        MetadataJson = "{\"timezone\":\"Europe/Paris\"}"
+                    });
+                }
+            }
+        }
     }
 }
