@@ -8,16 +8,12 @@ import FeatureCard from "@components/FeatureCard.astro";
 import StatCard from "@components/StatCard.astro";
 import NeonBadge from "@components/NeonBadge.astro";
 
-const heroChips = [
-  "+ de réponses (+ more replies)",
-  "Zéro oubli (+ zero missed follow-up)",
-  "Tout au même endroit (+ everything in one place)",
-];
+const heroChips = ["+ de réponses", "Zéro oubli", "Tout au même endroit"];
 
 const leadHunterBullets = [
-  "Critères simples (secteur, zone, avis, site, réseaux) (Simple criteria: vertical, area, reviews, site, socials)",
-  "Liste scorée + raison claire (Scored list + transparent why)",
-  "1-clic : créer la liste → créer la cadence (1-click list → cadence)",
+  "Critères simples (secteur, zone, avis, site, réseaux)",
+  "Liste scorée + raison claire",
+  "1-clic : créer la liste → créer la cadence",
 ];
 
 const cadenceColumns = [
@@ -27,53 +23,53 @@ const cadenceColumns = [
 ];
 
 const cadenceHighlights = [
-  "Caps/jour protégés (Daily caps protected)",
-  "Fenêtres horaires (Quiet hours windows)",
-  "Variantes A/B légères (Lightweight A/B variants)",
+  "Caps/jour protégés",
+  "Fenêtres horaires",
+  "Variantes A/B légères",
 ];
 
 const bookingBullets = [
-  "Intent 0–100 (intent score 0–100)",
-  "2-slot offer (2 time-slot offer)",
-  "Ajout auto au calendrier/CRM (Auto calendar/CRM update)",
+  "Intent 0–100",
+  "Offre 2 créneaux",
+  "Ajout auto au calendrier/CRM",
 ];
 
 const followupWhy = [
-  "Ancienneté de l’échange (Age of last exchange)",
-  "Heure locale qui performe (Local time that converts)",
-  "Angle valeur pour ce secteur (Value angle tuned to vertical)",
+  "Ancienneté de l’échange",
+  "Heure locale qui performe",
+  "Angle valeur pour ce secteur",
 ];
 
 const followupNotice =
-  "Respect opt-out/STOP et policy WhatsApp 24h (HSM si hors fenêtre). (EN: Respect opt-out/STOP and WhatsApp 24h policy — HSM if outside window.)";
+  "Respect opt-out/STOP et politique WhatsApp 24h (HSM requis hors fenêtre).";
 
 const timelineFlow = [
   {
     title: "Trouver",
-    description: "Lead Hunter IA → liste scorée (Lead Hunter AI → scored list)",
+    description: "Lead Hunter IA → liste scorée",
     icon: "search",
   },
   {
     title: "Prospecter",
-    description: "Cadence Email/WA/SMS (Email/WA/SMS cadence)",
+    description: "Cadence Email/WA/SMS",
     icon: "send",
   },
   {
     title: "Relancer",
-    description: "Moment + angle + message court (Timing + angle + short message)",
+    description: "Moment + angle + message court",
     icon: "bolt",
   },
   {
     title: "Booker",
-    description: "2 créneaux → confirmation → CRM (Two slots → confirm → CRM)",
+    description: "2 créneaux → confirmation → CRM",
     icon: "calendar",
   },
 ];
 
 const statHighlights = [
-  { label: "TTR", value: "26 s", hint: "réponse inbound moyenne (avg inbound time-to-reply)" },
-  { label: "Reply rate", value: "12 %", hint: "sur 30 jours (last 30 days)" },
-  { label: "RDV / 100", value: "8", hint: "dépend du secteur (per 100 leads, varies by vertical)" },
+  { label: "TTR", value: "26 s", hint: "réponse inbound moyenne" },
+  { label: "Reply rate", value: "12 %", hint: "sur 30 jours" },
+  { label: "RDV / 100", value: "8", hint: "dépend du secteur" },
 ];
 
 const pageTitle = "Pipelane – Lead Hunter → Cadences → Relance → 2 créneaux";
@@ -128,6 +124,7 @@ const faqSchema = {
   ],
 };
 ---
+<!-- Page d'accueil : présente le parcours Lead Hunter, cadences et relance pour guider l'utilisateur vers la démo. -->
 <BaseLayout title={pageTitle} description={pageDescription} canonical="https://www.pipelane.app">
   <Navbar currentPath={Astro.url.pathname} />
   <main class="space-y-32 lg:space-y-44">
@@ -136,10 +133,10 @@ const faqSchema = {
         <div class="space-y-8">
           <NeonBadge text="Lead Hunter → Cadences → Relance → Booking" />
           <h1 class="text-balance font-semibold on-surface-strong max-w-[42ch]">
-            Votre agent qui trouve des clients et remplit votre agenda (EN: The agent that finds clients and fills your calendar)
+            Votre agent qui trouve des clients et remplit votre agenda
           </h1>
           <p class="max-w-[48ch] text-lg leading-relaxed on-surface">
-            Pipelane repère les bons prospects avec une recherche intelligente, lance des séquences multi-canales (Email/WhatsApp/SMS), relance au bon moment et propose 2 créneaux — vous ne gérez que les RDV chauds. (EN: Smart lead hunting + multi-channel cadences + smart follow-ups + 2-slot booking.)
+            Pipelane repère les bons prospects avec une recherche intelligente, lance des séquences multi-canales (Email/WhatsApp/SMS), relance au bon moment et propose 2 créneaux — vous ne gérez que les rendez-vous chauds.
           </p>
           <ul class="flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.3em]">
             {heroChips.map((chip) => (
@@ -156,7 +153,7 @@ const faqSchema = {
               data-analytics="cta_click"
               data-location="hero-primary"
             >
-              Demander une démo (EN: Request a demo)
+              Demander une démo
             </a>
             <a
               href="#de-a-a-z"
@@ -164,7 +161,7 @@ const faqSchema = {
               data-analytics="cta_click"
               data-location="hero-secondary"
             >
-              Voir comment ça marche (EN: See how it works)
+              Voir comment ça marche
             </a>
           </div>
         </div>
@@ -182,14 +179,14 @@ const faqSchema = {
                   <div class="glass flex items-center justify-between rounded-2xl border border-line/25 bg-surfaceOverlay/80 px-4 py-3">
                     <div>
                       <p class="font-semibold on-surface-strong">Maison Nova · 94</p>
-                      <p class="text-xs text-textMuted">Paris · Site lent mobile (EN: Slow mobile site)</p>
+                      <p class="text-xs text-textMuted">Paris · Site lent mobile</p>
                     </div>
-                    <span class="rounded-full bg-primary/15 px-3 py-1 text-xs text-primary/90">Why this lead?</span>
+                    <span class="rounded-full bg-primary/15 px-3 py-1 text-xs text-primary/90">Pourquoi ce lead ?</span>
                   </div>
                   <div class="glass flex items-center justify-between rounded-2xl border border-line/25 bg-surfaceOverlay/70 px-4 py-3">
                     <div>
                       <p class="font-semibold on-surface-strong">Bistro Lumen · 88</p>
-                      <p class="text-xs text-textMuted">Lyon · Pas de réservation en ligne (EN: No online booking)</p>
+                      <p class="text-xs text-textMuted">Lyon · Pas de réservation en ligne</p>
                     </div>
                     <span class="rounded-full bg-primary/15 px-3 py-1 text-xs text-primary/90">Score élevé</span>
                   </div>
@@ -216,10 +213,10 @@ const faqSchema = {
         <div class="space-y-6">
           <NeonBadge text="Lead Hunter IA" />
           <h2 class="text-balance text-3xl font-semibold tracking-tight on-surface-strong sm:text-4xl">
-            Trouvez les bons prospects en 60 secondes (EN: Find the right prospects in 60 seconds)
+            Trouvez les bons prospects en 60 secondes
           </h2>
           <p class="text-base leading-relaxed on-surface">
-            Décrivez votre cible ou choisissez un secteur. L’agent analyse cartes, annuaires et données publiques, enrichit (site/email/réseaux), applique un scoring 0–100 et affiche des raisons claires “Pourquoi ce lead ?”. (EN: Describe your target or pick a vertical. The agent enriches, scores 0–100 and explains why each lead matters.)
+            Décrivez votre cible ou choisissez un secteur. L’agent analyse cartes, annuaires et données publiques, enrichit (site/email/réseaux), applique un scoring 0–100 et affiche des raisons claires “Pourquoi ce lead ?”.
           </p>
           <ul class="space-y-3 text-sm leading-relaxed on-surface">
             {leadHunterBullets.map((bullet) => (
@@ -231,7 +228,7 @@ const faqSchema = {
           </ul>
         </div>
         <FeatureCard
-          title="Why this lead?"
+          title="Pourquoi ce lead ?"
           badge="Score 0–100"
           bullets={["Pas de réservation en ligne", "Site lent mobile", "Instagram actif"]}
         />
@@ -242,7 +239,7 @@ const faqSchema = {
             data-analytics="cta_click"
             data-location="lead-hunter-link"
           >
-            Voir l’agent de prospection (EN: Explore the prospecting agent)
+            Voir l’agent de prospection
             <span aria-hidden="true">→</span>
           </a>
         </div>
@@ -254,10 +251,10 @@ const faqSchema = {
         <div class="space-y-4 text-center">
           <NeonBadge text="Cadences multi-canales" />
           <h2 class="text-3xl font-semibold tracking-tight on-surface-strong sm:text-4xl">
-            Prospectez en Email, WhatsApp et SMS en gardant la main (EN: Multi-channel cadences without losing control)
+            Prospectez en Email, WhatsApp et SMS en gardant la main
           </h2>
           <p class="mx-auto max-w-3xl text-base leading-relaxed on-surface">
-            L’IA rédige des messages courts et utiles (≤120 mots), FR/EN. (EN: AI writes short, useful messages (≤120 words) in FR/EN.)
+            L’IA rédige des messages courts et utiles (≤120 mots), en français et en anglais.
           </p>
         </div>
         <div class="grid gap-6 md:grid-cols-3">
@@ -276,7 +273,7 @@ const faqSchema = {
           ))}
         </div>
         <div class="rounded-3xl border border-primary/25 bg-primary/10 p-5 text-sm text-primary">
-          Conformité : Email (désinscription), SMS (STOP), WhatsApp 24h (HSM si hors fenêtre). (EN: Compliance: Email unsubscribe, SMS STOP, WhatsApp 24h/HSM if outside the window.)
+          Conformité : Email (désinscription), SMS (STOP), WhatsApp 24h (HSM si hors fenêtre).
         </div>
       </div>
     </section>
@@ -286,10 +283,10 @@ const faqSchema = {
         <div class="space-y-6">
           <NeonBadge text="Qualification & Booking" />
           <h2 class="text-3xl font-semibold tracking-tight on-surface-strong sm:text-4xl">
-            Qualifiez en 3–5 questions, proposez 2 créneaux (EN: Qualify in 3–5 questions, offer 2 slots)
+            Qualifiez en 3–5 questions, proposez 2 créneaux
           </h2>
           <p class="text-base leading-relaxed on-surface">
-            Dès qu’un prospect répond, l’agent pose 3–5 questions, score l’intention, puis propose 2 créneaux (ou un lien) et confirme le RDV. (EN: Once a reply lands, the agent qualifies with a few questions, scores intent and offers two slots or a booking link.)
+            Dès qu’un prospect répond, l’agent pose 3–5 questions, score l’intention, puis propose 2 créneaux (ou un lien) et confirme le rendez-vous.
           </p>
           <ul class="space-y-3 text-sm leading-relaxed on-surface">
             {bookingBullets.map((bullet) => (
@@ -301,23 +298,23 @@ const faqSchema = {
           </ul>
         </div>
         <div class="glass rounded-3xl border border-line/30 p-6 shadow-soft">
-          <p class="text-xs uppercase tracking-[0.3em] text-primary">Offre 2 créneaux (EN: Two-slot offer)</p>
+          <p class="text-xs uppercase tracking-[0.3em] text-primary">Offre 2 créneaux</p>
           <div class="mt-5 space-y-4 text-sm on-surface">
             <div class="flex items-center justify-between rounded-2xl border border-line/30 bg-surfaceOverlay/70 px-4 py-3">
               <p class="font-semibold on-surface-strong">Mar 10:00–10:30</p>
               <button class="rounded-full border border-primary/30 px-3 py-1 text-xs text-primary">
-                Confirmer (EN: Confirm)
+                Confirmer
               </button>
             </div>
             <div class="flex items-center justify-between rounded-2xl border border-line/30 bg-surfaceOverlay/60 px-4 py-3">
               <p class="font-semibold on-surface-strong">Mer 15:30–16:00</p>
               <button class="rounded-full border border-primary/30 px-3 py-1 text-xs text-primary">
-                Confirmer (EN: Confirm)
+                Confirmer
               </button>
             </div>
           </div>
           <div class="mt-6 rounded-2xl border border-primary/25 bg-primary/10 p-4 text-xs text-primary">
-            Synchronisation calendrier & CRM automatisée (EN: Calendar & CRM sync handled automatically)
+            Synchronisation calendrier & CRM automatisée
           </div>
         </div>
       </div>
@@ -326,16 +323,16 @@ const faqSchema = {
     <section id="relance" class="section bg-surface/40">
       <div class="container-page grid gap-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
         <div class="glass rounded-3xl border border-line/30 p-6 shadow-soft">
-          <p class="text-xs uppercase tracking-[0.3em] text-primary">Relance mardi 10:30 · angle valeur (EN: Follow-up Tuesday 10:30 · value angle)</p>
+          <p class="text-xs uppercase tracking-[0.3em] text-primary">Relance mardi 10:30 · angle valeur</p>
           <p class="mt-4 text-base leading-relaxed on-surface">
             « Bonjour Camille, vous m’indiquiez chercher un moyen d’automatiser vos relances.
-            Voici comment NovaOps a doublé ses RDV en 5 semaines, je vous envoie le cas ? » (EN: “Hi Camille, you were looking to automate follow-ups. NovaOps doubled meetings in 5 weeks — want the case study?”)
+            Voici comment NovaOps a doublé ses rendez-vous en 5 semaines, souhaitez-vous que je vous envoie le cas ? »
           </p>
-          <p class="mt-4 text-xs text-textMuted">Dernier échange lu · Pas de réponse depuis 3 jours (Last exchange read · No reply for 3 days)</p>
+          <p class="mt-4 text-xs text-textMuted">Dernier échange lu · Pas de réponse depuis 3 jours</p>
         </div>
         <div class="space-y-5">
           <div class="glass rounded-3xl border border-line/30 p-6 shadow-soft">
-            <p class="text-xs uppercase tracking-[0.3em] text-primary">Pourquoi ce choix ? (Why this choice?)</p>
+            <p class="text-xs uppercase tracking-[0.3em] text-primary">Pourquoi ce choix ?</p>
             <ul class="mt-4 space-y-3 text-sm leading-relaxed on-surface">
               {followupWhy.map((item) => (
                 <li class="flex items-start gap-2">
@@ -357,9 +354,9 @@ const faqSchema = {
         <div class="space-y-3 text-center">
           <NeonBadge text="De A à Z" />
           <h2 class="text-3xl font-semibold tracking-tight on-surface-strong sm:text-4xl">
-            De la recherche au RDV, en 4 étapes (EN: From discovery to booked meeting in 4 steps)
+            De la recherche au rendez-vous, en 4 étapes
           </h2>
-          <p class="text-sm uppercase tracking-[0.3em] text-textMuted">(Find → Prospect → Nurture → Book)</p>
+          <p class="text-sm uppercase tracking-[0.3em] text-textMuted">Trouver → Prospecter → Relancer → Booker</p>
         </div>
         <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           {timelineFlow.map((step, index) => (
@@ -374,7 +371,7 @@ const faqSchema = {
         <div class="space-y-4 text-center">
           <NeonBadge text="Preuve & réassurance" />
           <h2 class="text-3xl font-semibold tracking-tight on-surface-strong sm:text-4xl">
-            Des métriques qui montent sans complexité (EN: Metrics up, friction down)
+            Des métriques qui montent sans complexité
           </h2>
         </div>
         <div class="grid gap-6 md:grid-cols-3">
@@ -387,7 +384,7 @@ const faqSchema = {
             href="/securite-rgpd"
             class="inline-flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.3em] text-primary transition hover:text-primary/80"
           >
-            Sécurité & RGPD (Security & GDPR)
+            Sécurité & RGPD
             <span aria-hidden="true">→</span>
           </a>
         </div>
@@ -396,15 +393,15 @@ const faqSchema = {
 
     <CTA
       id="demo"
-      title="Remplissez votre pipe sans écrire un seul email. (EN: Fill your pipeline without writing a single email.)"
-      description="Activez Lead Hunter, cadences multi-canales et booking 2 créneaux en moins d’une heure. (EN: Activate Lead Hunter, multi-channel cadences, and 2-slot booking in under an hour.)"
+      title="Remplissez votre pipe sans écrire un seul email."
+      description="Activez Lead Hunter, cadences multi-canales et booking 2 créneaux en moins d’une heure."
       primary={{
-        label: "Demander une démo (EN: Request a demo)",
+        label: "Demander une démo",
         href: "/#demo",
         analyticsId: "cta-demo-primary",
       }}
       secondary={{
-        label: "Voir l’agent de prospection (EN: View the prospecting agent)",
+        label: "Voir l’agent de prospection",
         href: "/prospection-ia",
         analyticsId: "cta-demo-secondary",
       }}

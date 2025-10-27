@@ -25,22 +25,25 @@ const isDev = import.meta.env.DEV;
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="theme-color" content="#060c1c" media="(prefers-color-scheme: dark)" />
     <meta name="theme-color" content="#f4f7ff" media="(prefers-color-scheme: light)" />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Pipelane" />
-    <meta property="og:title" content={title} />
-    <meta property="og:description" content={description} />
+    <meta property="og:title" content="Pipelane" />
+    <meta property="og:description" content="Qualify • Relaunch • Book" />
     <meta property="og:url" content={canonical} />
-    <meta property="og:image" content="https://www.pipelane.app/og-cover.png" />
+    <meta property="og:image" content="/og-pipelane.png" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content={title} />
-    <meta name="twitter:description" content={description} />
-    <meta name="twitter:image" content="https://www.pipelane.app/og-cover.png" />
+    <meta name="twitter:title" content="Pipelane" />
+    <meta name="twitter:description" content="Qualify • Relaunch • Book" />
+    <meta name="twitter:image" content="/og-pipelane.png" />
     <meta name="twitter:creator" content="@pipelane" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="alternate icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
 
     <slot name="head" />
 

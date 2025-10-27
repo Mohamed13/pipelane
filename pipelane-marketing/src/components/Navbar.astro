@@ -62,12 +62,36 @@ const isActive = (link: NavLink) => {
       class="glass relative flex w-full items-center justify-between gap-4 rounded-2xl px-4 py-2 text-sm shadow-soft transition-colors duration-200 data-[scrolled='true']:bg-white/5 data-[scrolled='true']:backdrop-blur-md md:px-6 md:py-3"
     >
       <div class="absolute inset-0 -z-10 animate-gradient-slow bg-[radial-gradient(120%_120%_at_0%_0%,rgba(56,189,248,0.18),transparent),radial-gradient(120%_140%_at_100%_50%,rgba(167,139,250,0.24),transparent)]"></div>
-      <a href="/" class="group flex items-center gap-2 font-semibold uppercase tracking-[0.28em] on-surface-strong">
-        <span class="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-primary/20 text-primary shadow-glow">
-          <span class="absolute inset-0 animate-pulse-slow bg-[radial-gradient(circle,rgba(56,189,248,0.35)0%,transparent 70%)]"></span>
-          <span class="relative text-base font-semibold">PL</span>
-        </span>
-        <span class="text-xs lg:text-sm">Pipelane</span>
+      <a href="/" class="group flex items-center gap-3" aria-label="Pipelane logo">
+        <span class="sr-only">Pipelane</span>
+        <svg
+          class="w-[180px] max-w-full md:w-[220px]"
+          width="220"
+          height="56"
+          viewBox="0 0 680 140"
+          xmlns="http://www.w3.org/2000/svg"
+          role="img"
+          aria-hidden="true"
+        >
+          <defs>
+            <linearGradient id="plFlowNav" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#28C0B0" />
+              <stop offset="100%" stop-color="#7CE4D9" />
+            </linearGradient>
+          </defs>
+          <rect width="680" height="140" rx="16" fill="#0D0F12" />
+          <g transform="translate(20,28)">
+            <path d="M10 40 C60 10, 90 70, 140 40 S220 10, 260 40" stroke="url(#plFlowNav)" stroke-width="6" fill="none" stroke-linecap="round" />
+            <circle cx="60" cy="25" r="5" fill="#28C0B0" />
+            <circle cx="140" cy="40" r="5" fill="#28C0B0" />
+            <circle cx="220" cy="25" r="5" fill="#28C0B0" />
+            <path d="M260 40 l14 -8 v16 z" fill="#7CE4D9" />
+          </g>
+          <g transform="translate(320,85)">
+            <text x="0" y="0" fill="#E8FCF8" font-family="'Space Grotesk', Inter, system-ui, sans-serif" font-weight="700" font-size="44">Pipelane</text>
+            <text x="0" y="26" fill="#6B7280" font-family="Inter, system-ui, sans-serif" font-weight="600" font-size="16" letter-spacing="1.4">QUALIFY • RELAUNCH • BOOK</text>
+          </g>
+        </svg>
       </a>
       <button
         type="button"

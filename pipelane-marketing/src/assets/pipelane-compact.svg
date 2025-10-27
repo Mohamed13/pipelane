@@ -1,0 +1,19 @@
+<svg width="640" height="120" viewBox="0 0 640 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pipelane logo compact">
+  <defs>
+    <linearGradient id="plFlowCompact" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#28C0B0" />
+      <stop offset="100%" stop-color="#7CE4D9" />
+    </linearGradient>
+  </defs>
+  <g transform="translate(0,20)">
+    <path d="M10 40 C60 10, 90 70, 140 40 S220 10, 260 40" stroke="url(#plFlowCompact)" stroke-width="6" fill="none" stroke-linecap="round" />
+    <circle cx="60" cy="25" r="5" fill="#28C0B0" />
+    <circle cx="140" cy="40" r="5" fill="#28C0B0" />
+    <circle cx="220" cy="25" r="5" fill="#28C0B0" />
+    <path d="M260 40 l14 -8 v16 z" fill="#7CE4D9" />
+  </g>
+  <g transform="translate(300,74)">
+    <text x="0" y="0" fill="#0D0F12" font-family="'Space Grotesk', Inter, system-ui, sans-serif" font-weight="700" font-size="44">Pipelane</text>
+    <text x="0" y="24" fill="#4B5563" font-family="Inter, system-ui, sans-serif" font-weight="600" font-size="16" letter-spacing="1.4">QUALIFY • RELAUNCH • BOOK</text>
+  </g>
+</svg>

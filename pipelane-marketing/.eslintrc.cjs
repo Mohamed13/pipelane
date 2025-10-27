@@ -49,6 +49,8 @@ module.exports = {
         varsIgnorePattern: "^_"
       }
     ],
-    "tailwindcss/no-custom-classname": "off"
+    "tailwindcss/no-custom-classname": "off",
+    "astro/jsx-a11y/alt-text": "error",
+    "astro/jsx-a11y/aria-role": "error"
   }
 };

@@ -1,56 +1,133 @@
 ---
-import NeonBadge from "./NeonBadge.astro";
 import DemoForm from "./DemoForm.astro";
+import NeonBadge from "./NeonBadge.astro";
 
-interface Props {
-  id: string;
+type CTAAction = {
+  label: string;
+  href: string;
+  analyticsId?: string;
+  external?: boolean;
+};
+
+interface LegacyProps {
+  id?: string;
   title: string;
-  description: string;
-  primaryLabel: string;
-  secondaryLabel: string;
+  description?: string;
+  eyebrow?: string;
+  primary?: CTAAction;
+  secondary?: CTAAction;
+  includeForm?: boolean;
+  badge?: string;
+  layout?: "stacked" | "split";
+  primaryLabel?: string;
+  primaryHref?: string;
+  secondaryLabel?: string;
   secondaryHref?: string;
 }
 
-const { id, title, description, primaryLabel, secondaryLabel, secondaryHref = "#" } = Astro.props as Props;
+const {
+  id,
+  title,
+  description,
+  eyebrow,
+  badge,
+  layout = "split",
+  includeForm,
+  primary,
+  secondary,
+  primaryLabel,
+  primaryHref,
+  secondaryLabel,
+  secondaryHref
+} = Astro.props as LegacyProps;
+
+const resolvedPrimary: CTAAction = primary ?? {
+  label: primaryLabel ?? "Demander une démo",
+  href: primaryHref ?? "/#demo",
+  analyticsId: id ? `${id}-primary` : "cta-primary"
+};
+
+const resolvedSecondary: CTAAction | undefined =
+  secondary ??
+  (secondaryLabel
+    ? {
+        label: secondaryLabel,
+        href: secondaryHref ?? "#",
+        analyticsId: id ? `${id}-secondary` : "cta-secondary"
+      }
+    : undefined);
+
+const shouldRenderForm =
+  includeForm ??
+  Boolean(layout === "split");
+
+const resolvedBadge = badge ?? (shouldRenderForm ? "Plateforme d'automations omni-canales" : "");
+const showBadge = resolvedBadge.trim().length > 0;
 
 const demoMode = (import.meta.env.PUBLIC_DEMO_MODE ?? "false") === "true";
 const consoleUrl = (import.meta.env.PUBLIC_CONSOLE_URL ?? "http://localhost:4200").replace(/\/$/, "");
 ---
-<section id={id} class="py-20">
-  <div class="container">
-    <div class="reveal relative overflow-hidden rounded-[36px] border border-line/35 bg-surface-strong p-10 lg:grid lg:grid-cols-[1.1fr_1fr] lg:gap-16">
-      <div class="relative z-10 space-y-6 text-elevated">
-        <div class="inline-flex">
-          <NeonBadge text="Plateforme d'automations omni-canales" />
+<section id={id} class="section">
+  <div class="container-page">
+    <div
+      class={`reveal relative overflow-hidden rounded-[32px] border border-line/35 bg-surface-strong p-10 ${
+        shouldRenderForm ? "lg:grid lg:grid-cols-[1.05fr_minmax(0,0.95fr)] lg:gap-16" : "text-center"
+      }`}
+    >
+      <div class={`relative z-10 space-y-6 ${shouldRenderForm ? "" : "mx-auto max-w-3xl"}`}>
+        {showBadge && (
+          <div class={`${shouldRenderForm ? "inline-flex" : "flex justify-center"} text-primary`}>
+            <NeonBadge text={resolvedBadge} />
+          </div>
+        )}
+        <div class="space-y-4">
+          {eyebrow && <p class="text-xs font-semibold uppercase tracking-[0.4em] text-primary/75">{eyebrow}</p>}
+          <h2 class="text-3xl font-semibold tracking-tight on-surface-strong sm:text-4xl">{title}</h2>
+          {description && <p class={`text-lg leading-relaxed on-surface ${shouldRenderForm ? "max-w-xl" : "mx-auto max-w-3xl"}`}>{description}</p>}
         </div>
-        <h2 class="text-3xl font-semibold tracking-tight on-surface-strong sm:text-4xl">{title}</h2>
-        <p class="max-w-xl text-lg leading-relaxed on-surface">{description}</p>
-        <div class="flex flex-wrap gap-4 pt-2">
-          <a href="#demo" class="btn-primary" data-analytics="cta_click" data-location={`${id}-primary`}>
-            {primaryLabel}
+        <div class={`flex flex-col items-center gap-4 pt-2 ${shouldRenderForm ? "sm:flex-row sm:items-center sm:justify-start" : "sm:flex-row sm:justify-center"}`}>
+          <a
+            class="btn-primary min-h-[44px] rounded-xl px-6 shadow-glow focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+            href={resolvedPrimary.href}
+            target={resolvedPrimary.external ? "_blank" : undefined}
+            rel={resolvedPrimary.external ? "noreferrer" : undefined}
+            data-analytics="cta_click"
+            data-location={resolvedPrimary.analyticsId}
+          >
+            {resolvedPrimary.label}
           </a>
-          {demoMode && (
+          {demoMode && shouldRenderForm && (
             <a
-              class="btn-ghost"
+              class="btn-ghost min-h-[44px] rounded-xl px-6 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
               href={`${consoleUrl}/login?demo=1`}
               data-analytics="cta_click"
-              data-location={`${id}-demo`}
+              data-location={id ? `${id}-demo` : "cta-demo"}
             >
               Lancer la démo
             </a>
           )}
-          <a class="btn-ghost" href={secondaryHref} data-analytics="cta_click" data-location={`${id}-secondary`}>
-            {secondaryLabel}
-          </a>
+          {resolvedSecondary && (
+            <a
+              class="btn-ghost min-h-[44px] rounded-xl px-6 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+              href={resolvedSecondary.href}
+              target={resolvedSecondary.external ? "_blank" : undefined}
+              rel={resolvedSecondary.external ? "noreferrer" : undefined}
+              data-analytics="cta_click"
+              data-location={resolvedSecondary.analyticsId}
+            >
+              {resolvedSecondary.label}
+            </a>
+          )}
         </div>
       </div>
-      <div class="relative z-10 mt-10 lg:mt-0">
-        <DemoForm idPrefix={`${id}-form`} submitLabel={primaryLabel} />
-      </div>
+      {shouldRenderForm && (
+        <div class="relative z-10 mt-10 lg:mt-0">
+          <DemoForm idPrefix={`${id ?? "cta"}-form`} submitLabel={resolvedPrimary.label} />
+        </div>
+      )}
       <div class="absolute inset-0 -z-10 scrim">
-        <div class="absolute inset-0 bg-hero-gradient opacity-70"></div>
+        <div class="absolute inset-0 bg-hero-gradient opacity-65"></div>
       </div>
     </div>
   </div>
 </section>
-

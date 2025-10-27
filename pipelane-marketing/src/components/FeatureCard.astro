@@ -1,30 +1,86 @@
 ---
 import Icon from "./Icon.astro";
 
+interface ImageProps {
+  src: string;
+  alt: string;
+  aspectRatio?: string;
+}
+
 interface Props {
-  icon?: string;
   title: string;
-  description: string;
+  description?: string;
+  icon?: string;
+  bullets?: string[];
+  badge?: string;
+  image?: ImageProps;
   index?: number;
 }
 
-const { icon = "spark", title, description, index = 0 } = Astro.props as Props;
+const {
+  title,
+  description,
+  icon = "spark",
+  bullets = [],
+  badge,
+  image,
+  index = 0
+} = Astro.props as Props;
+
+const hasVisual = Astro.slots.has("visual") || Boolean(image);
 ---
 <article
-  class="reveal glass-strong transition-transform duration-350 rounded-3xl border border-line/30 p-8 hover:-translate-y-1 hover:border-primary/60"
+  class="reveal glass rounded-3xl border border-line/35 p-8 transition-transform duration-300 hover:-translate-y-1 hover:border-primary/60"
   style={`transition-delay: ${index * 70}ms;`}
 >
-  <div class="flex items-start gap-4">
-    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/18 text-primary">
-      <Icon name={icon} size={26} />
+  <div class={`flex flex-col gap-6 ${hasVisual ? "lg:flex-row lg:items-center" : ""}`}>
+    <div class="flex-1 space-y-5">
+      <div class="flex items-center gap-3 text-primary">
+        <span class="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/16">
+          <Icon name={icon} size={26} />
+        </span>
+        {badge && (
+          <span class="rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-medium uppercase tracking-wide text-primary/90">
+            {badge}
+          </span>
+        )}
+      </div>
+      <div class="space-y-3">
+        <h3 class="text-2xl font-semibold tracking-tight on-surface-strong">{title}</h3>
+        {description && <p class="text-base leading-relaxed on-surface">{description}</p>}
+      </div>
+      {bullets.length > 0 && (
+        <ul class="space-y-2 text-sm leading-relaxed on-surface">
+          {bullets.map((bullet) => (
+            <li class="flex items-start gap-2" >
+              <span class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-primary/80"></span>
+              <span>{bullet}</span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
-    <div>
-      <h3 class="text-xl font-semibold on-surface-strong">
-        {title}
-      </h3>
-      <p class="mt-4 text-base leading-relaxed on-surface">
-        {description}
-      </p>
-    </div>
+    {hasVisual && (
+      <div class="flex-1">
+        {Astro.slots.has("visual") ? (
+          <div class="overflow-hidden rounded-3xl border border-primary/20 bg-primary/10 p-4 text-primary shadow-[0_0_30px_rgba(98,199,255,0.25)]">
+            <slot name="visual" />
+          </div>
+        ) : image ? (
+          <figure
+            class="overflow-hidden rounded-3xl border border-primary/25 bg-gradient-to-br from-primary/12 to-primary/4 shadow-[0_0_30px_rgba(98,199,255,0.15)]"
+            style={image.aspectRatio ? `aspect-ratio: ${image.aspectRatio};` : undefined}
+          >
+            <img
+              src={image.src}
+              alt={image.alt}
+              loading="lazy"
+              decoding="async"
+              class="h-full w-full object-cover"
+            />
+          </figure>
+        ) : null}
+      </div>
+    )}
   </div>
 </article>
