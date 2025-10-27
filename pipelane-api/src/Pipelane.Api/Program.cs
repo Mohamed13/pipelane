@@ -340,6 +340,9 @@ app.UseSwaggerUI();
 
 app.MapControllers();
 
+app.MapGet("/", () => Results.Redirect("/swagger", permanent: false))
+    .ExcludeFromDescription();
+
 app.MapHealthChecks("/health", new HealthCheckOptions
 {
     ResponseWriter = async (context, report) =>
