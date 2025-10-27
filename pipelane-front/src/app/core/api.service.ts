@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Injectable, isDevMode } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Observable, throwError } from 'rxjs';
+import { Observable, throwError, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 
 import { AuthService } from './auth.service';
@@ -60,16 +60,42 @@ export class ApiService {
   private readonly auth = inject(AuthService);
   private readonly snackbar = inject(MatSnackBar, { optional: true });
   private readonly base = environment.API_BASE_URL;
+  private readonly warnCache = new Set<string>();
+  private readonly isDev = isDevMode();
 
   private headers(explicitTenantId?: string): Record<string, string> {
     const tenantId = explicitTenantId ?? this.auth.tenantId();
     return tenantId ? { 'X-Tenant-Id': tenantId } : {};
   }
 
+  private warnOnce(key: string, detail?: unknown): void {
+    if (!this.isDev) {
+      return;
+    }
+    if (this.warnCache.has(key)) {
+      return;
+    }
+    this.warnCache.add(key);
+    if (typeof console !== 'undefined') {
+      console.warn(`[API] ${key}`, detail);
+    }
+  }
+
+  private openInfo(message: string): void {
+    if (!this.snackbar) {
+      return;
+    }
+    this.snackbar.dismiss();
+    this.snackbar.open(message, undefined, {
+      duration: 5000,
+      panelClass: ['info-snackbar'],
+    });
+  }
+
   private handleError(context: string) {
     return (error: HttpErrorResponse) => {
       const detail = this.extractErrorMessage(error);
-      if (typeof console !== 'undefined') {
+      if (this.isDev && typeof console !== 'undefined') {
         console.error(`[API] ${context}`, error);
       }
       if (this.snackbar) {
@@ -548,16 +574,44 @@ export class ApiService {
   }
 
   getFollowupConversationPreview(
-    conversationId: string,
+    conversationId?: string,
     tenantId?: string,
   ): Observable<FollowupConversationPreviewResponse> {
+    if (!conversationId) {
+      this.warnOnce('followups-preview-missing-id');
+      this.openInfo('Sélectionnez une conversation pour prévisualiser la relance.');
+      return throwError(() => new Error('conversationId required'));
+    }
+
     const params = new HttpParams().set('conversationId', conversationId);
+    const headers = this.headers(tenantId);
+    const fallback = () =>
+      this.http
+        .post<FollowupConversationPreviewResponse>(
+          `${this.base}/api/followups/preview`,
+          { conversationId },
+          { headers },
+        )
+        .pipe(catchError(this.handleError('Prévisualiser la relance')));
+
     return this.http
       .get<FollowupConversationPreviewResponse>(`${this.base}/api/followups/preview`, {
         params,
-        headers: this.headers(tenantId),
+        headers,
       })
-      .pipe(catchError(this.handleError('Prévisualiser la relance')));
+      .pipe(
+        catchError((error: HttpErrorResponse) => {
+          if (error.status === 400) {
+            this.warnOnce('followups-preview-missing-id', error);
+            this.openInfo('Sélectionnez une conversation pour prévisualiser la relance.');
+            return throwError(() => error);
+          }
+          if (error.status === 405 || error.status === 415) {
+            return fallback();
+          }
+          return this.handleError('Prévisualiser la relance')(error);
+        }),
+      );
   }
 
   hunterSearch(criteria: HunterSearchCriteria, options?: { dryRun?: boolean }): Observable<HunterSearchResponse> {
@@ -614,7 +668,17 @@ export class ApiService {
       .get<ListSummary[]>(`${this.base}/api/lists`, {
         headers: this.headers(),
       })
-      .pipe(catchError(this.handleError('Load lists')));
+      .pipe(
+        map((res) => (Array.isArray(res) ? res : [])),
+        catchError((error: HttpErrorResponse) => {
+          if (error.status === 400) {
+            this.warnOnce('lists-tenant-missing', error);
+            this.openInfo('Sélectionnez un espace de travail / reconnectez-vous.');
+            return of([]);
+          }
+          return this.handleError('Load lists')(error);
+        }),
+      );
   }
 
   createList(payload: CreateListPayload): Observable<{ id: string }> {

@@ -16,9 +16,11 @@ describe('ApiService', () => {
   let service: ApiService;
   let http: HttpTestingController;
   let consoleSpy: jest.SpyInstance;
+  let warnSpy: jest.SpyInstance;
   const snackbar = {
     dismiss: jest.fn(),
     openFromComponent: jest.fn(() => ({ onAction: () => ({ subscribe: () => undefined }) })),
+    open: jest.fn(),
   };
   const authMock = {
     tenantId: () => 'tenant-123',
@@ -27,6 +29,7 @@ describe('ApiService', () => {
 
   beforeEach(() => {
     consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
 
     TestBed.configureTestingModule({
       providers: [
@@ -42,10 +45,12 @@ describe('ApiService', () => {
     http = TestBed.inject(HttpTestingController);
     snackbar.dismiss.mockReset();
     snackbar.openFromComponent.mockClear();
+    snackbar.open.mockClear();
   });
 
   afterEach(() => {
     consoleSpy.mockRestore();
+    warnSpy.mockRestore();
     http.verify();
   });
 
@@ -119,6 +124,41 @@ describe('ApiService', () => {
         previewText: 'On se reparle demain ?',
       },
     });
+  });
+
+  it('falls back to POST when GET followup preview is not allowed', () => {
+    service.getFollowupConversationPreview('conv-fallback').subscribe();
+
+    const getReq = http.expectOne('https://localhost:56667/api/followups/preview?conversationId=conv-fallback');
+    expect(getReq.request.method).toBe('GET');
+    getReq.flush('Method Not Allowed', { status: 405, statusText: 'Method Not Allowed' });
+
+    const postReq = http.expectOne('https://localhost:56667/api/followups/preview');
+    expect(postReq.request.method).toBe('POST');
+    expect(postReq.request.body).toEqual({ conversationId: 'conv-fallback' });
+    postReq.flush({
+      historySnippet: 'Fallback history',
+      lastInteractionAt: new Date().toISOString(),
+      read: false,
+      timezone: 'UTC',
+      proposal: {
+        proposalId: 'proposal-fallback',
+        scheduledAtIso: new Date().toISOString(),
+        angle: 'reminder',
+        previewText: 'Hello again!',
+      },
+    });
+  });
+
+  it('shows toast when conversation id is missing for preview', () => {
+    service.getFollowupConversationPreview('').subscribe({
+      error: () => undefined,
+    });
+    expect(snackbar.open).toHaveBeenCalledWith(
+      'Sélectionnez une conversation pour prévisualiser la relance.',
+      undefined,
+      expect.objectContaining({ duration: 5000 }),
+    );
   });
 
   it('posts to demo endpoint when runDemo is called', () => {
@@ -250,6 +290,31 @@ describe('ApiService', () => {
     });
 
     expect(response?.items?.[0].why).toEqual([]);
+  });
+
+  it('returns empty list when API responds with null', () => {
+    let lists: unknown;
+    service.listSummaries().subscribe((res) => (lists = res));
+
+    const req = http.expectOne('https://localhost:56667/api/lists');
+    req.flush(null);
+
+    expect(lists).toEqual([]);
+  });
+
+  it('shows reconnect toast when list summaries returns 400', () => {
+    let lists: unknown;
+    service.listSummaries().subscribe((res) => (lists = res));
+
+    const req = http.expectOne('https://localhost:56667/api/lists');
+    req.flush({ title: 'tenant_header_missing' }, { status: 400, statusText: 'Bad Request' });
+
+    expect(snackbar.open).toHaveBeenCalledWith(
+      'Sélectionnez un espace de travail / reconnectez-vous.',
+      undefined,
+      expect.objectContaining({ duration: 5000 }),
+    );
+    expect(lists).toEqual([]);
   });
 });
 
