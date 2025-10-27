@@ -44,10 +44,8 @@ const followupWhy = [
   "Angle valeur pour ce secteur (Value angle tuned to vertical)",
 ];
 
-const followupReasons = [
-  "Respect opt-out/STOP (Respect opt-out/STOP)",
-  "Policy WhatsApp 24h (WhatsApp 24h policy – HSM if needed)",
-];
+const followupNotice =
+  "Respect opt-out/STOP et policy WhatsApp 24h (HSM si hors fenêtre). (EN: Respect opt-out/STOP and WhatsApp 24h policy — HSM if outside window.)";
 
 const timelineFlow = [
   {
@@ -348,7 +346,7 @@ const faqSchema = {
             </ul>
           </div>
           <div class="rounded-3xl border border-primary/25 bg-primary/10 p-4 text-xs text-primary">
-            {followupReasons.join(" · ")}
+            {followupNotice}
           </div>
         </div>
       </div>
