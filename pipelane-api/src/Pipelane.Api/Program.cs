@@ -4,16 +4,19 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Security.Cryptography;
 using System.Threading.RateLimiting;
+using System.Linq;
 
 using FluentValidation;
 using FluentValidation.AspNetCore;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -58,6 +61,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ITenantProvider, HttpTenantProvider>();
 builder.Services.AddDbContext<AppDbContext>(o => o.UseSqlServer(conn));
 builder.Services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
+builder.Services.AddScoped<IDatabaseDiagnostics>(sp => sp.GetRequiredService<AppDbContext>());
 builder.Services.AddMemoryCache();
 
 // OpenTelemetry
@@ -105,6 +109,8 @@ builder.Services.AddSwaggerGen(o =>
     var xml = Path.Combine(AppContext.BaseDirectory, $"{Assembly.GetExecutingAssembly().GetName().Name}.xml");
     if (File.Exists(xml)) o.IncludeXmlComments(xml);
 });
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<AppDbContext>("db");
 
 // Http clients + Polly
 builder.Services.AddHttpClient();
@@ -289,7 +295,37 @@ app.UseSwaggerUI();
 
 app.MapControllers();
 
-app.MapGet("/health", () => Results.Ok(new { status = "ok" })).AllowAnonymous();
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        var payload = new
+        {
+            status = report.Status.ToString().ToLowerInvariant(),
+            checks = report.Entries.Select(entry => new
+            {
+                name = entry.Key,
+                status = entry.Value.Status.ToString().ToLowerInvariant(),
+                error = entry.Value.Exception?.Message,
+                durationMs = entry.Value.Duration.TotalMilliseconds
+            }),
+            timestamp = DateTimeOffset.UtcNow
+        };
+
+        if (report.Status != HealthStatus.Healthy)
+        {
+            var logger = context.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("HealthChecks");
+            logger.LogError("Health check failed with status {Status} {@Checks}", report.Status, payload.checks);
+        }
+
+        await context.Response.WriteAsync(JsonSerializer.Serialize(payload, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = false
+        }));
+    }
+}).AllowAnonymous();
 
 app.Run();
 

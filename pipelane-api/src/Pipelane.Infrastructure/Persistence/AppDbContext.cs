@@ -1,12 +1,17 @@
-using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
+using Microsoft.EntityFrameworkCore;
 using Pipelane.Application.Storage;
 using Pipelane.Domain.Entities;
 using Pipelane.Domain.Entities.Prospecting;
 
 namespace Pipelane.Infrastructure.Persistence;
 
-public class AppDbContext : DbContext, IAppDbContext
+public class AppDbContext : DbContext, IAppDbContext, IDatabaseDiagnostics
 {
     private readonly Guid _tenantId;
 
@@ -373,9 +378,30 @@ public class AppDbContext : DbContext, IAppDbContext
 
     private void ApplyTenantFilter<TEntity>(ModelBuilder modelBuilder) where TEntity : BaseEntity
         => modelBuilder.Entity<TEntity>().HasQueryFilter(e => _tenantId == Guid.Empty || e.TenantId == _tenantId);
+
+    public string ProviderName => Database.ProviderName ?? "unknown";
+
+    public async Task<IReadOnlyList<string>> GetPendingMigrationsAsync(CancellationToken ct)
+    {
+        try
+        {
+            var pending = await Database.GetPendingMigrationsAsync(ct);
+            return pending.ToList();
+        }
+        catch
+        {
+            return Array.Empty<string>();
+        }
+    }
 }
 
 public interface ITenantProvider
 {
     Guid TenantId { get; }
+}
+
+public interface IDatabaseDiagnostics
+{
+    string ProviderName { get; }
+    Task<IReadOnlyList<string>> GetPendingMigrationsAsync(CancellationToken ct);
 }
