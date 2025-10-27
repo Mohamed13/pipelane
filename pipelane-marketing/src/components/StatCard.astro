@@ -1,27 +1,14 @@
 ---
-import Icon from "./Icon.astro";
-
 interface Props {
-  metric: string;
-  description: string;
-  icon?: string;
+  label: string;
+  value: string;
+  hint?: string;
 }
 
-const { metric, description, icon } = Astro.props as Props;
+const { label, value, hint } = Astro.props as Props;
 ---
-<div class="reveal glass min-w-[260px] rounded-3xl border border-white/10 p-6 text-left on-surface md:p-7">
-  <div class="flex items-start gap-3">
-    {icon && (
-      <span class="mt-1 text-primary">
-        <Icon name={icon} size={26} />
-      </span>
-    )}
-    <div>
-      <p class="text-3xl font-semibold leading-tight text-primary">{metric}</p>
-      <p class="mt-3 text-sm leading-relaxed on-surface-strong break-words text-pretty">{description}</p>
-    </div>
-  </div>
-</div>
-
-
-
+<dl class="reveal glass min-w-[220px] rounded-3xl border border-line/35 p-6 text-left text-pretty md:p-7">
+  <dt class="text-sm font-medium uppercase tracking-wide text-primary/80">{label}</dt>
+  <dd class="mt-2 text-3xl font-semibold leading-tight text-primary">{value}</dd>
+  {hint && <dd class="mt-3 text-sm leading-relaxed on-surface">{hint}</dd>}
+</dl>
