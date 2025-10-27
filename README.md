@@ -1,5 +1,9 @@
 # Pipelane Monorepo
 
+[![API CI](https://github.com/moham/Pipelane/actions/workflows/api-ci.yml/badge.svg)](https://github.com/moham/Pipelane/actions/workflows/api-ci.yml)
+[![Front CI](https://github.com/moham/Pipelane/actions/workflows/front-ci.yml/badge.svg)](https://github.com/moham/Pipelane/actions/workflows/front-ci.yml)
+[![Marketing CI](https://github.com/moham/Pipelane/actions/workflows/marketing-ci.yml/badge.svg)](https://github.com/moham/Pipelane/actions/workflows/marketing-ci.yml)
+
 Pipelane regroupe l'API multi-tenant (.NET 8), la console opérateur Angular 20 et le site marketing Astro. Ce dépôt rassemble tout le nécessaire pour développer, tester et publier les trois applications.
 
 ## Structure
@@ -38,10 +42,10 @@ npm run dev
 
 ## Qualité & CI
 - Formatage .NET via `dotnet format`.
-- ESLint + Prettier sur Angular et Astro.
-- Couverture minimale : 60 % statements backend / lines frontend.
-- Git hooks Husky (lint, format, tests courts) et pipelines GitHub Actions vérifient build, lint, tests et audits marketing.
-- Scripts d’automatisation disponibles dans `package.json` et `scripts/`.
+- ESLint + Prettier sur Angular et Astro (via Husky + lint-staged).
+- Seuils CI actuels : backend ≥15 % lignes (coverlet, à augmenter), front ≥25 % lignes (Jest), marketing ≥95 Lighthouse + pa11y vert.
+- Git hooks Husky (lint, format, type-check, tests courts) et pipelines GitHub Actions (`api-ci`, `front-ci`, `marketing-ci`) vérifient build, lint, tests et audits marketing.
+- Scripts d’automatisation disponibles dans `package.json` (racine, front, marketing) et `scripts/`.
 
 ## Conventions de commit
 Les messages doivent suivre Conventional Commits :`type(scope): message` (ex. `feat(api): ajout du suivi`).
