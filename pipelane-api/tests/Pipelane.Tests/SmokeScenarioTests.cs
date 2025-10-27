@@ -14,8 +14,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 using Pipelane.Api.Controllers;
-using Pipelane.Application.Ai;
 using Pipelane.Application.Abstractions;
+using Pipelane.Application.Ai;
 using Pipelane.Application.DTOs;
 using Pipelane.Application.Services;
 using Pipelane.Domain.Entities;

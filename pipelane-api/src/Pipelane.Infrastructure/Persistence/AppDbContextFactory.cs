@@ -1,4 +1,5 @@
 using System;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
@@ -8,6 +9,7 @@ namespace Pipelane.Infrastructure.Persistence;
 
 public sealed class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
 {
+    /// <inheritdoc/>
     public AppDbContext CreateDbContext(string[] args)
     {
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();

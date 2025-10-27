@@ -30,6 +30,7 @@ public sealed class AutomationEventPublisher : IAutomationEventPublisher
         _logger = logger;
     }
 
+    /// <inheritdoc/>
     public async Task PublishAsync(string eventType, object payload, Guid tenantId, CancellationToken ct)
     {
         var settings = _options.CurrentValue;

@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+
 using FluentAssertions;
 
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +14,7 @@ using Pipelane.Application.Storage;
 using Pipelane.Domain.Entities;
 using Pipelane.Domain.Entities.Prospecting;
 using Pipelane.Infrastructure.Demo;
+
 using Xunit;
 
 namespace Pipelane.Tests;

@@ -30,6 +30,7 @@ public sealed class MessageDispatchGuard : IMessageDispatchGuard
         _clock = clock ?? TimeProvider.System;
     }
 
+    /// <inheritdoc/>
     public async Task<GuardResult> EvaluateAsync(OutboxMessage job, Contact contact, Conversation convo, CancellationToken ct)
     {
         if (IsOptedOut(contact, job.Channel))

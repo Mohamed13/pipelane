@@ -39,6 +39,7 @@ public sealed class HunterDemoSeeder : IHunterDemoSeeder
         _logger = logger;
     }
 
+    /// <inheritdoc/>
     public async Task<IReadOnlyList<HunterResultDto>> SeedAsync(Guid tenantId, CancellationToken ct)
     {
         if (!_options.Value.Enabled)

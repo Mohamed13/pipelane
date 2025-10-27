@@ -1,10 +1,12 @@
+using System;
+using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Security.Cryptography;
 using System.Threading.RateLimiting;
-using System.Linq;
+using System.Net.Http;
 
 using FluentValidation;
 using FluentValidation.AspNetCore;
@@ -13,35 +15,39 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Polly;
+using Polly.Extensions.Http;
 
+using Pipelane.Api.Middleware;
 using Pipelane.Api.MultiTenancy;
-using Pipelane.Application.Ai;
 using Pipelane.Application.Abstractions;
+using Pipelane.Application.Ai;
 using Pipelane.Application.Hunter;
 using Pipelane.Application.Prospecting;
 using Pipelane.Application.Services;
 using Pipelane.Application.Storage;
 using Pipelane.Domain.Enums;
+using Pipelane.Domain.Entities;
 using Pipelane.Infrastructure.Automations;
 using Pipelane.Infrastructure.Background;
 using Pipelane.Infrastructure.Channels;
-using Pipelane.Infrastructure.Hunter;
-using Pipelane.Infrastructure.Followups;
-using Pipelane.Infrastructure.Persistence;
-using Pipelane.Infrastructure.Services;
-using Pipelane.Infrastructure.Security;
-using Pipelane.Infrastructure.Webhooks;
-using Quartz;
 using Pipelane.Infrastructure.Demo;
+using Pipelane.Infrastructure.Followups;
+using Pipelane.Infrastructure.Hunter;
+using Pipelane.Infrastructure.Persistence;
 using Pipelane.Infrastructure.Reports;
-using Pipelane.Api.Middleware;
+using Pipelane.Infrastructure.Security;
+using Pipelane.Infrastructure.Services;
+using Pipelane.Infrastructure.Webhooks;
+
+using Quartz;
 
 using Serilog;
 
@@ -65,12 +71,21 @@ builder.Services.AddScoped<IDatabaseDiagnostics>(sp => sp.GetRequiredService<App
 builder.Services.AddMemoryCache();
 
 // OpenTelemetry
+var otlpEndpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"] ?? Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT");
 builder.Services.AddOpenTelemetry()
-    .WithTracing(b => b
-        .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("Pipelane.Api"))
-        .AddAspNetCoreInstrumentation()
-        .AddHttpClientInstrumentation()
-        .AddConsoleExporter());
+    .WithTracing(b =>
+    {
+        b.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("Pipelane.Api"))
+            .AddSource("Pipelane.Messaging", "Pipelane.Webhooks", "Pipelane.Followups")
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation();
+
+        b.AddConsoleExporter();
+        if (!string.IsNullOrWhiteSpace(otlpEndpoint) && Uri.TryCreate(otlpEndpoint, UriKind.Absolute, out var endpointUri))
+        {
+            b.AddOtlpExporter(options => options.Endpoint = endpointUri);
+        }
+    });
 
 // Auth (JWT optional dev)
 var jwtKey = builder.Configuration["JWT_KEY"] ?? Environment.GetEnvironmentVariable("JWT_KEY") ?? "dev-secret-key-please-change";
@@ -96,7 +111,31 @@ builder.Services.AddCors(o => o.AddDefaultPolicy(p => p
     .AllowAnyHeader()
     .AllowAnyMethod()));
 
-builder.Services.AddProblemDetails();
+builder.Services.AddProblemDetails(options =>
+{
+    options.CustomizeProblemDetails = context =>
+    {
+        var httpContext = context.HttpContext;
+        var status = context.ProblemDetails.Status ?? httpContext.Response.StatusCode;
+        context.ProblemDetails.Status = status;
+        context.ProblemDetails.Title ??= ProblemDetailsFrenchLocalizer.ResolveTitle(status);
+
+        if (string.IsNullOrWhiteSpace(context.ProblemDetails.Detail))
+        {
+            context.ProblemDetails.Detail = ProblemDetailsFrenchLocalizer.ResolveDetail(status);
+        }
+
+        context.ProblemDetails.Instance ??= httpContext.Request.Path;
+        context.ProblemDetails.Extensions["traceId"] = httpContext.TraceIdentifier;
+
+        if (httpContext.Items.TryGetValue("CorrelationId", out var rawCorrelation) &&
+            rawCorrelation is string correlation &&
+            !string.IsNullOrWhiteSpace(correlation))
+        {
+            context.ProblemDetails.Extensions["correlationId"] = correlation;
+        }
+    };
+});
 builder.Services.AddControllers().AddJsonOptions(opts =>
 {
     opts.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
@@ -117,13 +156,19 @@ builder.Services.AddHttpClient();
 builder.Services.AddHttpClient("Resend", client =>
 {
     client.BaseAddress = new Uri("https://api.resend.com/");
-});
+})
+    .AddPolicyHandler(CreateRetryPolicy())
+    .AddPolicyHandler(CreateCircuitBreakerPolicy());
 builder.Services.AddHttpClient("OpenAI", client =>
 {
     var baseUrl = builder.Configuration["OpenAI:BaseUrl"] ?? "https://api.openai.com/";
     client.BaseAddress = new Uri(baseUrl);
-});
-builder.Services.AddHttpClient("Automations");
+})
+    .AddPolicyHandler(CreateRetryPolicy())
+    .AddPolicyHandler(CreateCircuitBreakerPolicy());
+builder.Services.AddHttpClient("Automations")
+    .AddPolicyHandler(CreateRetryPolicy())
+    .AddPolicyHandler(CreateCircuitBreakerPolicy());
 var demoMode = builder.Configuration.GetValue<bool?>("DEMO_MODE") ?? false;
 
 builder.Services.AddRateLimiter(options =>
@@ -281,11 +326,11 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+app.UseMiddleware<RequestLoggingEnrichmentMiddleware>();
 app.UseSerilogRequestLogging();
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseCors();
 app.UseRateLimiter();
-app.UseExceptionHandler();
-app.UseStatusCodePages();
 app.UseAuthentication();
 app.UseMiddleware<TenantScopeMiddleware>();
 app.UseAuthorization();
@@ -327,7 +372,59 @@ app.MapHealthChecks("/health", new HealthCheckOptions
     }
 }).AllowAnonymous();
 
+app.MapGet("/health/metrics", async (IServiceProvider services, CancellationToken ct) =>
+    {
+        await using var scope = services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        var queueDepth = await db.Outbox.AsNoTracking()
+            .CountAsync(o => o.Status == OutboxStatus.Queued || o.Status == OutboxStatus.Sending, ct)
+            .ConfigureAwait(false);
+
+        var latencies = await db.Messages.AsNoTracking()
+            .Where(m => m.Direction == MessageDirection.Out && m.DeliveredAt != null)
+            .OrderByDescending(m => m.CreatedAt)
+            .Take(100)
+            .Select(m => new { m.CreatedAt, m.DeliveredAt })
+            .ToListAsync(ct)
+            .ConfigureAwait(false);
+
+        var avgSendLatencyMs = latencies.Count == 0
+            ? 0d
+            : latencies.Average(m => (m.DeliveredAt!.Value - m.CreatedAt).TotalMilliseconds);
+
+        var deadWebhookBacklog = await db.FailedWebhooks.AsNoTracking()
+            .CountAsync(ct)
+            .ConfigureAwait(false);
+
+        return Results.Json(new
+        {
+            queueDepth,
+            avgSendLatencyMs,
+            deadWebhookBacklog,
+            timestamp = DateTimeOffset.UtcNow
+        }, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        });
+    })
+    .WithName("HealthMetrics")
+    .Produces(StatusCodes.Status200OK)
+    .AllowAnonymous();
+
 app.Run();
+
+static IAsyncPolicy<HttpResponseMessage> CreateRetryPolicy() =>
+    HttpPolicyExtensions
+        .HandleTransientHttpError()
+        .OrResult(response => (int)response.StatusCode == StatusCodes.Status429TooManyRequests)
+        .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
+
+static IAsyncPolicy<HttpResponseMessage> CreateCircuitBreakerPolicy() =>
+    HttpPolicyExtensions
+        .HandleTransientHttpError()
+        .OrResult(response => (int)response.StatusCode == StatusCodes.Status429TooManyRequests)
+        .CircuitBreakerAsync(5, TimeSpan.FromSeconds(30));
 
 static Guid ResolveTenantId(HttpContext context)
 {

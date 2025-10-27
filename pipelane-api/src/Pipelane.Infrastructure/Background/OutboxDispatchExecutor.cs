@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Text.Json;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using Pipelane.Application.Abstractions;
 using Pipelane.Application.Services;
 using Pipelane.Application.Storage;
+using Pipelane.Application.Common;
 using Pipelane.Domain.Entities;
 using Pipelane.Domain.Enums;
 using Pipelane.Infrastructure.Automations;
@@ -173,6 +175,13 @@ public sealed class OutboxDispatchExecutor
             _ => channel.GetType().Name
         };
 
+        using var activity = TelemetrySources.Messaging.StartActivity("outbox.send", ActivityKind.Internal);
+        activity?.SetTag("messaging.channel", job.Channel.ToString());
+        activity?.SetTag("messaging.message_id", job.Id);
+        activity?.SetTag("messaging.tenant_id", contact.TenantId);
+        activity?.SetTag("messaging.template", templateName ?? string.Empty);
+        activity?.SetTag("messaging.provider", provider);
+
         SendResult? lastResult = null;
         Exception? lastException = null;
         string? providerMessageId = null;
@@ -182,6 +191,7 @@ public sealed class OutboxDispatchExecutor
         while (job.Attempts < maxAttempts)
         {
             var attemptNumber = job.Attempts + 1;
+            activity?.SetTag("messaging.attempt", attemptNumber);
             try
             {
                 SendResult result;
@@ -206,6 +216,8 @@ public sealed class OutboxDispatchExecutor
 
                 if (result.Success)
                 {
+                    activity?.SetTag("messaging.provider_message_id", result.ProviderMessageId ?? providerMessageId);
+                    activity?.SetStatus(ActivityStatusCode.Ok);
                     await FinalizeMessageAsync(db, contact, convo, job, provider, providerMessageId, templateName, MessageStatus.Sent, null, null, publisher, ct);
                     return true;
                 }
@@ -225,6 +237,7 @@ public sealed class OutboxDispatchExecutor
             if (job.Attempts >= maxAttempts)
             {
                 providerMessageId ??= lastResult?.ProviderMessageId;
+                activity?.SetStatus(ActivityStatusCode.Error, errorReason ?? errorCode ?? "send_failed");
                 await FinalizeMessageAsync(db, contact, convo, job, provider, providerMessageId, templateName, MessageStatus.Failed, errorCode ?? "send_failed", errorReason, publisher, ct, failed: true);
                 if (lastException is not null)
                 {

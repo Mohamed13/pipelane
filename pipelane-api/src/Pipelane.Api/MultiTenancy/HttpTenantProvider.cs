@@ -8,6 +8,7 @@ public sealed class HttpTenantProvider : ITenantProvider
 {
     private readonly IHttpContextAccessor _http;
     public HttpTenantProvider(IHttpContextAccessor http) => _http = http;
+    /// <inheritdoc/>
     public Guid TenantId
     {
         get

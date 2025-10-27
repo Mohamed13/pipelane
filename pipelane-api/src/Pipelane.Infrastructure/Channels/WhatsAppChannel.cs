@@ -51,8 +51,10 @@ public sealed class WhatsAppChannel : IMessageChannel
         _clock = clock ?? TimeProvider.System;
     }
 
+    /// <inheritdoc/>
     public Channel Channel => Channel.Whatsapp;
 
+    /// <inheritdoc/>
     public async Task<SendResult> SendTemplateAsync(Contact contact, Template template, IDictionary<string, string> variables, SendMeta meta, CancellationToken ct)
     {
         var config = await _configProvider.GetWhatsAppConfigAsync(contact.TenantId, ct).ConfigureAwait(false);
@@ -103,6 +105,7 @@ public sealed class WhatsAppChannel : IMessageChannel
         return await SendAsync(config, payload, contact, ct).ConfigureAwait(false);
     }
 
+    /// <inheritdoc/>
     public async Task<SendResult> SendTextAsync(Contact contact, string text, SendMeta meta, CancellationToken ct)
     {
         var config = await _configProvider.GetWhatsAppConfigAsync(contact.TenantId, ct).ConfigureAwait(false);
@@ -135,6 +138,7 @@ public sealed class WhatsAppChannel : IMessageChannel
         return await SendAsync(config, payload, contact, ct).ConfigureAwait(false);
     }
 
+    /// <inheritdoc/>
     public async Task<WebhookResult> HandleWebhookAsync(string body, IDictionary<string, string> headers, CancellationToken ct)
     {
         if (!headers.TryGetValue("x-tenant-id", out var tenantValue) || !Guid.TryParse(tenantValue, out var tenantId))
@@ -194,6 +198,7 @@ public sealed class WhatsAppChannel : IMessageChannel
         return new WebhookResult(true, null);
     }
 
+    /// <inheritdoc/>
     public Task<bool> ValidateTemplateAsync(Template t, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(t.CoreSchemaJson))

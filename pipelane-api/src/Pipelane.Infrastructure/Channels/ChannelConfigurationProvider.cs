@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Text.Json;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -36,6 +36,7 @@ public sealed class ChannelConfigurationProvider : IChannelConfigurationProvider
         _logger = logger;
     }
 
+    /// <inheritdoc/>
     public async Task<WhatsAppChannelConfig?> GetWhatsAppConfigAsync(Guid tenantId, CancellationToken ct)
     {
         var values = await LoadSettingsAsync(Channel.Whatsapp, tenantId, ct).ConfigureAwait(false);
@@ -64,6 +65,7 @@ public sealed class ChannelConfigurationProvider : IChannelConfigurationProvider
             verifyToken);
     }
 
+    /// <inheritdoc/>
     public async Task<TwilioSmsChannelConfig?> GetTwilioConfigAsync(Guid tenantId, CancellationToken ct)
     {
         var values = await LoadSettingsAsync(Channel.Sms, tenantId, ct).ConfigureAwait(false);

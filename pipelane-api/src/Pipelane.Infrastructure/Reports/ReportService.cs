@@ -39,6 +39,7 @@ public sealed class ReportService : IReportService
         _logger = logger;
     }
 
+    /// <inheritdoc/>
     public async Task<ReportSummary> GetSummaryAsync(Guid tenantId, DateTime from, DateTime to, CancellationToken ct)
     {
         var (start, end) = NormalizeRange(from, to);
@@ -66,6 +67,7 @@ public sealed class ReportService : IReportService
         return new ReportSummary(start, end, analytics.Totals, channels, topTemplates, meetings);
     }
 
+    /// <inheritdoc/>
     public async Task<byte[]> RenderSummaryPdfAsync(Guid tenantId, DateTime from, DateTime to, CancellationToken ct)
     {
         var summary = await GetSummaryAsync(tenantId, from, to, ct).ConfigureAwait(false);

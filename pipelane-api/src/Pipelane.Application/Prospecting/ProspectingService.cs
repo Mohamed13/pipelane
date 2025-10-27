@@ -1,6 +1,6 @@
 using System.Collections.Generic;
-using System.Linq;
 using System.Globalization;
+using System.Linq;
 using System.Text;
 using System.Text.Json;
 
@@ -50,6 +50,7 @@ public sealed class ProspectingService : IProspectingService
         _logger = logger;
     }
 
+    /// <inheritdoc/>
     public async Task<ProspectImportResult> ImportProspectsAsync(Guid tenantId, ProspectImportRequest request, CancellationToken ct)
     {
         var imported = 0;
@@ -99,6 +100,7 @@ public sealed class ProspectingService : IProspectingService
         return new ProspectImportResult(imported, skipped, updated);
     }
 
+    /// <inheritdoc/>
     public async Task<(int Total, IReadOnlyList<ProspectDto> Items)> GetProspectsAsync(int page, int size, string? search, CancellationToken ct)
     {
         var query = _db.Prospects.AsQueryable();
@@ -125,6 +127,7 @@ public sealed class ProspectingService : IProspectingService
         return (total, prospects.Select(p => p.ToDto()).ToList());
     }
 
+    /// <inheritdoc/>
     public async Task<ProspectingSequenceDto> CreateSequenceAsync(Guid tenantId, ProspectingSequenceCreateRequest request, CancellationToken ct)
     {
         if (request.Steps.Count == 0)
@@ -176,6 +179,7 @@ public sealed class ProspectingService : IProspectingService
         return sequence.ToDto();
     }
 
+    /// <inheritdoc/>
     public async Task<IReadOnlyList<ProspectingSequenceDto>> GetSequencesAsync(CancellationToken ct)
     {
         var sequences = await _db.ProspectingSequences
@@ -185,6 +189,7 @@ public sealed class ProspectingService : IProspectingService
         return sequences.Select(s => s.ToDto()).ToList();
     }
 
+    /// <inheritdoc/>
     public async Task<ProspectingSequenceDto> UpdateSequenceAsync(Guid sequenceId, ProspectingSequenceUpdateRequest request, CancellationToken ct)
     {
         var sequence = await _db.ProspectingSequences
@@ -234,6 +239,7 @@ public sealed class ProspectingService : IProspectingService
         return sequence.ToDto();
     }
 
+    /// <inheritdoc/>
     public async Task DeleteSequenceAsync(Guid sequenceId, CancellationToken ct)
     {
         var sequence = await _db.ProspectingSequences.FirstOrDefaultAsync(s => s.Id == sequenceId, ct);
@@ -252,6 +258,7 @@ public sealed class ProspectingService : IProspectingService
         await _db.SaveChangesAsync(ct);
     }
 
+    /// <inheritdoc/>
     public async Task<ProspectingCampaignDto> CreateCampaignAsync(Guid tenantId, ProspectingCampaignCreateRequest request, CancellationToken ct)
     {
         var sequenceExists = await _db.ProspectingSequences.AnyAsync(s => s.Id == request.SequenceId, ct);
@@ -280,6 +287,7 @@ public sealed class ProspectingService : IProspectingService
         return campaign.ToDto();
     }
 
+    /// <inheritdoc/>
     public async Task<IReadOnlyList<ProspectingCampaignDto>> GetCampaignsAsync(CancellationToken ct)
     {
         var campaigns = await _db.ProspectingCampaigns
@@ -288,6 +296,7 @@ public sealed class ProspectingService : IProspectingService
         return campaigns.Select(c => c.ToDto()).ToList();
     }
 
+    /// <inheritdoc/>
     public async Task<ProspectingCampaignDto?> GetCampaignAsync(Guid campaignId, CancellationToken ct)
     {
         var campaign = await _db.ProspectingCampaigns
@@ -296,6 +305,7 @@ public sealed class ProspectingService : IProspectingService
         return campaign?.ToDto();
     }
 
+    /// <inheritdoc/>
     public async Task<ProspectingCampaignDto> StartCampaignAsync(Guid campaignId, CancellationToken ct)
     {
         var campaign = await _db.ProspectingCampaigns
@@ -383,6 +393,7 @@ public sealed class ProspectingService : IProspectingService
         return campaign.ToDto();
     }
 
+    /// <inheritdoc/>
     public async Task<ProspectingCampaignDto> PauseCampaignAsync(Guid campaignId, CancellationToken ct)
     {
         var campaign = await _db.ProspectingCampaigns.FirstOrDefaultAsync(c => c.Id == campaignId, ct);
@@ -409,6 +420,7 @@ public sealed class ProspectingService : IProspectingService
         return campaign.ToDto();
     }
 
+    /// <inheritdoc/>
     public async Task<ProspectingCampaignPreview> PreviewCampaignAsync(Guid campaignId, CancellationToken ct)
     {
         var campaign = await _db.ProspectingCampaigns
@@ -442,6 +454,7 @@ public sealed class ProspectingService : IProspectingService
         return new ProspectingCampaignPreview(campaign.Id, prospects, schedule);
     }
 
+    /// <inheritdoc/>
     public async Task<ProspectingAnalyticsResponse> GetAnalyticsAsync(DateTime from, DateTime to, CancellationToken ct)
     {
         var totalProspects = await _db.Prospects.CountAsync(ct);
@@ -509,6 +522,7 @@ public sealed class ProspectingService : IProspectingService
             stepBreakdown);
     }
 
+    /// <inheritdoc/>
     public async Task<GenerateEmailResponse> GenerateEmailAsync(Guid tenantId, GenerateEmailRequest request, CancellationToken ct)
     {
         var prospect = await _db.Prospects.FirstOrDefaultAsync(p => p.Id == request.ProspectId, ct);
@@ -556,6 +570,7 @@ public sealed class ProspectingService : IProspectingService
         return new GenerateEmailResponse(generation.Id, subject, html, text, generation.Variant, promptTokens, completionTokens, costUsd);
     }
 
+    /// <inheritdoc/>
     public async Task<ProspectingClassifyReplyResponse> ClassifyReplyAsync(ProspectingClassifyReplyRequest request, CancellationToken ct)
     {
         var reply = await _db.ProspectReplies.FirstOrDefaultAsync(r => r.Id == request.ReplyId, ct);
@@ -573,6 +588,7 @@ public sealed class ProspectingService : IProspectingService
         return new ProspectingClassifyReplyResponse(reply.Id, intent, confidence, datesJson);
     }
 
+    /// <inheritdoc/>
     public async Task<AutoReplyResponse> AutoReplyAsync(Guid tenantId, AutoReplyRequest request, CancellationToken ct)
     {
         var reply = await _db.ProspectReplies
@@ -620,6 +636,7 @@ public sealed class ProspectingService : IProspectingService
         return new AutoReplyResponse(generation.Id, subject, html, text, generation.Variant);
     }
 
+    /// <inheritdoc/>
     public async Task<IReadOnlyList<ProspectReplyDto>> GetRepliesAsync(ReplyIntent? intent, CancellationToken ct)
     {
         var query = _db.ProspectReplies
@@ -636,6 +653,7 @@ public sealed class ProspectingService : IProspectingService
         return replies.Select(r => r.ToDto()).ToList();
     }
 
+    /// <inheritdoc/>
     public async Task<ProspectDto?> UpdateOptOutAsync(string email, CancellationToken ct)
     {
         var normalized = email.Trim().ToLowerInvariant();
@@ -743,7 +761,7 @@ public sealed class ProspectingService : IProspectingService
 
         foreach (var ch in line)
         {
-            if (ch == '"' )
+            if (ch == '"')
             {
                 inQuotes = !inQuotes;
                 continue;

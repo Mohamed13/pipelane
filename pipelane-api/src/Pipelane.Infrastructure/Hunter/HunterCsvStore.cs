@@ -21,6 +21,7 @@ public sealed class HunterCsvStore : IHunterCsvStore
         _logger = logger;
     }
 
+    /// <inheritdoc/>
     public async Task<Guid> SaveAsync(Guid tenantId, Stream content, CancellationToken ct)
     {
         Directory.CreateDirectory(_root);
@@ -34,6 +35,7 @@ public sealed class HunterCsvStore : IHunterCsvStore
         return csvId;
     }
 
+    /// <inheritdoc/>
     public Task<Stream> OpenAsync(Guid tenantId, Guid csvId, CancellationToken ct)
     {
         var path = BuildPath(tenantId, csvId);
@@ -46,6 +48,7 @@ public sealed class HunterCsvStore : IHunterCsvStore
         return Task.FromResult(stream);
     }
 
+    /// <inheritdoc/>
     public Task DeleteAsync(Guid tenantId, Guid csvId, CancellationToken ct)
     {
         var path = BuildPath(tenantId, csvId);

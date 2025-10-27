@@ -14,6 +14,7 @@ public sealed class MessagingLimitsProvider : IMessagingLimitsProvider
         _options = options;
     }
 
+    /// <inheritdoc/>
     public MessagingLimitsSnapshot GetLimits()
     {
         var value = _options.Value;

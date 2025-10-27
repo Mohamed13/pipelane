@@ -35,8 +35,10 @@ public sealed class MapsStubLeadProvider : ILeadProvider
         _logger = logger;
     }
 
+    /// <inheritdoc/>
     public string Source => "mapsStub";
 
+    /// <inheritdoc/>
     public Task<IReadOnlyList<LeadCandidate>> SearchAsync(Guid tenantId, HunterSearchCriteria criteria, CancellationToken ct)
     {
         var results = new List<LeadCandidate>();
@@ -147,8 +149,10 @@ public sealed class CsvLeadProvider : ILeadProvider
         _logger = logger;
     }
 
+    /// <inheritdoc/>
     public string Source => "csv";
 
+    /// <inheritdoc/>
     public async Task<IReadOnlyList<LeadCandidate>> SearchAsync(Guid tenantId, HunterSearchCriteria criteria, CancellationToken ct)
     {
         if (criteria.CsvId is null)
@@ -251,8 +255,10 @@ public sealed class DirectoryStubLeadProvider : ILeadProvider
         _maps = maps;
     }
 
+    /// <inheritdoc/>
     public string Source => "directoryStub";
 
+    /// <inheritdoc/>
     public Task<IReadOnlyList<LeadCandidate>> SearchAsync(Guid tenantId, HunterSearchCriteria criteria, CancellationToken ct)
     {
         // For now reuse maps stub

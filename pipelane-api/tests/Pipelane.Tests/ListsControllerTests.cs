@@ -50,7 +50,7 @@ public class ListsControllerTests
 
         var badRequest = response.Result.Should().BeOfType<BadRequestObjectResult>().Which;
         var problem = badRequest.Value.Should().BeOfType<ProblemDetails>().Which;
-        problem.Title.Should().Be("tenant_header_missing");
+        problem.Title.Should().Be("Tenant manquant");
         problem.Status.Should().Be(400);
     }
 

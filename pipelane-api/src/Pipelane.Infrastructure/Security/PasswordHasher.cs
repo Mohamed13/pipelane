@@ -11,6 +11,7 @@ public interface IPasswordHasher
 
 public sealed class Pbkdf2PasswordHasher : IPasswordHasher
 {
+    /// <inheritdoc/>
     public string Hash(string password)
     {
         using var rng = RandomNumberGenerator.Create();
@@ -21,6 +22,7 @@ public sealed class Pbkdf2PasswordHasher : IPasswordHasher
         return Convert.ToBase64String(salt) + ":" + Convert.ToBase64String(key);
     }
 
+    /// <inheritdoc/>
     public bool Verify(string password, string hash)
     {
         var parts = hash.Split(':');

@@ -20,6 +20,7 @@ public class CampaignRunner : BackgroundService
     public CampaignRunner(IServiceProvider sp, ILogger<CampaignRunner> logger)
     { _sp = sp; _logger = logger; }
 
+    /// <inheritdoc/>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)

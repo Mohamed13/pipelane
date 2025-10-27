@@ -10,6 +10,7 @@ public interface IWhyThisLeadService
 
 public sealed class WhyThisLeadService : IWhyThisLeadService
 {
+    /// <inheritdoc/>
     public IReadOnlyList<string> BuildReasons(HunterProspectDto prospect, HunterFeaturesDto features, int score)
     {
         var reasons = new List<string>();

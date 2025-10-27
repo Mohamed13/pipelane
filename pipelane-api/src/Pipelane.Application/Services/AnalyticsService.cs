@@ -25,6 +25,7 @@ public sealed class AnalyticsService : IAnalyticsService
         _db = db;
     }
 
+    /// <inheritdoc/>
     public async Task<DeliveryAnalyticsResult> GetDeliveryAsync(DateTime from, DateTime to, CancellationToken cancellationToken)
     {
         NormalizeRange(ref from, ref to);
@@ -154,6 +155,7 @@ public sealed class AnalyticsService : IAnalyticsService
         return new DeliveryAnalyticsResult(totals, byChannel, byTemplate, timeline);
     }
 
+    /// <inheritdoc/>
     public async Task<TopMessagesResult> GetTopMessagesAsync(DateTime from, DateTime to, CancellationToken cancellationToken)
     {
         NormalizeRange(ref from, ref to);

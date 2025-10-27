@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 
 using Microsoft.EntityFrameworkCore;
@@ -6,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Pipelane.Application.Storage;
 using Pipelane.Domain.Entities;
 using Pipelane.Domain.Enums;
+using Pipelane.Application.Common;
 
 namespace Pipelane.Infrastructure.Webhooks;
 
@@ -33,8 +35,13 @@ public sealed class ResendWebhookProcessor
 
     public async Task<bool> ProcessAsync(string payload, CancellationToken cancellationToken)
     {
+        using var activity = TelemetrySources.Webhooks.StartActivity("webhook.resend.handle", ActivityKind.Server);
+        activity?.SetTag("webhook.provider", ProviderName);
+        activity?.SetTag("webhook.payload_size", payload?.Length ?? 0);
+
         if (string.IsNullOrWhiteSpace(payload))
         {
+            activity?.SetStatus(ActivityStatusCode.Error, "empty_payload");
             return false;
         }
 
@@ -46,6 +53,7 @@ public sealed class ResendWebhookProcessor
         catch (JsonException ex)
         {
             _logger.LogWarning(ex, "Unable to parse Resend webhook payload");
+            activity?.SetStatus(ActivityStatusCode.Error, "invalid_json");
             return false;
         }
 
@@ -55,6 +63,7 @@ public sealed class ResendWebhookProcessor
             if (!root.TryGetProperty("type", out var typeProp))
             {
                 _logger.LogWarning("Resend webhook missing type");
+                activity?.SetStatus(ActivityStatusCode.Error, "missing_type");
                 return false;
             }
 
@@ -62,12 +71,15 @@ public sealed class ResendWebhookProcessor
             if (eventTypeName is null || !EventMap.TryGetValue(eventTypeName, out var mapping))
             {
                 _logger.LogInformation("Ignoring Resend event {Type}", eventTypeName);
+                activity?.SetTag("webhook.event", eventTypeName ?? "unknown");
+                activity?.SetStatus(ActivityStatusCode.Ok, "ignored");
                 return true;
             }
 
             if (!root.TryGetProperty("data", out var dataElement))
             {
                 _logger.LogWarning("Resend webhook missing data section");
+                activity?.SetStatus(ActivityStatusCode.Error, "missing_data");
                 return false;
             }
 
@@ -75,13 +87,18 @@ public sealed class ResendWebhookProcessor
             if (string.IsNullOrWhiteSpace(providerMessageId))
             {
                 _logger.LogWarning("Resend webhook missing message identifier for event {Type}", eventTypeName);
+                activity?.SetStatus(ActivityStatusCode.Error, "missing_message_id");
                 return false;
             }
+
+            activity?.SetTag("webhook.event", eventTypeName);
+            activity?.SetTag("webhook.provider_message_id", providerMessageId);
 
             var message = await _db.Messages.FirstOrDefaultAsync(m => m.ProviderMessageId == providerMessageId, cancellationToken);
             if (message is null)
             {
                 _logger.LogWarning("Resend webhook could not match message id {ProviderMessageId}", providerMessageId);
+                activity?.SetStatus(ActivityStatusCode.Ok, "message_not_found");
                 return true;
             }
 
@@ -92,6 +109,7 @@ public sealed class ResendWebhookProcessor
                 if (exists)
                 {
                     _logger.LogDebug("Resend event {EventId} already processed", eventId);
+                    activity?.SetStatus(ActivityStatusCode.Ok, "duplicate");
                     return true;
                 }
             }
@@ -115,6 +133,7 @@ public sealed class ResendWebhookProcessor
             ApplyStatusUpdate(message, mapping.Status, occurredAt, dataElement);
 
             await _db.SaveChangesAsync(cancellationToken);
+            activity?.SetStatus(ActivityStatusCode.Ok);
             return true;
         }
     }

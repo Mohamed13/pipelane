@@ -1,0 +1,43 @@
+{
+  "settings": {
+    "documentationRules": {
+      "companyName": "Pipelane",
+      "documentExposedElements": true,
+      "documentInterfaces": true,
+      "documentInternalElements": false,
+      "documentPrivateElements": false,
+      "documentPrivateFields": false,
+      "excludeFromDocumentationRules": [
+        "src/Pipelane.Domain/**.cs",
+        "src/Pipelane.Infrastructure/**.cs",
+        "src/Pipelane.Application/Background/**.cs",
+        "src/Pipelane.Application/Migrations/**.cs"
+      ]
+    },
+    "namingRules": {
+      "allowCommonHungarianPrefixes": false,
+      "includeInferredTupleElementNames": true
+    },
+    "orderingRules": {
+      "systemUsingDirectivesFirst": true,
+      "blankLinesBetweenUsingGroups": true
+    }
+  },
+  "rules": {
+    "SA1633": {
+      "severity": "none"
+    },
+    "SA1413": {
+      "severity": "none"
+    },
+    "SA1136": {
+      "severity": "none"
+    },
+    "SA1502": {
+      "severity": "none"
+    },
+    "SA1516": {
+      "severity": "warning"
+    }
+  }
+}

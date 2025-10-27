@@ -10,11 +10,15 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
+using Pipelane.Api.Middleware;
 using Pipelane.Application.Hunter;
 using Pipelane.Infrastructure.Persistence;
 
 namespace Pipelane.Api.Controllers;
 
+/// <summary>
+/// Gère les listes de prospects Lead Hunter (création, lecture, renommage, suppression).
+/// </summary>
 [ApiController]
 [Authorize]
 [Route("api/lists")]
@@ -37,6 +41,14 @@ public class ListsController : ControllerBase
         _logger = logger;
     }
 
+    /// <summary>
+    /// Crée une nouvelle liste Lead Hunter pour le tenant courant.
+    /// </summary>
+    /// <param name="request">Nom de la liste à créer.</param>
+    /// <param name="ct">Token d'annulation.</param>
+    /// <returns>Identifiant de la liste créée.</returns>
+    /// <response code="200">La liste est créée.</response>
+    /// <response code="400">Le tenant est manquant ou le nom vide.</response>
     [HttpPost]
     public async Task<ActionResult<object>> Create(CreateListRequest request, CancellationToken ct)
     {
@@ -47,60 +59,79 @@ public class ListsController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(request.Name))
         {
-            return BadRequest("Nom de liste obligatoire.");
+            return BadRequest(new ProblemDetails
+            {
+                Title = ProblemDetailsFrenchLocalizer.ResolveTitle(StatusCodes.Status400BadRequest),
+                Detail = "Le nom de la liste est obligatoire.",
+                Status = StatusCodes.Status400BadRequest
+            });
         }
 
-    var id = await _service.CreateListAsync(tenantId, request, ct);
-    return Ok(new { id });
-  }
-
-  [HttpGet]
-  public async Task<ActionResult<IReadOnlyList<ProspectListSummary>>> GetAll(CancellationToken ct)
-  {
-    if (!TryGetTenantId(out var tenantId, out var problem))
-    {
-      return BadRequest(problem);
+        var id = await _service.CreateListAsync(tenantId, request, ct);
+        return Ok(new { id });
     }
 
-    var userId = GetUserId();
-    _logger.LogInformation("Fetching lists for tenant {TenantId} user {UserId} using provider {Provider}", tenantId, userId, _dbDiagnostics.ProviderName);
-
-    try
+    /// <summary>
+    /// Retourne l'ensemble des listes du tenant courant.
+    /// </summary>
+    /// <param name="ct">Token d'annulation.</param>
+    /// <returns>Listes disponibles.</returns>
+    /// <response code="200">Listes récupérées avec succès.</response>
+    /// <response code="400">Tenant manquant.</response>
+    [HttpGet]
+    public async Task<ActionResult<IReadOnlyList<ProspectListSummary>>> GetAll(CancellationToken ct)
     {
-      var response = await _service.GetListsAsync(tenantId, ct) ?? Array.Empty<ProspectListSummary>();
-      var items = response
-        .Select(list => new ProspectListSummary(list.Id, list.Name, list.Count, list.CreatedAtUtc, list.UpdatedAtUtc))
-        .ToList();
-
-      _logger.LogInformation("Fetched {Count} lists for tenant {TenantId}", items.Count, tenantId);
-      return Ok(items);
-    }
-    catch (Exception ex)
-    {
-      var pending = await _dbDiagnostics.GetPendingMigrationsAsync(ct);
-      if (pending.Count > 0)
-      {
-        _logger.LogError(ex, "Pending migrations detected while fetching lists for tenant {TenantId}: {PendingMigrations}", tenantId, pending);
-        var migrationProblem = new ProblemDetails
+        if (!TryGetTenantId(out var tenantId, out var problem))
         {
-          Title = "DB_MIGRATION_PENDING",
-          Detail = "La base de données nécessite l'application des dernières migrations.",
-          Status = StatusCodes.Status500InternalServerError
-        };
-        return StatusCode(StatusCodes.Status500InternalServerError, migrationProblem);
-      }
+            return BadRequest(problem);
+        }
 
-      _logger.LogError(ex, "Unexpected error while fetching lists for tenant {TenantId} user {UserId}", tenantId, userId);
-      var genericProblem = new ProblemDetails
-      {
-        Title = "lists_fetch_failed",
-        Detail = "Erreur inattendue lors de la récupération des listes.",
-        Status = StatusCodes.Status500InternalServerError
-      };
-      return StatusCode(StatusCodes.Status500InternalServerError, genericProblem);
+        var userId = GetUserId();
+        _logger.LogInformation("Chargement des listes pour le tenant {TenantId} (utilisateur {UserId}, provider {Provider})", tenantId, userId, _dbDiagnostics.ProviderName);
+
+        try
+        {
+            var items = await _service.GetListsAsync(tenantId, ct);
+            _logger.LogInformation("Chargement terminé ({Count} listes) pour le tenant {TenantId}", items.Count, tenantId);
+            return Ok(items);
+        }
+        catch (Exception ex)
+        {
+            var pending = await _dbDiagnostics.GetPendingMigrationsAsync(ct);
+            if (pending.Count > 0)
+            {
+                _logger.LogError(ex, "Migrations en attente détectées pour le tenant {TenantId}: {PendingMigrations}", tenantId, pending);
+                var migrationProblem = new ProblemDetails
+                {
+                    Title = "Migrations en attente",
+                    Detail = "La base de données nécessite l'application des dernières migrations.",
+                    Status = StatusCodes.Status503ServiceUnavailable
+                };
+                return StatusCode(StatusCodes.Status503ServiceUnavailable, migrationProblem);
+            }
+
+            _logger.LogError(ex, "Erreur inattendue lors du chargement des listes pour le tenant {TenantId} (utilisateur {UserId})", tenantId, userId);
+            var genericProblem = new ProblemDetails
+            {
+                Title = ProblemDetailsFrenchLocalizer.ResolveTitle(StatusCodes.Status500InternalServerError),
+                Detail = ProblemDetailsFrenchLocalizer.ResolveDetail(StatusCodes.Status500InternalServerError),
+                Status = StatusCodes.Status500InternalServerError
+            };
+            return StatusCode(StatusCodes.Status500InternalServerError, genericProblem);
+        }
     }
-  }
 
+    /// <summary>
+    /// Renomme une liste existante.
+    /// </summary>
+    /// <param name="listId">Identifiant de la liste.</param>
+    /// <param name="request">Nouveau nom.</param>
+    /// <param name="ct">Token d'annulation.</param>
+    /// <returns>Aucun contenu si la mise à jour réussit.</returns>
+    /// <response code="204">Liste renommée.</response>
+    /// <response code="400">Nom invalide.</response>
+    /// <response code="404">Liste introuvable.</response>
+    /// <response code="409">Conflit sur le nom.</response>
     [HttpPut("{listId:guid}")]
     public async Task<IActionResult> Rename(Guid listId, RenameListRequest request, CancellationToken ct)
     {
@@ -116,18 +147,41 @@ public class ListsController : ControllerBase
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(new ProblemDetails { Title = "invalid_name", Detail = ex.Message });
+            return BadRequest(new ProblemDetails
+            {
+                Title = ProblemDetailsFrenchLocalizer.ResolveTitle(StatusCodes.Status400BadRequest),
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest
+            });
         }
         catch (InvalidOperationException ex)
         {
-            return Conflict(new ProblemDetails { Title = "name_conflict", Detail = ex.Message });
+            return Conflict(new ProblemDetails
+            {
+                Title = ProblemDetailsFrenchLocalizer.ResolveTitle(StatusCodes.Status409Conflict),
+                Detail = ex.Message,
+                Status = StatusCodes.Status409Conflict
+            });
         }
         catch (KeyNotFoundException)
         {
-            return NotFound();
+            return NotFound(new ProblemDetails
+            {
+                Title = ProblemDetailsFrenchLocalizer.ResolveTitle(StatusCodes.Status404NotFound),
+                Detail = "Liste introuvable.",
+                Status = StatusCodes.Status404NotFound
+            });
         }
     }
 
+    /// <summary>
+    /// Supprime une liste et les liaisons prospects associées.
+    /// </summary>
+    /// <param name="listId">Identifiant de la liste.</param>
+    /// <param name="ct">Token d'annulation.</param>
+    /// <returns>204 si la suppression est effectuée.</returns>
+    /// <response code="204">Liste supprimée.</response>
+    /// <response code="404">Liste introuvable.</response>
     [HttpDelete("{listId:guid}")]
     public async Task<IActionResult> Delete(Guid listId, CancellationToken ct)
     {
@@ -143,10 +197,24 @@ public class ListsController : ControllerBase
         }
         catch (KeyNotFoundException)
         {
-            return NotFound();
+            return NotFound(new ProblemDetails
+            {
+                Title = ProblemDetailsFrenchLocalizer.ResolveTitle(StatusCodes.Status404NotFound),
+                Detail = "Liste introuvable.",
+                Status = StatusCodes.Status404NotFound
+            });
         }
     }
 
+    /// <summary>
+    /// Ajoute un ensemble de prospects à une liste donnée.
+    /// </summary>
+    /// <param name="listId">Identifiant de la liste cible.</param>
+    /// <param name="request">Identifiants de prospects à ajouter.</param>
+    /// <param name="ct">Token d'annulation.</param>
+    /// <returns>Nombre d'éléments ajoutés et ignorés.</returns>
+    /// <response code="200">Résultat de l'ajout.</response>
+    /// <response code="404">Liste introuvable.</response>
     [HttpPost("{listId:guid}/add")]
     public async Task<ActionResult<AddToListResponse>> Add(Guid listId, AddToListRequest request, CancellationToken ct)
     {
@@ -159,6 +227,14 @@ public class ListsController : ControllerBase
         return Ok(response);
     }
 
+    /// <summary>
+    /// Retourne le détail d'une liste, avec ses prospects scorés.
+    /// </summary>
+    /// <param name="listId">Identifiant de la liste.</param>
+    /// <param name="ct">Token d'annulation.</param>
+    /// <returns>Détail de la liste.</returns>
+    /// <response code="200">Liste trouvée.</response>
+    /// <response code="404">Liste introuvable.</response>
     [HttpGet("{listId:guid}")]
     public async Task<ActionResult<ProspectListResponse>> Get(Guid listId, CancellationToken ct)
     {
@@ -174,7 +250,12 @@ public class ListsController : ControllerBase
         }
         catch (KeyNotFoundException)
         {
-            return NotFound();
+            return NotFound(new ProblemDetails
+            {
+                Title = ProblemDetailsFrenchLocalizer.ResolveTitle(StatusCodes.Status404NotFound),
+                Detail = "Liste introuvable.",
+                Status = StatusCodes.Status404NotFound
+            });
         }
     }
 
@@ -190,8 +271,8 @@ public class ListsController : ControllerBase
         _logger.LogWarning("Tenant header missing or invalid for user {UserId}", GetUserId());
         problem = new ProblemDetails
         {
-            Title = "tenant_header_missing",
-            Detail = "Tenant header (X-Tenant-Id) manquant ou invalide.",
+            Title = "Tenant manquant",
+            Detail = "L'en-tête X-Tenant-Id est manquant ou invalide.",
             Status = StatusCodes.Status400BadRequest
         };
         return false;

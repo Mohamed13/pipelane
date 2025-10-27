@@ -32,6 +32,7 @@ public sealed class MessageSendRateLimiter : IMessageSendRateLimiter
         _store = store;
     }
 
+    /// <inheritdoc/>
     public Task<bool> TryAcquireAsync(Guid tenantId, CancellationToken cancellationToken = default)
     {
         if (cancellationToken.IsCancellationRequested)

@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Pipelane.Api.Middleware;
 
+/// <summary>
+/// Valide que le tenant demandé via X-Tenant-Id est autorisé pour l'utilisateur courant et peuple les erreurs FR.
+/// </summary>
 public sealed class TenantScopeMiddleware
 {
     private const string TenantIdsClaim = "tenant_ids";
@@ -35,11 +38,17 @@ public sealed class TenantScopeMiddleware
                     !allowedTenants.Contains(requestedTenant.ToString()))
                 {
                     context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                    var correlationId = context.Items.TryGetValue("CorrelationId", out var rawCorrelation)
+                        ? rawCorrelation?.ToString()
+                        : null;
+                    correlationId ??= context.TraceIdentifier;
                     await context.Response.WriteAsJsonAsync(new ProblemDetails
                     {
-                        Title = "tenant_forbidden",
-                        Detail = "The provided tenant is not allowed by this token.",
-                        Status = StatusCodes.Status403Forbidden
+                        Title = "Accès refusé",
+                        Detail = "Ce jeton ne permet pas d'accéder à ce tenant.",
+                        Status = StatusCodes.Status403Forbidden,
+                        Instance = context.Request.Path,
+                        Extensions = { ["traceId"] = context.TraceIdentifier, ["correlationId"] = correlationId! }
                     });
                     return;
                 }

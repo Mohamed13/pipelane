@@ -20,6 +20,7 @@ public sealed class EmailChannel : IMessageChannel
     private readonly string? _fromAddress;
     private readonly string? _fromName;
 
+    /// <inheritdoc/>
     public Channel Channel => Channel.Email;
 
     public EmailChannel(IHttpClientFactory httpFactory, IConfiguration configuration, ILogger<EmailChannel> logger)
@@ -31,14 +32,17 @@ public sealed class EmailChannel : IMessageChannel
         _fromName = configuration["RESEND_FROM_NAME"] ?? configuration["Resend:FromName"];
     }
 
+    /// <inheritdoc/>
     public Task<WebhookResult> HandleWebhookAsync(string body, IDictionary<string, string> headers, CancellationToken ct)
         => Task.FromResult(new WebhookResult(true, null));
 
+    /// <inheritdoc/>
     public async Task<SendResult> SendTemplateAsync(Contact contact, Template template, IDictionary<string, string> variables, SendMeta meta, CancellationToken ct)
     {
         return await SendAsync(contact, template, variables, ct);
     }
 
+    /// <inheritdoc/>
     public async Task<SendResult> SendTextAsync(Contact contact, string text, SendMeta meta, CancellationToken ct)
     {
         var template = new Template { Name = "text", CoreSchemaJson = JsonSerializer.Serialize(new { subject = "Message", text }) };
@@ -46,6 +50,7 @@ public sealed class EmailChannel : IMessageChannel
         return await SendAsync(contact, template, vars, ct);
     }
 
+    /// <inheritdoc/>
     public Task<bool> ValidateTemplateAsync(Template t, CancellationToken ct) => Task.FromResult(true);
 
     private async Task<SendResult> SendAsync(Contact contact, Template template, IDictionary<string, string> variables, CancellationToken ct)

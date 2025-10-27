@@ -77,6 +77,7 @@ public sealed class DemoExperienceService : IDemoExperienceService
         _logger = logger;
     }
 
+    /// <inheritdoc/>
     public async Task<DemoRunResult> RunAsync(Guid tenantId, CancellationToken ct)
     {
         if (!_options.Value.Enabled)

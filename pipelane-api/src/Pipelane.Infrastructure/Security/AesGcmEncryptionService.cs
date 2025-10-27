@@ -19,6 +19,7 @@ public sealed class AesGcmEncryptionService : IEncryptionService
         _key = sha.ComputeHash(Encoding.UTF8.GetBytes(keyMaterial)); // 32 bytes
     }
 
+    /// <inheritdoc/>
     public string Encrypt(string plaintext)
     {
         var nonce = RandomNumberGenerator.GetBytes(12);
@@ -34,6 +35,7 @@ public sealed class AesGcmEncryptionService : IEncryptionService
         return Convert.ToBase64String(combined);
     }
 
+    /// <inheritdoc/>
     public string Decrypt(string ciphertext)
     {
         var data = Convert.FromBase64String(ciphertext);

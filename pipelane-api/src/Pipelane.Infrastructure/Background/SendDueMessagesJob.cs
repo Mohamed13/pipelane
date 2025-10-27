@@ -15,6 +15,7 @@ public sealed class SendDueMessagesJob : IJob
         _logger = logger;
     }
 
+    /// <inheritdoc/>
     public async Task Execute(IJobExecutionContext context)
     {
         try

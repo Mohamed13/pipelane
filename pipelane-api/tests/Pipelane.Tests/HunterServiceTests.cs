@@ -216,8 +216,9 @@ public class HunterServiceTests
         add.Skipped.Should().Be(0);
 
         var detail = await service.GetListAsync(tenantId, listId, CancellationToken.None);
-        detail.Items.Should().ContainSingle();
-        detail.Items.First().Score.Should().Be(75);
+        detail.Items.Should().NotBeNull();
+        detail.Items!.Should().ContainSingle();
+        detail.Items!.First().Score.Should().Be(75);
     }
 
     [Fact]

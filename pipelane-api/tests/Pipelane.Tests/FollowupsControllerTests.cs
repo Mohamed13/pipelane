@@ -13,13 +13,13 @@ using Microsoft.Extensions.Options;
 
 using Pipelane.Api.Controllers;
 using Pipelane.Application.Ai;
+using Pipelane.Application.DTOs;
 using Pipelane.Application.Services;
 using Pipelane.Application.Storage;
-using Pipelane.Application.DTOs;
 using Pipelane.Domain.Entities;
 using Pipelane.Domain.Enums;
-using Pipelane.Infrastructure.Persistence;
 using Pipelane.Infrastructure.Background;
+using Pipelane.Infrastructure.Persistence;
 
 using Xunit;
 

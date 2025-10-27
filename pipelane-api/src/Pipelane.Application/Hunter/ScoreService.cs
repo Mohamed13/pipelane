@@ -9,6 +9,7 @@ public interface IHunterScoreService
 
 public sealed class HunterScoreService : IHunterScoreService
 {
+    /// <inheritdoc/>
     public int ComputeScore(HunterFeaturesDto features, HunterFilters? filters)
     {
         var ratingNorm = NormalizeRating(features.Rating);

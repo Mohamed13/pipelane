@@ -48,14 +48,17 @@ public sealed class SmsChannel : IMessageChannel
         _clock = clock ?? TimeProvider.System;
     }
 
+    /// <inheritdoc/>
     public Channel Channel => Channel.Sms;
 
+    /// <inheritdoc/>
     public async Task<SendResult> SendTemplateAsync(Contact contact, Template template, IDictionary<string, string> variables, SendMeta meta, CancellationToken ct)
     {
         var body = RenderTemplate(template, variables);
         return await SendMessageAsync(contact, body, ct).ConfigureAwait(false);
     }
 
+    /// <inheritdoc/>
     public async Task<SendResult> SendTextAsync(Contact contact, string text, SendMeta meta, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(text))
@@ -66,6 +69,7 @@ public sealed class SmsChannel : IMessageChannel
         return await SendMessageAsync(contact, text, ct).ConfigureAwait(false);
     }
 
+    /// <inheritdoc/>
     public Task<bool> ValidateTemplateAsync(Template template, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(template.CoreSchemaJson))
@@ -84,6 +88,7 @@ public sealed class SmsChannel : IMessageChannel
         }
     }
 
+    /// <inheritdoc/>
     public async Task<WebhookResult> HandleWebhookAsync(string body, IDictionary<string, string> headers, CancellationToken ct)
     {
         if (!headers.TryGetValue("x-tenant-id", out var tenantValue) || !Guid.TryParse(tenantValue, out var tenantId))

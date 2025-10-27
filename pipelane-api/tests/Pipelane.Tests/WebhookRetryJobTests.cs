@@ -5,11 +5,12 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using FluentAssertions;
+
 using Microsoft.Extensions.Logging.Abstractions;
 
 using Pipelane.Application.Abstractions;
-using Pipelane.Domain.Enums;
 using Pipelane.Domain.Entities;
+using Pipelane.Domain.Enums;
 using Pipelane.Infrastructure.Webhooks;
 
 using Xunit;

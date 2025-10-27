@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -11,7 +12,6 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using System.Linq;
 using Pipelane.Application.Ai.Prompts;
 using Pipelane.Domain.Enums;
 
@@ -71,6 +71,7 @@ public sealed class TextAiService : ITextAiService
         _clock = clock ?? TimeProvider.System;
     }
 
+    /// <inheritdoc/>
     public async Task<GenerateMessageResult> GenerateMessageAsync(Guid tenantId, GenerateMessageCommand command, CancellationToken ct)
     {
         ValidateGenerate(command);
@@ -107,6 +108,7 @@ public sealed class TextAiService : ITextAiService
         }
     }
 
+    /// <inheritdoc/>
     public async Task<ClassifyReplyResult> ClassifyReplyAsync(Guid tenantId, ClassifyReplyCommand command, CancellationToken ct)
     {
         ValidateClassify(command);
@@ -142,6 +144,7 @@ public sealed class TextAiService : ITextAiService
         }
     }
 
+    /// <inheritdoc/>
     public async Task<SuggestFollowupResult> SuggestFollowupAsync(Guid tenantId, SuggestFollowupCommand command, CancellationToken ct)
     {
         ValidateFollowup(command);
@@ -324,7 +327,7 @@ public sealed class TextAiService : ITextAiService
                 _logger.LogInformation("AI request {Operation} for tenant {TenantId} succeeded in {Elapsed} ms (prompt {PromptTokens}, completion {CompletionTokens})",
                     operation, tenantId, sw.ElapsedMilliseconds, promptTokens, completionTokens);
 
-               completion = new AiCompletionResponse(content, promptTokens, completionTokens);
+                completion = new AiCompletionResponse(content, promptTokens, completionTokens);
                 last = null;
                 break;
             }

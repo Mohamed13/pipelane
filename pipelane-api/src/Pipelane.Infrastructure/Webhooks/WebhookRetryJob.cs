@@ -25,6 +25,7 @@ public sealed class WebhookRetryJob : IJob
         _logger = logger;
     }
 
+    /// <inheritdoc/>
     public async Task Execute(IJobExecutionContext context)
     {
         var cancellationToken = context?.CancellationToken ?? CancellationToken.None;

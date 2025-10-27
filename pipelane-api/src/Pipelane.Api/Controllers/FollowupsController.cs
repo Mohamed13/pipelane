@@ -3,15 +3,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Diagnostics;
 
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.AspNetCore.Http;
 
-using Pipelane.Application.Ai;
 using Pipelane.Application.Abstractions;
+using Pipelane.Application.Ai;
 using Pipelane.Application.DTOs;
 using Pipelane.Application.Services;
 using Pipelane.Application.Storage;
@@ -19,6 +20,7 @@ using Pipelane.Domain.Entities;
 using Pipelane.Domain.Enums;
 using Pipelane.Infrastructure.Background;
 using Pipelane.Infrastructure.Persistence;
+using Pipelane.Application.Common;
 
 namespace Pipelane.Api.Controllers;
 
@@ -71,25 +73,36 @@ public sealed class FollowupsController : ControllerBase
     [HttpPost("preview")]
     public async Task<ActionResult<object>> Preview([FromBody] FollowupPreviewRequest? request, CancellationToken cancellationToken)
     {
+        using var activity = TelemetrySources.Followups.StartActivity("followup.preview.request", ActivityKind.Server);
+        activity?.SetTag("followup.tenant_id", _tenantProvider.TenantId);
+
         if (request is null)
         {
+            activity?.SetStatus(ActivityStatusCode.Error, "missing_request");
             return BadRequest(CreateConversationIdProblem());
         }
 
         if (request.ConversationId.HasValue)
         {
             var conversationId = request.ConversationId.Value;
+            activity?.SetTag("followup.conversation_id", conversationId);
             if (conversationId == Guid.Empty)
             {
+                activity?.SetStatus(ActivityStatusCode.Error, "invalid_conversation_id");
                 return BadRequest(CreateConversationIdProblem());
             }
 
             var preview = await PreviewConversationInternal(conversationId, cancellationToken).ConfigureAwait(false);
             if (preview.Result is not null)
             {
+                if (preview.Result is ObjectResult objectResult && objectResult.StatusCode >= 400)
+                {
+                    activity?.SetStatus(ActivityStatusCode.Error, $"child_{objectResult.StatusCode}");
+                }
                 return preview.Result;
             }
 
+            activity?.SetStatus(ActivityStatusCode.Ok);
             return Ok(preview.Value!);
         }
 
@@ -104,6 +117,7 @@ public sealed class FollowupsController : ControllerBase
             }
             catch (JsonException)
             {
+                activity?.SetStatus(ActivityStatusCode.Error, "invalid_segment_json");
                 return BadRequest("SegmentJson is not valid JSON");
             }
 
@@ -122,6 +136,8 @@ public sealed class FollowupsController : ControllerBase
         }
 
         var count = await query.CountAsync(cancellationToken);
+        activity?.SetTag("followup.segment_count", count);
+        activity?.SetStatus(ActivityStatusCode.Ok);
         return Ok(new { count });
     }
 
@@ -129,13 +145,20 @@ public sealed class FollowupsController : ControllerBase
     public async Task<ActionResult<object>> Validate([FromBody] ValidateFollowupRequest request, CancellationToken ct)
     {
         var tenantId = _tenantProvider.TenantId;
+        using var activity = TelemetrySources.Followups.StartActivity("followup.validate", ActivityKind.Server);
+        activity?.SetTag("followup.tenant_id", tenantId);
+        activity?.SetTag("followup.proposal_id", request.ProposalId);
+        activity?.SetTag("followup.conversation_id", request.ConversationId);
+        activity?.SetTag("followup.send_now", request.SendNow);
         if (tenantId == Guid.Empty)
         {
+            activity?.SetStatus(ActivityStatusCode.Error, "tenant_missing");
             return BadRequest("tenant_missing");
         }
 
         if (!_proposalStore.TryGet(tenantId, request.ProposalId, out var proposal) || proposal is null)
         {
+            activity?.SetStatus(ActivityStatusCode.Error, "proposal_not_found");
             return NotFound("proposal_not_found");
         }
 
@@ -145,6 +168,7 @@ public sealed class FollowupsController : ControllerBase
 
         if (conversation is null)
         {
+            activity?.SetStatus(ActivityStatusCode.Error, "conversation_not_found");
             return NotFound("conversation_not_found");
         }
 
@@ -154,6 +178,7 @@ public sealed class FollowupsController : ControllerBase
 
         if (contact is null)
         {
+            activity?.SetStatus(ActivityStatusCode.Error, "contact_not_found");
             return NotFound("contact_not_found");
         }
 
@@ -197,6 +222,9 @@ public sealed class FollowupsController : ControllerBase
             conversation.Id,
             request.ProposalId,
             scheduledUtc ?? now);
+
+        activity?.SetTag("followup.scheduled_utc", scheduledUtc ?? now);
+        activity?.SetStatus(ActivityStatusCode.Ok);
 
         return Ok(new
         {
@@ -395,7 +423,11 @@ public sealed class FollowupsController : ControllerBase
 
     private async Task<ActionResult<FollowupConversationPreviewResponse>> PreviewConversationInternal(Guid conversationId, CancellationToken ct)
     {
+        using var activity = TelemetrySources.Followups.StartActivity("followup.preview.conversation", ActivityKind.Server);
+        activity?.SetTag("followup.conversation_id", conversationId);
+
         var tenantId = _tenantProvider.TenantId;
+        activity?.SetTag("followup.tenant_id", tenantId);
 
         var conversation = await _db.Conversations
             .AsNoTracking()
@@ -405,6 +437,7 @@ public sealed class FollowupsController : ControllerBase
         if (conversation is null || (tenantId != Guid.Empty && conversation.TenantId != tenantId))
         {
             _logger.LogWarning("Conversation {ConversationId} not found for tenant {TenantId}", conversationId, tenantId);
+            activity?.SetStatus(ActivityStatusCode.Error, "conversation_not_found");
             return NotFound("conversation_not_found");
         }
 
@@ -418,6 +451,7 @@ public sealed class FollowupsController : ControllerBase
         if (messages.Count == 0)
         {
             _logger.LogWarning("Conversation {ConversationId} has no messages, cannot preview follow-up", conversationId);
+            activity?.SetStatus(ActivityStatusCode.Error, "no_messages");
             return NotFound("no_messages");
         }
 
@@ -462,6 +496,10 @@ public sealed class FollowupsController : ControllerBase
             messages.Count > 0,
             scheduledUtc,
             scheduledLocal);
+
+        activity?.SetTag("followup.scheduled_utc", scheduledUtc);
+        activity?.SetTag("followup.angle", suggestion.Angle.ToString());
+        activity?.SetStatus(ActivityStatusCode.Ok);
 
         return Ok(new FollowupConversationPreviewResponse(
             historySnippet,

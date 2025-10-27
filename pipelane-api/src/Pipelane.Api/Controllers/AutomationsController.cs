@@ -4,8 +4,8 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 using Pipelane.Application.DTOs;
 using Pipelane.Application.Services;
@@ -22,7 +22,7 @@ namespace Pipelane.Api.Controllers;
 [EnableRateLimiting("automations")]
 public sealed class AutomationsController : ControllerBase
 {
-private static readonly JsonSerializerOptions SerializerOptions = CreateSerializerOptions();
+    private static readonly JsonSerializerOptions SerializerOptions = CreateSerializerOptions();
 
     private readonly IOptionsMonitor<AutomationsOptions> _options;
     private readonly IMessagingService _messaging;

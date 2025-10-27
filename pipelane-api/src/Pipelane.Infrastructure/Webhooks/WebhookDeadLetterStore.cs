@@ -40,6 +40,7 @@ public sealed class WebhookDeadLetterStore : IWebhookDeadLetterStore
         _logger = logger;
     }
 
+    /// <inheritdoc/>
     public async Task LogFailureAsync(Guid tenantId, Channel channel, string provider, string kind, string payload, IDictionary<string, string> headers, string error, CancellationToken ct)
     {
         using var scope = _scopeFactory.CreateScope();
@@ -65,6 +66,7 @@ public sealed class WebhookDeadLetterStore : IWebhookDeadLetterStore
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
     }
 
+    /// <inheritdoc/>
     public async Task<IReadOnlyList<WebhookDeadLetterItem>> TakeDueAsync(DateTime utcNow, int batchSize, CancellationToken ct)
     {
         using var scope = _scopeFactory.CreateScope();
@@ -85,6 +87,7 @@ public sealed class WebhookDeadLetterStore : IWebhookDeadLetterStore
         }).ToList();
     }
 
+    /// <inheritdoc/>
     public async Task MarkSuccessAsync(Guid id, CancellationToken ct)
     {
         using var scope = _scopeFactory.CreateScope();
@@ -100,6 +103,7 @@ public sealed class WebhookDeadLetterStore : IWebhookDeadLetterStore
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
     }
 
+    /// <inheritdoc/>
     public async Task MarkFailureAsync(Guid id, string error, TimeSpan backoff, CancellationToken ct)
     {
         using var scope = _scopeFactory.CreateScope();

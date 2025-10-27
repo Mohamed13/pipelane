@@ -19,7 +19,7 @@ Structure email (si email):
 - Corps en HTML simple (<p>, <strong>, <a>), 1 CTA clair.
 Si WhatsApp/SMS: texte simple sans HTML.
 Réponds JSON strict avec {"subject":"","text":"","html":"","languageDetected":""}.
-"""; 
+""";
 
     public const string ClassifyReplySystem = """
 Tu lis une réponse et tu la classes pour aider un commercial. Rends un JSON simple, rien d’autre.

@@ -20,6 +20,7 @@ public sealed class HunterEnrichService : IHunterEnrichService
         _logger = logger;
     }
 
+    /// <inheritdoc/>
     public async Task<HunterFeaturesDto> EnrichAsync(HunterProspectDto prospect, HunterFilters? filters, HunterFeaturesDto candidate, CancellationToken ct)
     {
         var hasSite = candidate.HasSite ?? !string.IsNullOrWhiteSpace(prospect.Website);

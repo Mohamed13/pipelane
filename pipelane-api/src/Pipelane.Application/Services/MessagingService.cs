@@ -24,6 +24,7 @@ public sealed class OutboxService : IOutboxService
 {
     private readonly IAppDbContext _db;
     public OutboxService(IAppDbContext db) => _db = db;
+    /// <inheritdoc/>
     public async Task EnqueueAsync(OutboxMessage msg, CancellationToken ct)
     {
         await _db.Outbox.AddAsync(msg, ct);
@@ -35,6 +36,7 @@ public sealed class ChannelRegistry : IChannelRegistry
 {
     private readonly IEnumerable<IMessageChannel> _channels;
     public ChannelRegistry(IEnumerable<IMessageChannel> channels) => _channels = channels;
+    /// <inheritdoc/>
     public IMessageChannel? Resolve(Channel channel) => _channels.FirstOrDefault(c => c.Channel == channel);
 }
 
@@ -55,6 +57,7 @@ public sealed class MessagingService : IMessagingService
         _db = db; _registry = registry; _rules = rules; _outbox = outbox;
     }
 
+    /// <inheritdoc/>
     public async Task<SendResult> SendAsync(SendMessageRequest req, CancellationToken ct)
     {
         var contact = await ResolveContactAsync(req, ct) ?? throw new InvalidOperationException("Contact not found");

@@ -1,6 +1,6 @@
+using System.Globalization;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Globalization;
 using System.Text;
 using System.Text.Json;
 
@@ -40,6 +40,7 @@ public sealed class ProspectingAiService : IProspectingAiService
         _logger = logger;
     }
 
+    /// <inheritdoc/>
     public async Task<(string subject, string html, string? text, int? promptTokens, int? completionTokens, decimal? costUsd)> GenerateEmailAsync(Prospect prospect, ProspectingSequenceStep step, ProspectingCampaign? campaign, CancellationToken ct)
     {
         var (subject, html, text) = ComposeFallbackEmail(prospect, step, campaign);
@@ -73,6 +74,7 @@ public sealed class ProspectingAiService : IProspectingAiService
         }
     }
 
+    /// <inheritdoc/>
     public Task<(ReplyIntent intent, double confidence, string? extractedDatesJson)> ClassifyReplyAsync(ProspectReply reply, CancellationToken ct)
     {
         var text = reply.TextBody ?? reply.HtmlBody ?? string.Empty;
@@ -94,6 +96,7 @@ public sealed class ProspectingAiService : IProspectingAiService
         return Task.FromResult((intent, confidence, datesJson));
     }
 
+    /// <inheritdoc/>
     public async Task<(string subject, string html, string? text, int? promptTokens, int? completionTokens, decimal? costUsd)> CreateAutoReplyDraftAsync(ProspectReply reply, Prospect prospect, CancellationToken ct)
     {
         var (subject, html, text) = ComposeAutoReply(reply, prospect);

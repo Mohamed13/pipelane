@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
+using Pipelane.Application.Common;
 using Pipelane.Application.Hunter;
 using Pipelane.Application.Services;
 using Pipelane.Application.Storage;
@@ -18,6 +19,9 @@ using Pipelane.Domain.Enums.Prospecting;
 
 namespace Pipelane.Application.Hunter;
 
+/// <summary>
+/// Contrat applicatif pour orchestrer la prospection Lead Hunter : import, enrichissement, scoring et cadences.
+/// </summary>
 public interface IHunterService
 {
     Task<Guid> UploadCsvAsync(Guid tenantId, StreamReference file, CancellationToken ct);
@@ -33,6 +37,9 @@ public interface IHunterService
 
 public sealed record StreamReference(string FileName, Stream Content);
 
+/// <summary>
+/// Implémentation applicative Lead Hunter garantissant la déduplication cross-sources et la cohérence des listes/cadences.
+/// </summary>
 public sealed class HunterService : IHunterService
 {
     private readonly IAppDbContext _db;
@@ -66,18 +73,26 @@ public sealed class HunterService : IHunterService
         _logger = logger;
     }
 
+    /// <inheritdoc/>
     public async Task<Guid> UploadCsvAsync(Guid tenantId, StreamReference file, CancellationToken ct)
     {
-        if (file.Content == null) throw new ArgumentNullException(nameof(file.Content));
-        var csvId = await _csvStore.SaveAsync(tenantId, file.Content, ct);
+        Guard.NotEmpty(tenantId, nameof(tenantId));
+        var safeFile = Guard.NotNull(file, nameof(file));
+        ArgumentNullException.ThrowIfNull(safeFile.Content);
+
+        var csvId = await _csvStore.SaveAsync(tenantId, safeFile.Content, ct);
         _logger.LogInformation("Stored hunter CSV {CsvId} for tenant {Tenant}", csvId, tenantId);
         return csvId;
     }
 
+    /// <inheritdoc/>
     public async Task<HunterSearchResponse> SearchAsync(Guid tenantId, HunterSearchCriteria criteria, bool dryRun, CancellationToken ct)
     {
-        var provider = ResolveProvider(criteria.Source);
-        var candidates = await provider.SearchAsync(tenantId, criteria, ct);
+        Guard.NotEmpty(tenantId, nameof(tenantId));
+        var safeCriteria = Guard.NotNull(criteria, nameof(criteria));
+
+        var provider = ResolveProvider(safeCriteria.Source);
+        var candidates = await provider.SearchAsync(tenantId, safeCriteria, ct);
 
         var total = candidates.Count;
         var now = DateTime.UtcNow;
@@ -106,6 +121,7 @@ public sealed class HunterService : IHunterService
             if (emails.Count > 0 || fuzzyKeys.Count > 0)
             {
                 var existing = await _db.Prospects
+                    .AsNoTracking()
                     .Where(p =>
                         (p.Email != null && emails.Contains(p.Email.ToLower())) ||
                         fuzzyKeys.Contains(NormalizeCompanyCity(p.Company, p.City)!))
@@ -154,8 +170,8 @@ public sealed class HunterService : IHunterService
             }
 
             Prospect? entity = existing;
-            var enriched = await _enrich.EnrichAsync(candidate.Prospect, criteria.Filters, candidate.Features, ct);
-            var score = _score.ComputeScore(enriched, criteria.Filters);
+            var enriched = await _enrich.EnrichAsync(candidate.Prospect, safeCriteria.Filters, candidate.Features, ct);
+            var score = _score.ComputeScore(enriched, safeCriteria.Filters);
             var why = _why.BuildReasons(candidate.Prospect, enriched, score);
 
             if (!dryRun)
@@ -184,8 +200,8 @@ public sealed class HunterService : IHunterService
                 entity.City = candidate.Prospect.City ?? entity.City;
                 entity.Country = candidate.Prospect.Country ?? entity.Country;
                 entity.Website = candidate.Prospect.Website ?? entity.Website;
-                entity.Source = criteria.Source ?? provider.Source;
-                entity.Industry = criteria.Industry ?? entity.Industry;
+                entity.Source = safeCriteria.Source ?? provider.Source;
+                entity.Industry = safeCriteria.Industry ?? entity.Industry;
                 entity.UpdatedAtUtc = now;
                 entity.EnrichedJson = JsonSerializer.Serialize(enriched, JsonOptions);
 
@@ -225,14 +241,18 @@ public sealed class HunterService : IHunterService
         return new HunterSearchResponse(total, duplicates, results);
     }
 
+    /// <inheritdoc/>
     public async Task<Guid> CreateListAsync(Guid tenantId, CreateListRequest request, CancellationToken ct)
     {
+        Guard.NotEmpty(tenantId, nameof(tenantId));
+        var safeRequest = Guard.NotNull(request, nameof(request));
+        var name = Guard.NotNullOrWhiteSpace(safeRequest.Name, nameof(safeRequest.Name));
         var now = DateTime.UtcNow;
         var list = new ProspectList
         {
             Id = Guid.NewGuid(),
             TenantId = tenantId,
-            Name = request.Name,
+            Name = name,
             CreatedAtUtc = now,
             UpdatedAtUtc = now
         };
@@ -242,15 +262,21 @@ public sealed class HunterService : IHunterService
         return list.Id;
     }
 
+    /// <inheritdoc/>
     public async Task<AddToListResponse> AddToListAsync(Guid tenantId, Guid listId, AddToListRequest request, CancellationToken ct)
     {
+        Guard.NotEmpty(tenantId, nameof(tenantId));
+        Guard.NotEmpty(listId, nameof(listId));
+        var safeRequest = Guard.NotNull(request, nameof(request));
+
         var list = await _db.ProspectLists.FirstOrDefaultAsync(l => l.Id == listId && l.TenantId == tenantId, ct);
         if (list is null) throw new KeyNotFoundException("Liste introuvable.");
 
-        var prospectIds = request.ProspectIds?.Distinct().ToList() ?? new List<Guid>();
+        var prospectIds = safeRequest.ProspectIds?.Distinct().ToList() ?? new List<Guid>();
         if (prospectIds.Count == 0) return new AddToListResponse(0, 0);
 
         var existingItems = await _db.ProspectListItems
+            .AsNoTracking()
             .Where(i => i.ProspectListId == listId && prospectIds.Contains(i.ProspectId))
             .Select(i => i.ProspectId)
             .ToListAsync(ct);
@@ -279,14 +305,19 @@ public sealed class HunterService : IHunterService
         return new AddToListResponse(newIds.Count, existingItems.Count);
     }
 
+    /// <inheritdoc/>
     public async Task<ProspectListResponse> GetListAsync(Guid tenantId, Guid listId, CancellationToken ct)
     {
+        Guard.NotEmpty(tenantId, nameof(tenantId));
+        Guard.NotEmpty(listId, nameof(listId));
+
         var list = await _db.ProspectLists
             .AsNoTracking()
             .FirstOrDefaultAsync(l => l.Id == listId && l.TenantId == tenantId, ct);
         if (list is null) throw new KeyNotFoundException("Liste introuvable.");
 
         var items = await _db.ProspectListItems
+            .AsNoTracking()
             .Where(i => i.ProspectListId == listId)
             .Include(i => i.Prospect!)
             .ThenInclude(p => p.Score)
@@ -327,15 +358,18 @@ public sealed class HunterService : IHunterService
         return new ProspectListResponse(list.Id, list.Name, list.CreatedAtUtc, list.UpdatedAtUtc, responses);
     }
 
+    /// <inheritdoc/>
     public async Task<IReadOnlyList<ProspectListSummary>> GetListsAsync(Guid tenantId, CancellationToken ct)
     {
+        Guard.NotEmpty(tenantId, nameof(tenantId));
+
         var lists = await _db.ProspectLists
             .AsNoTracking()
             .Where(l => l.TenantId == tenantId)
             .Select(l => new ProspectListSummary(
                 l.Id,
                 l.Name,
-                _db.ProspectListItems.Count(i => i.ProspectListId == l.Id),
+                l.Items.Count,
                 l.CreatedAtUtc,
                 l.UpdatedAtUtc))
             .OrderByDescending(l => l.UpdatedAtUtc)
@@ -344,14 +378,19 @@ public sealed class HunterService : IHunterService
         return lists;
     }
 
+    /// <inheritdoc/>
     public async Task RenameListAsync(Guid tenantId, Guid listId, RenameListRequest request, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(request.Name))
+        Guard.NotEmpty(tenantId, nameof(tenantId));
+        Guard.NotEmpty(listId, nameof(listId));
+        var safeRequest = Guard.NotNull(request, nameof(request));
+
+        if (string.IsNullOrWhiteSpace(safeRequest.Name))
         {
             throw new ArgumentException("Le nom de liste est obligatoire.", nameof(request));
         }
 
-        var trimmed = request.Name.Trim();
+        var trimmed = safeRequest.Name.Trim();
         var exists = await _db.ProspectLists
             .AnyAsync(l => l.TenantId == tenantId && l.Id != listId && l.Name == trimmed, ct);
         if (exists)
@@ -370,8 +409,12 @@ public sealed class HunterService : IHunterService
         await _db.SaveChangesAsync(ct);
     }
 
+    /// <inheritdoc/>
     public async Task DeleteListAsync(Guid tenantId, Guid listId, CancellationToken ct)
     {
+        Guard.NotEmpty(tenantId, nameof(tenantId));
+        Guard.NotEmpty(listId, nameof(listId));
+
         var list = await _db.ProspectLists.FirstOrDefaultAsync(l => l.Id == listId && l.TenantId == tenantId, ct);
         if (list is null)
         {
@@ -382,9 +425,14 @@ public sealed class HunterService : IHunterService
         await _db.SaveChangesAsync(ct);
     }
 
+    /// <inheritdoc/>
     public async Task<Guid> CreateCadenceFromListAsync(Guid tenantId, CadenceFromListRequest request, CancellationToken ct)
     {
-        var list = await _db.ProspectLists.FirstOrDefaultAsync(l => l.Id == request.ListId && l.TenantId == tenantId, ct);
+        Guard.NotEmpty(tenantId, nameof(tenantId));
+        var safeRequest = Guard.NotNull(request, nameof(request));
+        Guard.NotEmpty(safeRequest.ListId, nameof(safeRequest.ListId));
+
+        var list = await _db.ProspectLists.FirstOrDefaultAsync(l => l.Id == safeRequest.ListId && l.TenantId == tenantId, ct);
         if (list is null) throw new KeyNotFoundException("Liste introuvable.");
 
         var now = DateTime.UtcNow;
@@ -392,14 +440,14 @@ public sealed class HunterService : IHunterService
         {
             Id = Guid.NewGuid(),
             TenantId = tenantId,
-            Name = request.Name ?? $"Cadence {list.Name}",
+            Name = safeRequest.Name ?? $"Cadence {list.Name}",
             Description = "Cadence générée depuis Lead Hunter",
             CreatedAtUtc = now,
             UpdatedAtUtc = now,
             Steps = new List<ProspectingSequenceStep>()
         };
 
-        var stepsInput = request.Steps?.Count > 0 ? request.Steps : DefaultSteps();
+        var stepsInput = safeRequest.Steps?.Count > 0 ? safeRequest.Steps : DefaultSteps();
         var order = 0;
         foreach (var step in stepsInput)
         {
@@ -422,16 +470,16 @@ public sealed class HunterService : IHunterService
         var limits = _limitsProvider.GetLimits();
         var settings = new
         {
-            dailyCap = request.DailyCap ?? limits.DailySendCap,
+            dailyCap = safeRequest.DailyCap ?? limits.DailySendCap,
             quietHours = new { start = limits.QuietHoursStart, end = limits.QuietHoursEnd },
-            window = request.Window
+            window = safeRequest.Window
         };
 
         var campaign = new ProspectingCampaign
         {
             Id = Guid.NewGuid(),
             TenantId = tenantId,
-            Name = request.Name ?? $"Cadence {list.Name}",
+            Name = safeRequest.Name ?? $"Cadence {list.Name}",
             SequenceId = sequence.Id,
             SegmentJson = JsonSerializer.Serialize(new { listId = list.Id }, JsonOptions),
             SettingsJson = JsonSerializer.Serialize(settings, JsonOptions),

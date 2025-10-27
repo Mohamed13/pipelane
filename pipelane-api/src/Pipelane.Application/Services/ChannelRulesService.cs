@@ -18,6 +18,7 @@ public sealed class ChannelRulesService : IChannelRulesService
 
     public ChannelRulesService(IAppDbContext db) => _db = db;
 
+    /// <inheritdoc/>
     public async Task<bool> CanSendWhatsAppSessionAsync(Guid contactId, CancellationToken ct)
     {
         var list = await (from m in _db.Messages
@@ -32,5 +33,6 @@ public sealed class ChannelRulesService : IChannelRulesService
         return lastInbound.HasValue && (DateTime.UtcNow - lastInbound.Value).TotalHours <= 24;
     }
 
+    /// <inheritdoc/>
     public bool MustIncludeUnsubscribe(Channel channel) => channel == Channel.Email;
 }

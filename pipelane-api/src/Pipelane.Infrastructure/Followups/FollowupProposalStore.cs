@@ -1,4 +1,5 @@
 using System;
+
 using Microsoft.Extensions.Caching.Memory;
 
 using Pipelane.Application.Services;
@@ -16,6 +17,7 @@ public sealed class FollowupProposalStore : IFollowupProposalStore
         _cache = cache;
     }
 
+    /// <inheritdoc/>
     public Guid Save(Guid tenantId, FollowupProposalData proposal)
     {
         var id = Guid.NewGuid();
@@ -24,6 +26,7 @@ public sealed class FollowupProposalStore : IFollowupProposalStore
         return id;
     }
 
+    /// <inheritdoc/>
     public bool TryGet(Guid tenantId, Guid proposalId, out FollowupProposalData? proposal)
     {
         if (_cache.TryGetValue(BuildKey(tenantId, proposalId), out var value) && value is FollowupProposalData data)
@@ -36,6 +39,7 @@ public sealed class FollowupProposalStore : IFollowupProposalStore
         return false;
     }
 
+    /// <inheritdoc/>
     public void Remove(Guid tenantId, Guid proposalId)
     {
         _cache.Remove(BuildKey(tenantId, proposalId));

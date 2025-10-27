@@ -14,6 +14,7 @@ public class OutboxProcessor : BackgroundService
         _logger = logger;
     }
 
+    /// <inheritdoc/>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)

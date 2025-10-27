@@ -22,6 +22,7 @@ public sealed class ResendWebhookVerifier : IProviderWebhookVerifier
         _secret = configuration["RESEND_WEBHOOK_SECRET"] ?? configuration["Resend:WebhookSecret"];
     }
 
+    /// <inheritdoc/>
     public bool Verify(string provider, string payload, IReadOnlyDictionary<string, string> headers)
     {
         if (!string.Equals(provider, ProviderKey, StringComparison.OrdinalIgnoreCase))

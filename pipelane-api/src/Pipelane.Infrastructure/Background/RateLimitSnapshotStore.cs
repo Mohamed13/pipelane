@@ -29,6 +29,7 @@ public sealed class RateLimitSnapshotStore : IRateLimitSnapshotStore
         _logger = logger;
     }
 
+    /// <inheritdoc/>
     public IReadOnlyCollection<DateTime> Load(Guid targetTenantId)
     {
         using var scope = _scopeFactory.CreateScope();
@@ -60,6 +61,7 @@ public sealed class RateLimitSnapshotStore : IRateLimitSnapshotStore
         }
     }
 
+    /// <inheritdoc/>
     public void Save(Guid targetTenantId, IReadOnlyCollection<DateTime> hits)
     {
         using var scope = _scopeFactory.CreateScope();
