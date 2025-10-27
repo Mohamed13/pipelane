@@ -39,6 +39,7 @@ import { TourService } from './core/tour.service';
 import { ApiService } from './core/api.service';
 import { environment } from './core/environment';
 import { HelpCenterComponent } from './core/help-center/help-center.component';
+import { PipelaneLogoComponent } from './shared/ui/pipelane-logo/pipelane-logo.component';
 
 interface NavItem {
   label: string;
@@ -81,6 +82,7 @@ const fadeIn = animation([
     MatTooltipModule,
     MatSnackBarModule,
     MatDialogModule,
+    PipelaneLogoComponent,
   ],
   animations: [
     trigger('headerAnimate', [
@@ -99,8 +101,7 @@ const fadeIn = animation([
       >
         <div class="rail-head">
           <div class="brand">
-            <mat-icon aria-hidden="true">auto_awesome</mat-icon>
-            <span>Pipelane</span>
+            <app-pipelane-logo variant="compact" [inline]="true"></app-pipelane-logo>
           </div>
           <button
             mat-icon-button
@@ -331,12 +332,12 @@ const fadeIn = animation([
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        background: var(--grad-main);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        padding-inline: var(--space-2);
+      }
+
+      .brand app-pipelane-logo,
+      .brand .pl-logo {
+        width: clamp(160px, 20vw, 240px);
       }
 
       .nav-rail {
@@ -684,9 +685,14 @@ export class AppComponent {
 
   @HostListener('document:keydown', ['$event'])
   handleShortcut(event: KeyboardEvent): void {
-    const target = event.target as HTMLElement | null;
-    const tag = target?.tagName.toLowerCase();
-    const isEditable = target?.isContentEditable;
+    if (!event || typeof event.key !== 'string' || event.key.length === 0) {
+      this.resetShortcutBuffer();
+      return;
+    }
+
+    const target = event.target instanceof HTMLElement ? event.target : null;
+    const tag = typeof target?.tagName === 'string' ? target.tagName.toLowerCase() : '';
+    const isEditable = target?.isContentEditable ?? false;
     const isFormField =
       !!tag && (tag === 'input' || tag === 'textarea' || tag === 'select' || isEditable);
 
