@@ -6,12 +6,18 @@ Thumbs.db
 node_modules/
 dist/
 coverage/
-pipelane-front/node_modules/
 pipelane-front/dist/
 pipelane-front/coverage/
+pipelane-marketing/dist/
+pipelane-marketing/coverage/
+pipelane-marketing/.astro/
+pipelane-front/node_modules/
 pipelane-front/.env
+pipelane-front/.env.*
 pipelane-front/.angular/
 pipelane-front/src/app/core/env.generated.ts
+*.env
+.env*
 
 # Dotnet
 **/bin/
@@ -29,3 +35,8 @@ launchSettings.json
 .vscode/
 *.tgz
 pipelane-marketing/storage/
+pipelane-marketing/storage/*.json
+
+# Build artifacts
+build/
+tmp/

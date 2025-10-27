@@ -1,0 +1,20 @@
+* text=auto eol=lf
+
+*.cs text diff=csharp
+*.ts text
+*.tsx text
+*.js text
+*.jsx text
+*.json text
+*.md text
+*.scss text
+*.css text
+*.html text
+*.astro text
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.svg text
+*.ico binary

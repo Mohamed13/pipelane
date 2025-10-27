@@ -1,0 +1,7 @@
+# Définition des responsables de revues par zone
+
+*                                           @pipelane/maintainers
+pipelane-api/                               @pipelane/backend
+pipelane-front/                             @pipelane/frontend
+pipelane-marketing/                         @pipelane/marketing
+docs/                                       @pipelane/docs
