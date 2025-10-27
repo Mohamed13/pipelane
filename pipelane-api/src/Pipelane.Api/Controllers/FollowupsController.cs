@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Http;
 
 using Pipelane.Application.Ai;
 using Pipelane.Application.Abstractions;
@@ -61,77 +62,37 @@ public sealed class FollowupsController : ControllerBase
     {
         if (conversationId == Guid.Empty)
         {
-            return BadRequest("conversation_missing");
+            return BadRequest(CreateConversationIdProblem());
         }
 
-        var conversation = await _db.Conversations
-            .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == conversationId, ct)
-            .ConfigureAwait(false);
-
-        if (conversation is null)
-        {
-            return NotFound("conversation_not_found");
-        }
-
-        var messages = await _db.Messages
-            .AsNoTracking()
-            .Where(m => m.ConversationId == conversationId)
-            .OrderBy(m => m.CreatedAt)
-            .ToListAsync(ct)
-            .ConfigureAwait(false);
-
-        if (messages.Count == 0)
-        {
-            return NotFound("no_messages");
-        }
-
-        var contact = await _db.Contacts
-            .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == conversation.ContactId, ct)
-            .ConfigureAwait(false);
-
-        var historySnippet = BuildHistorySnippet(messages, 6);
-        var lastMessage = messages[^1];
-        var read = messages.Any(m => m.Status == MessageStatus.Opened);
-        var timezone = ResolveTimezone(contact?.Lang);
-        var language = contact?.Lang ?? lastMessage.Lang ?? "en";
-        var tenantId = _tenantProvider.TenantId;
-
-        var suggestion = await _aiService.SuggestFollowupAsync(
-            tenantId,
-            new SuggestFollowupCommand(
-                conversation.PrimaryChannel,
-                timezone,
-                lastMessage.CreatedAt,
-                read,
-                language,
-                historySnippet,
-                null),
-            ct).ConfigureAwait(false);
-
-        var scheduledUtc = await EnforceFollowupLimitsAsync(tenantId, timezone, suggestion.ScheduledAtUtc, ct).ConfigureAwait(false);
-        var proposalId = _proposalStore.Save(tenantId, new FollowupProposalData(
-            conversation.PrimaryChannel,
-            scheduledUtc,
-            suggestion.Angle,
-            suggestion.PreviewText,
-            language));
-
-        return Ok(new FollowupConversationPreviewResponse(
-            historySnippet,
-            lastMessage.CreatedAt,
-            read,
-            timezone,
-            new FollowupProposalPreview(
-                proposalId,
-                scheduledUtc.ToString("o"),
-                MapAngle(suggestion.Angle),
-                suggestion.PreviewText)));
+        return await PreviewConversationInternal(conversationId, ct).ConfigureAwait(false);
     }
+
     [HttpPost("preview")]
-    public async Task<ActionResult<object>> Preview([FromBody] FollowupPreviewRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<object>> Preview([FromBody] FollowupPreviewRequest? request, CancellationToken cancellationToken)
     {
+        if (request is null)
+        {
+            return BadRequest(CreateConversationIdProblem());
+        }
+
+        if (request.ConversationId.HasValue)
+        {
+            var conversationId = request.ConversationId.Value;
+            if (conversationId == Guid.Empty)
+            {
+                return BadRequest(CreateConversationIdProblem());
+            }
+
+            var preview = await PreviewConversationInternal(conversationId, cancellationToken).ConfigureAwait(false);
+            if (preview.Result is not null)
+            {
+                return preview.Result;
+            }
+
+            return Ok(preview.Value!);
+        }
+
         var query = _db.Contacts.AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(request.SegmentJson))
@@ -431,4 +392,93 @@ public sealed class FollowupsController : ControllerBase
         [property: JsonPropertyName("scheduledAtIso")] string ScheduledAtIso,
         [property: JsonPropertyName("angle")] string Angle,
         [property: JsonPropertyName("previewText")] string PreviewText);
+
+    private async Task<ActionResult<FollowupConversationPreviewResponse>> PreviewConversationInternal(Guid conversationId, CancellationToken ct)
+    {
+        var tenantId = _tenantProvider.TenantId;
+
+        var conversation = await _db.Conversations
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == conversationId, ct)
+            .ConfigureAwait(false);
+
+        if (conversation is null || (tenantId != Guid.Empty && conversation.TenantId != tenantId))
+        {
+            _logger.LogWarning("Conversation {ConversationId} not found for tenant {TenantId}", conversationId, tenantId);
+            return NotFound("conversation_not_found");
+        }
+
+        var messages = await _db.Messages
+            .AsNoTracking()
+            .Where(m => m.ConversationId == conversationId)
+            .OrderBy(m => m.CreatedAt)
+            .ToListAsync(ct)
+            .ConfigureAwait(false);
+
+        if (messages.Count == 0)
+        {
+            _logger.LogWarning("Conversation {ConversationId} has no messages, cannot preview follow-up", conversationId);
+            return NotFound("no_messages");
+        }
+
+        var contact = await _db.Contacts
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == conversation.ContactId, ct)
+            .ConfigureAwait(false);
+
+        var historySnippet = BuildHistorySnippet(messages, 6);
+        var lastMessage = messages[^1];
+        var read = messages.Any(m => m.Status == MessageStatus.Opened);
+        var timezone = ResolveTimezone(contact?.Lang);
+        var language = contact?.Lang ?? lastMessage.Lang ?? "en";
+
+        var suggestion = await _aiService.SuggestFollowupAsync(
+            tenantId,
+            new SuggestFollowupCommand(
+                conversation.PrimaryChannel,
+                timezone,
+                lastMessage.CreatedAt,
+                read,
+                language,
+                historySnippet,
+                null),
+            ct).ConfigureAwait(false);
+
+        var scheduledUtc = await EnforceFollowupLimitsAsync(tenantId, timezone, suggestion.ScheduledAtUtc, ct).ConfigureAwait(false);
+        var proposalId = _proposalStore.Save(tenantId, new FollowupProposalData(
+            conversation.PrimaryChannel,
+            scheduledUtc,
+            suggestion.Angle,
+            suggestion.PreviewText,
+            language));
+
+        var resolvedTimezone = ResolveTimezoneInfo(timezone);
+        var scheduledLocal = TimeZoneInfo.ConvertTimeFromUtc(scheduledUtc, resolvedTimezone);
+
+        _logger.LogInformation(
+            "Preview follow-up computed for tenant {TenantId} conversation {ConversationId} hasHistory={HasHistory} scheduledUtc={ScheduledUtc:o} scheduledLocal={ScheduledLocal:o}",
+            tenantId,
+            conversationId,
+            messages.Count > 0,
+            scheduledUtc,
+            scheduledLocal);
+
+        return Ok(new FollowupConversationPreviewResponse(
+            historySnippet,
+            lastMessage.CreatedAt,
+            read,
+            timezone,
+            new FollowupProposalPreview(
+                proposalId,
+                scheduledUtc.ToString("o"),
+                MapAngle(suggestion.Angle),
+                suggestion.PreviewText)));
+    }
+
+    private static ProblemDetails CreateConversationIdProblem() => new()
+    {
+        Title = "invalid_request",
+        Detail = "conversationId required",
+        Status = StatusCodes.Status400BadRequest
+    };
 }

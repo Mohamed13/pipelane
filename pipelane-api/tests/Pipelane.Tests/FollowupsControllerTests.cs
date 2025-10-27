@@ -15,6 +15,7 @@ using Pipelane.Api.Controllers;
 using Pipelane.Application.Ai;
 using Pipelane.Application.Services;
 using Pipelane.Application.Storage;
+using Pipelane.Application.DTOs;
 using Pipelane.Domain.Entities;
 using Pipelane.Domain.Enums;
 using Pipelane.Infrastructure.Persistence;
@@ -26,6 +27,121 @@ namespace Pipelane.Tests;
 
 public class FollowupsControllerTests
 {
+    [Fact]
+    public async Task Preview_get_and_post_compat()
+    {
+        var options = new DbContextOptionsBuilder<FakeDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+        await using var db = new FakeDbContext(options);
+
+        var tenantId = Guid.NewGuid();
+        var contactId = Guid.NewGuid();
+        var conversationId = Guid.NewGuid();
+
+        db.Contacts.Add(new Contact
+        {
+            Id = contactId,
+            TenantId = tenantId,
+            Lang = "fr",
+            Email = "contact@example.com",
+            CreatedAt = DateTime.UtcNow.AddDays(-10),
+            UpdatedAt = DateTime.UtcNow.AddDays(-5)
+        });
+        db.Conversations.Add(new Conversation
+        {
+            Id = conversationId,
+            TenantId = tenantId,
+            ContactId = contactId,
+            PrimaryChannel = Channel.Email,
+            CreatedAt = DateTime.UtcNow.AddDays(-3)
+        });
+        db.Messages.Add(new Message
+        {
+            Id = Guid.NewGuid(),
+            TenantId = tenantId,
+            ConversationId = conversationId,
+            Channel = Channel.Email,
+            Direction = MessageDirection.Out,
+            Type = MessageType.Text,
+            PayloadJson = JsonSerializer.Serialize(new { text = "Bonjour" }),
+            Status = MessageStatus.Delivered,
+            CreatedAt = DateTime.UtcNow.AddHours(-6),
+            Lang = "fr"
+        });
+        db.Messages.Add(new Message
+        {
+            Id = Guid.NewGuid(),
+            TenantId = tenantId,
+            ConversationId = conversationId,
+            Channel = Channel.Email,
+            Direction = MessageDirection.In,
+            Type = MessageType.Text,
+            PayloadJson = JsonSerializer.Serialize(new { text = "Merci" }),
+            Status = MessageStatus.Opened,
+            CreatedAt = DateTime.UtcNow.AddHours(-2),
+            Lang = "fr"
+        });
+        await db.SaveChangesAsync();
+
+        var store = new StubProposalStore();
+        var ai = new StubAiService
+        {
+            SuggestResponse = new SuggestFollowupResult(DateTime.UtcNow.AddHours(4), AiFollowupAngle.Value, "On se capte ?", AiContentSource.Fallback)
+        };
+
+        var controller = new FollowupsController(
+            db,
+            new StubOutboxService(),
+            store,
+            new StubTenantProvider(tenantId),
+            ai,
+            Options.Create(new MessagingLimitsOptions()),
+            NullLogger<FollowupsController>.Instance);
+
+        var getResponse = await controller.PreviewConversation(conversationId, CancellationToken.None);
+        var getOk = getResponse.Result.Should().BeOfType<OkObjectResult>().Which;
+        var getPreview = getOk.Value.Should().BeOfType<FollowupsController.FollowupConversationPreviewResponse>().Which;
+        getPreview.Proposal.PreviewText.Should().Be("On se capte ?");
+
+        var postResponse = await controller.Preview(new FollowupPreviewRequest { ConversationId = conversationId }, CancellationToken.None);
+        var postOk = postResponse.Result.Should().BeOfType<OkObjectResult>().Which;
+        postOk.Value.Should().BeOfType<FollowupsController.FollowupConversationPreviewResponse>();
+    }
+
+    [Fact]
+    public async Task Preview_400_on_missing_conversationId()
+    {
+        var options = new DbContextOptionsBuilder<FakeDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+        await using var db = new FakeDbContext(options);
+
+        var controller = new FollowupsController(
+            db,
+            new StubOutboxService(),
+            new StubProposalStore(),
+            new StubTenantProvider(Guid.NewGuid()),
+            new StubAiService(),
+            Options.Create(new MessagingLimitsOptions()),
+            NullLogger<FollowupsController>.Instance);
+
+        var getResponse = await controller.PreviewConversation(Guid.Empty, CancellationToken.None);
+        var getBadRequest = getResponse.Result.Should().BeOfType<BadRequestObjectResult>().Which;
+        var getProblem = getBadRequest.Value.Should().BeOfType<ProblemDetails>().Which;
+        getProblem.Detail.Should().Be("conversationId required");
+
+        var nullResponse = await controller.Preview(null, CancellationToken.None);
+        var nullBadRequest = nullResponse.Result.Should().BeOfType<BadRequestObjectResult>().Which;
+        var nullProblem = nullBadRequest.Value.Should().BeOfType<ProblemDetails>().Which;
+        nullProblem.Detail.Should().Be("conversationId required");
+
+        var postResponse = await controller.Preview(new FollowupPreviewRequest { ConversationId = Guid.Empty }, CancellationToken.None);
+        var postBadRequest = postResponse.Result.Should().BeOfType<BadRequestObjectResult>().Which;
+        var postProblem = postBadRequest.Value.Should().BeOfType<ProblemDetails>().Which;
+        postProblem.Detail.Should().Be("conversationId required");
+    }
+
     [Fact]
     public async Task ValidateFollowup_Enqueues_Outbox_Message_With_Proposal_Data()
     {
