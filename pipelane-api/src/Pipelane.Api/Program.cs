@@ -326,6 +326,11 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+if (string.Equals(Environment.GetEnvironmentVariable("SEED_ONLY"), "true", StringComparison.OrdinalIgnoreCase))
+{
+    return;
+}
+
 app.UseMiddleware<RequestLoggingEnrichmentMiddleware>();
 app.UseSerilogRequestLogging();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
