@@ -124,9 +124,9 @@ public record GenerateEmailRequest(Guid ProspectId, Guid StepId, Guid? CampaignI
 
 public record GenerateEmailResponse(Guid GenerationId, string Subject, string HtmlBody, string? TextBody, string Variant, int? PromptTokens, int? CompletionTokens, decimal? CostUsd);
 
-public record ClassifyReplyRequest(Guid ReplyId);
+public record ProspectingClassifyReplyRequest(Guid ReplyId);
 
-public record ClassifyReplyResponse(Guid ReplyId, ReplyIntent Intent, double Confidence, string? ExtractedDatesJson);
+public record ProspectingClassifyReplyResponse(Guid ReplyId, ReplyIntent Intent, double Confidence, string? ExtractedDatesJson);
 
 public record AutoReplyRequest(Guid ReplyId, Guid? CampaignId = null);
 

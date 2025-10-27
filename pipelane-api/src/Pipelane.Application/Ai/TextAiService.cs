@@ -74,9 +74,15 @@ public sealed class TextAiService : ITextAiService
     public async Task<GenerateMessageResult> GenerateMessageAsync(Guid tenantId, GenerateMessageCommand command, CancellationToken ct)
     {
         ValidateGenerate(command);
-        var apiKey = EnsureEnabled();
-
         var fallback = BuildFallbackMessage(command);
+
+        var apiKey = TryGetApiKey();
+        if (apiKey is null)
+        {
+            _logger.LogDebug("AI disabled; returning heuristic message for tenant {TenantId}", tenantId);
+            return fallback;
+        }
+
         var prompts = BuildGeneratePrompts(command);
         var completion = await CallChatCompletionAsync(apiKey, tenantId, "generate-message", prompts.System, prompts.User, ct);
         if (completion is null)
@@ -104,13 +110,19 @@ public sealed class TextAiService : ITextAiService
     public async Task<ClassifyReplyResult> ClassifyReplyAsync(Guid tenantId, ClassifyReplyCommand command, CancellationToken ct)
     {
         ValidateClassify(command);
-        var apiKey = EnsureEnabled();
+        var fallback = BuildFallbackClassification(command);
+        var apiKey = TryGetApiKey();
+        if (apiKey is null)
+        {
+            _logger.LogDebug("AI disabled; returning heuristic classification for tenant {TenantId}", tenantId);
+            return fallback;
+        }
 
         var prompts = BuildClassifyPrompts(command);
         var completion = await CallChatCompletionAsync(apiKey, tenantId, "classify-reply", prompts.System, prompts.User, ct);
         if (completion is null)
         {
-            return BuildFallbackClassification(command);
+            return fallback;
         }
 
         try
@@ -126,16 +138,22 @@ public sealed class TextAiService : ITextAiService
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Falling back to heuristic classification for tenant {TenantId}", tenantId);
-            return BuildFallbackClassification(command);
+            return fallback;
         }
     }
 
     public async Task<SuggestFollowupResult> SuggestFollowupAsync(Guid tenantId, SuggestFollowupCommand command, CancellationToken ct)
     {
         ValidateFollowup(command);
-        var apiKey = EnsureEnabled();
-
         var fallback = BuildFallbackFollowup(command);
+
+        var apiKey = TryGetApiKey();
+        if (apiKey is null)
+        {
+            _logger.LogDebug("AI disabled; returning heuristic follow-up for tenant {TenantId}", tenantId);
+            return fallback;
+        }
+
         var prompts = BuildFollowupPrompts(command);
         var completion = await CallChatCompletionAsync(apiKey, tenantId, "suggest-followup", prompts.System, prompts.User, ct);
         if (completion is null)
@@ -160,14 +178,7 @@ public sealed class TextAiService : ITextAiService
         }
     }
 
-    private string EnsureEnabled()
-    {
-        if (string.IsNullOrWhiteSpace(_options.ApiKey))
-        {
-            throw new AiDisabledException();
-        }
-        return _options.ApiKey;
-    }
+    private string? TryGetApiKey() => string.IsNullOrWhiteSpace(_options.ApiKey) ? null : _options.ApiKey;
 
     private void ValidateGenerate(GenerateMessageCommand command)
     {

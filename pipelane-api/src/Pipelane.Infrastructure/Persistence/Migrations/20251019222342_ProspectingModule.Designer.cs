@@ -1218,7 +1218,7 @@ namespace Pipelane.Infrastructure.Persistence.Migrations
                     b.HasOne("Pipelane.Domain.Entities.Prospecting.Prospect", "Prospect")
                         .WithMany("Replies")
                         .HasForeignKey("ProspectId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Pipelane.Domain.Entities.Prospecting.SendLog", "SendLog")
@@ -1229,7 +1229,7 @@ namespace Pipelane.Infrastructure.Persistence.Migrations
                     b.HasOne("Pipelane.Domain.Entities.Prospecting.ProspectingSequenceStep", "Step")
                         .WithMany("Replies")
                         .HasForeignKey("StepId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("AutoReplyGeneration");
 
@@ -1279,13 +1279,13 @@ namespace Pipelane.Infrastructure.Persistence.Migrations
                     b.HasOne("Pipelane.Domain.Entities.Prospecting.Prospect", "Prospect")
                         .WithMany("Sends")
                         .HasForeignKey("ProspectId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Pipelane.Domain.Entities.Prospecting.ProspectingSequenceStep", "Step")
                         .WithMany("Sends")
                         .HasForeignKey("StepId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Campaign");
 

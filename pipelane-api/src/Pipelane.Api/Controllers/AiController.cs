@@ -1,16 +1,20 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 using Pipelane.Application.Ai;
+using Pipelane.Application.Services;
 using Pipelane.Application.Storage;
 using Pipelane.Domain.Enums;
+using Pipelane.Infrastructure.Background;
 using Pipelane.Infrastructure.Persistence;
 
 namespace Pipelane.Api.Controllers;
@@ -27,17 +31,25 @@ public sealed class AiController : ControllerBase
     private readonly ITenantProvider _tenantProvider;
     private readonly IAppDbContext _db;
     private readonly ILogger<AiController> _logger;
-
+    private readonly IFollowupProposalStore _proposalStore;
+    private readonly MessagingLimitsOptions _messagingLimits;
+    private readonly TimeProvider _clock;
     public AiController(
         ITextAiService aiService,
         ITenantProvider tenantProvider,
         IAppDbContext db,
-        ILogger<AiController> logger)
+        ILogger<AiController> logger,
+        IFollowupProposalStore proposalStore,
+        IOptions<MessagingLimitsOptions> messagingOptions,
+        TimeProvider? clock = null)
     {
         _aiService = aiService;
         _tenantProvider = tenantProvider;
         _db = db;
         _logger = logger;
+        _proposalStore = proposalStore;
+        _messagingLimits = messagingOptions.Value;
+        _clock = clock ?? TimeProvider.System;
     }
 
     [HttpPost("generate-message")]
@@ -179,8 +191,17 @@ public sealed class AiController : ControllerBase
 
             var result = await _aiService.SuggestFollowupAsync(tenantId, command, ct).ConfigureAwait(false);
 
+            var scheduledUtc = await EnforceFollowupLimitsAsync(tenantId, request.Timezone, result.ScheduledAtUtc, ct).ConfigureAwait(false);
+            var proposalId = _proposalStore.Save(tenantId, new FollowupProposalData(
+                request.Channel,
+                scheduledUtc,
+                result.Angle,
+                result.PreviewText,
+                request.Language));
+
             return Ok(new SuggestFollowupResponse(
-                result.ScheduledAtUtc.ToString("o"),
+                proposalId,
+                scheduledUtc.ToString("o"),
                 MapAngle(result.Angle),
                 result.PreviewText));
         }
@@ -212,13 +233,93 @@ public sealed class AiController : ControllerBase
         }
     }
 
-    private async Task<bool> IsOptOutAsync(Channel channel, Guid? contactId, string? contextSnippet, CancellationToken ct)
+    private async Task<DateTime> EnforceFollowupLimitsAsync(Guid tenantId, string timezone, DateTime scheduledUtc, CancellationToken ct)
     {
-        if (channel is not (Channel.Email or Channel.Sms))
+        var tz = ResolveTimezone(timezone);
+        var sanitized = EnsureFuture(scheduledUtc);
+        sanitized = AdjustForQuietHours(sanitized, tz);
+        sanitized = EnsureFuture(sanitized);
+
+        var dayStartUtc = _clock.GetUtcNow().UtcDateTime.Date;
+        var sentToday = await _db.Messages
+            .Where(m => m.TenantId == tenantId && m.Direction == MessageDirection.Out && m.CreatedAt >= dayStartUtc && m.Status != MessageStatus.Failed)
+            .CountAsync(ct)
+            .ConfigureAwait(false);
+
+        if (sentToday >= _messagingLimits.DailySendCap)
         {
-            return false;
+            sanitized = MoveToNextWindow(sanitized, tz);
         }
 
+        return EnsureFuture(sanitized);
+    }
+
+    private static TimeZoneInfo ResolveTimezone(string timezone)
+    {
+        if (string.IsNullOrWhiteSpace(timezone))
+        {
+            return TimeZoneInfo.Utc;
+        }
+
+        try
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById(timezone);
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            return TimeZoneInfo.Utc;
+        }
+        catch (InvalidTimeZoneException)
+        {
+            return TimeZoneInfo.Utc;
+        }
+    }
+
+    private DateTime AdjustForQuietHours(DateTime scheduledUtc, TimeZoneInfo tz)
+    {
+        var local = TimeZoneInfo.ConvertTimeFromUtc(scheduledUtc, tz);
+        var start = _messagingLimits.QuietHoursStart;
+        var end = _messagingLimits.QuietHoursEnd;
+
+        var inQuiet = start <= end
+            ? local.TimeOfDay >= start && local.TimeOfDay < end
+            : local.TimeOfDay >= start || local.TimeOfDay < end;
+
+        if (!inQuiet)
+        {
+            return scheduledUtc;
+        }
+
+        var midnight = new DateTime(local.Year, local.Month, local.Day, 0, 0, 0, local.Kind);
+        var nextLocal = midnight.Add(end);
+        if (local.TimeOfDay >= start)
+        {
+            nextLocal = nextLocal.AddDays(1);
+        }
+
+        return TimeZoneInfo.ConvertTimeToUtc(nextLocal, tz);
+    }
+
+    private DateTime MoveToNextWindow(DateTime scheduledUtc, TimeZoneInfo tz)
+    {
+        var local = TimeZoneInfo.ConvertTimeFromUtc(scheduledUtc, tz).AddDays(1);
+        var target = new DateTime(local.Year, local.Month, local.Day, 10, 30, 0, local.Kind);
+        return TimeZoneInfo.ConvertTimeToUtc(target, tz);
+    }
+
+    private DateTime EnsureFuture(DateTime scheduledUtc)
+    {
+        var now = _clock.GetUtcNow().UtcDateTime;
+        if (scheduledUtc <= now.AddMinutes(5))
+        {
+            return now.AddMinutes(5);
+        }
+
+        return scheduledUtc;
+    }
+
+    private async Task<bool> IsOptOutAsync(Channel channel, Guid? contactId, string? contextSnippet, CancellationToken ct)
+    {
         if (!string.IsNullOrWhiteSpace(contextSnippet))
         {
             var lowered = contextSnippet.ToLowerInvariant();
@@ -233,12 +334,56 @@ public sealed class AiController : ControllerBase
             return false;
         }
 
+        var contact = await _db.Contacts
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == contactId.Value, ct)
+            .ConfigureAwait(false);
+
+        if (contact is not null && !string.IsNullOrWhiteSpace(contact.TagsJson) && HasOptOutTag(contact.TagsJson, channel))
+        {
+            return true;
+        }
+
         var prospect = await _db.Prospects
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.Id == contactId.Value, ct)
             .ConfigureAwait(false);
 
-        return prospect?.OptedOut == true;
+        if (prospect?.OptedOut == true)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool HasOptOutTag(string tagsJson, Channel channel)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(tagsJson);
+            if (document.RootElement.ValueKind == JsonValueKind.Array)
+            {
+                var tags = document.RootElement.EnumerateArray()
+                    .Where(e => e.ValueKind == JsonValueKind.String)
+                    .Select(e => e.GetString()?.ToLowerInvariant())
+                    .Where(s => !string.IsNullOrWhiteSpace(s))
+                    .ToList();
+
+                return channel switch
+                {
+                    Channel.Email => tags.Contains("optout_email") || tags.Contains("stop_email") || tags.Contains("unsubscribe") || tags.Contains("do_not_contact"),
+                    Channel.Sms => tags.Contains("optout_sms") || tags.Contains("stop_sms") || tags.Contains("stop"),
+                    Channel.Whatsapp => tags.Contains("optout_whatsapp") || tags.Contains("stop_whatsapp") || tags.Contains("stop"),
+                    _ => false
+                };
+            }
+        }
+        catch (JsonException)
+        {
+        }
+
+        return false;
     }
 
     private static string MapIntent(AiReplyIntent intent) => intent switch
@@ -365,6 +510,7 @@ public sealed class AiController : ControllerBase
     }
 
     public sealed record SuggestFollowupResponse(
+        [property: JsonPropertyName("proposalId")] Guid ProposalId,
         [property: JsonPropertyName("scheduledAtIso")] string ScheduledAtIso,
         [property: JsonPropertyName("angle")] string Angle,
         [property: JsonPropertyName("previewText")] string PreviewText);

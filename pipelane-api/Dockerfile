@@ -10,8 +10,7 @@ RUN dotnet publish src/Pipelane.Api/Pipelane.Api.csproj -c Release -o /app/out /
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
-ENV ASPNETCORE_URLS=http://0.0.0.0:5000
-EXPOSE 5000
+ENV ASPNETCORE_URLS=http://0.0.0.0:56667
+EXPOSE 56667
 COPY --from=build /app/out ./
 ENTRYPOINT ["dotnet","Pipelane.Api.dll"]
-

@@ -268,13 +268,13 @@ namespace Pipelane.Infrastructure.Persistence.Migrations
                         column: x => x.StepId,
                         principalTable: "ProspectingSequenceSteps",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_ProspectingSendLogs_Prospects_ProspectId",
                         column: x => x.ProspectId,
                         principalTable: "Prospects",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -329,13 +329,13 @@ namespace Pipelane.Infrastructure.Persistence.Migrations
                         column: x => x.StepId,
                         principalTable: "ProspectingSequenceSteps",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_ProspectReplies_Prospects_ProspectId",
                         column: x => x.ProspectId,
                         principalTable: "Prospects",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateIndex(

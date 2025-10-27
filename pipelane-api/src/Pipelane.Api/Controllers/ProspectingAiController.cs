@@ -27,7 +27,7 @@ public class ProspectingAiController : ControllerBase
     }
 
     [HttpPost("classify-reply")]
-    public async Task<ActionResult<ClassifyReplyResponse>> ClassifyReply(ClassifyReplyRequest request, CancellationToken ct)
+    public async Task<ActionResult<ProspectingClassifyReplyResponse>> ClassifyReply(ProspectingClassifyReplyRequest request, CancellationToken ct)
     {
         var response = await _service.ClassifyReplyAsync(request, ct);
         return Ok(response);

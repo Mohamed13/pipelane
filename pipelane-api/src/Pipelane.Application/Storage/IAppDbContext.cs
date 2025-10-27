@@ -29,6 +29,11 @@ public interface IAppDbContext
     DbSet<EmailGeneration> EmailGenerations { get; }
     DbSet<SendLog> ProspectingSendLogs { get; }
     DbSet<ProspectReply> ProspectReplies { get; }
+    DbSet<ProspectList> ProspectLists { get; }
+    DbSet<ProspectListItem> ProspectListItems { get; }
+    DbSet<ProspectScore> ProspectScores { get; }
+    DbSet<RateLimitSnapshot> RateLimitSnapshots { get; }
+    DbSet<FailedWebhook> FailedWebhooks { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

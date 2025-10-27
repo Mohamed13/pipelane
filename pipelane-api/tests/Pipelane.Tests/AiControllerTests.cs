@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,13 +10,16 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 
 using Pipelane.Api.Controllers;
-using Pipelane.Infrastructure.Persistence;
 using Pipelane.Application.Ai;
+using Pipelane.Application.Services;
 using Pipelane.Application.Storage;
 using Pipelane.Domain.Entities.Prospecting;
 using Pipelane.Domain.Enums;
+using Pipelane.Infrastructure.Background;
+using Pipelane.Infrastructure.Persistence;
 
 using Xunit;
 
@@ -32,10 +36,11 @@ public class AiControllerTests
 
         await using var db = new FakeDbContext(options);
         var prospectId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
         db.Prospects.Add(new Prospect
         {
             Id = prospectId,
-            TenantId = Guid.NewGuid(),
+            TenantId = tenantId,
             Email = "optout@example.com",
             OptedOut = true,
             CreatedAtUtc = DateTime.UtcNow,
@@ -44,11 +49,14 @@ public class AiControllerTests
         await db.SaveChangesAsync();
 
         var stubService = new StubTextAiService();
+        var proposalStore = new InMemoryProposalStore();
         var controller = new AiController(
             stubService,
-            new StubTenantProvider(Guid.NewGuid()),
+            new StubTenantProvider(tenantId),
             db,
-            NullLogger<AiController>.Instance);
+            NullLogger<AiController>.Instance,
+            proposalStore,
+            DefaultMessagingOptions());
 
         var request = new AiController.GenerateMessageRequest
         {
@@ -66,14 +74,17 @@ public class AiControllerTests
     [Fact]
     public async Task ClassifyReply_MapsIntentToResponse()
     {
+        var tenantId = Guid.NewGuid();
         var controller = new AiController(
             new StubTextAiService
             {
                 ClassifyResponse = new ClassifyReplyResult(AiReplyIntent.Ooo, 0.66, AiContentSource.OpenAi)
             },
-            new StubTenantProvider(Guid.NewGuid()),
+            new StubTenantProvider(tenantId),
             new FakeDbContext(new DbContextOptionsBuilder<FakeDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options),
-            NullLogger<AiController>.Instance);
+            NullLogger<AiController>.Instance,
+            new InMemoryProposalStore(),
+            DefaultMessagingOptions());
 
         var result = await controller.ClassifyReply(new AiController.ClassifyReplyRequest { Text = "I'm out of office" }, CancellationToken.None);
 
@@ -91,12 +102,15 @@ public class AiControllerTests
         {
             SuggestResponse = new SuggestFollowupResult(scheduled, AiFollowupAngle.Social, "See you soon", AiContentSource.OpenAi)
         };
+        var tenantId = Guid.NewGuid();
 
         var controller = new AiController(
             stub,
-            new StubTenantProvider(Guid.NewGuid()),
+            new StubTenantProvider(tenantId),
             new FakeDbContext(new DbContextOptionsBuilder<FakeDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options),
-            NullLogger<AiController>.Instance);
+            NullLogger<AiController>.Instance,
+            new InMemoryProposalStore(),
+            DefaultMessagingOptions());
 
         var response = await controller.SuggestFollowup(new AiController.SuggestFollowupRequest
         {
@@ -110,6 +124,32 @@ public class AiControllerTests
         var payload = ok.Value.Should().BeOfType<AiController.SuggestFollowupResponse>().Which;
         payload.ScheduledAtIso.Should().Be(scheduled.ToString("o"));
         payload.Angle.Should().Be("social");
+    }
+
+    private static IOptions<MessagingLimitsOptions> DefaultMessagingOptions()
+        => Options.Create(new MessagingLimitsOptions
+        {
+            DailySendCap = 120,
+            QuietHoursStart = TimeSpan.Zero,
+            QuietHoursEnd = TimeSpan.Zero
+        });
+
+    private sealed class InMemoryProposalStore : IFollowupProposalStore
+    {
+        private readonly Dictionary<(Guid TenantId, Guid ProposalId), FollowupProposalData> _storage = new();
+
+        public Guid Save(Guid tenantId, FollowupProposalData proposal)
+        {
+            var id = Guid.NewGuid();
+            _storage[(tenantId, id)] = proposal;
+            return id;
+        }
+
+        public bool TryGet(Guid tenantId, Guid proposalId, out FollowupProposalData? proposal)
+            => _storage.TryGetValue((tenantId, proposalId), out proposal);
+
+        public void Remove(Guid tenantId, Guid proposalId)
+            => _storage.Remove((tenantId, proposalId));
     }
 
     private sealed class StubTenantProvider(Guid tenantId) : ITenantProvider

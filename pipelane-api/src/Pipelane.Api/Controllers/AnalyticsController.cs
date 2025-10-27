@@ -41,4 +41,13 @@ public class AnalyticsController : ControllerBase
         var result = await _analytics.GetDeliveryAsync(start, end, ct);
         return Ok(result);
     }
+
+    [HttpGet("top-messages")]
+    public async Task<ActionResult<TopMessagesResult>> TopMessages([FromQuery] DateTime? from, [FromQuery] DateTime? to, CancellationToken ct)
+    {
+        var start = from ?? DateTime.UtcNow.AddDays(-7);
+        var end = to ?? DateTime.UtcNow;
+        var result = await _analytics.GetTopMessagesAsync(start, end, ct);
+        return Ok(result);
+    }
 }

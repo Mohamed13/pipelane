@@ -88,6 +88,13 @@ public class AnalyticsServiceTests
 
         result.ByTemplate.Should().HaveCount(2);
         result.ByTemplate.First(t => t.Template == "promo").Failed.Should().Be(1);
+
+        result.Timeline.Should().NotBeNull();
+        result.Timeline.Should().HaveCount(1);
+        var dayPoint = result.Timeline.Single();
+        dayPoint.Delivered.Should().Be(1);
+        dayPoint.Failed.Should().Be(1);
+        dayPoint.Sent.Should().Be(1);
     }
 
     [Fact]
@@ -123,5 +130,89 @@ public class AnalyticsServiceTests
 
         result.Totals.Opened.Should().Be(1);
         result.ByChannel.Single().Opened.Should().Be(1);
+        result.Timeline.Should().HaveCount(1);
+        result.Timeline.Single().Opened.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task GetTopMessagesAsync_ComputesRepliesAndOpens()
+    {
+        var options = new DbContextOptionsBuilder<FakeDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+        await using var db = new FakeDbContext(options);
+
+        var tenantId = Guid.NewGuid();
+        var convoId = Guid.NewGuid();
+        var now = DateTime.UtcNow;
+
+        db.Messages.AddRange(
+            new Message
+            {
+                Id = Guid.NewGuid(),
+                TenantId = tenantId,
+                ConversationId = convoId,
+                Channel = Channel.Email,
+                Direction = MessageDirection.Out,
+                Type = MessageType.Text,
+                PayloadJson = "{\"subject\":\"Growth plan\"}",
+                Status = MessageStatus.Opened,
+                OpenedAt = now.AddMinutes(-50),
+                CreatedAt = now.AddMinutes(-55)
+            },
+            new Message
+            {
+                Id = Guid.NewGuid(),
+                TenantId = tenantId,
+                ConversationId = convoId,
+                Channel = Channel.Email,
+                Direction = MessageDirection.In,
+                Type = MessageType.Text,
+                PayloadJson = "{\"text\":\"Sounds good\"}",
+                Status = MessageStatus.Delivered,
+                CreatedAt = now.AddMinutes(-40)
+            },
+            new Message
+            {
+                Id = Guid.NewGuid(),
+                TenantId = tenantId,
+                ConversationId = convoId,
+                Channel = Channel.Email,
+                Direction = MessageDirection.Out,
+                Type = MessageType.Template,
+                TemplateName = "followup",
+                Status = MessageStatus.Delivered,
+                DeliveredAt = now.AddMinutes(-20),
+                CreatedAt = now.AddMinutes(-25)
+            },
+            new Message
+            {
+                Id = Guid.NewGuid(),
+                TenantId = tenantId,
+                ConversationId = convoId,
+                Channel = Channel.Email,
+                Direction = MessageDirection.In,
+                Type = MessageType.Text,
+                PayloadJson = "{\"text\":\"We are interested\"}",
+                Status = MessageStatus.Delivered,
+                CreatedAt = now.AddMinutes(-10)
+            });
+
+        await db.SaveChangesAsync();
+
+        var service = new AnalyticsService(db);
+        var result = await service.GetTopMessagesAsync(now.AddHours(-2), now, CancellationToken.None);
+
+        result.TopByReplies.Should().HaveCount(2);
+        var subjectEntry = result.TopByReplies.First();
+        subjectEntry.Label.Should().Be("Growth plan");
+        subjectEntry.Replies.Should().Be(1);
+        subjectEntry.Opened.Should().Be(1);
+
+        var templateEntry = result.TopByReplies.Single(t => t.Label == "followup");
+        templateEntry.Replies.Should().Be(1);
+        templateEntry.Delivered.Should().Be(1);
+
+        result.TopByOpens.First().Opened.Should().BeGreaterThan(0);
     }
 }

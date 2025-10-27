@@ -31,7 +31,7 @@ public interface IProspectingService
     Task<ProspectingCampaignPreview> PreviewCampaignAsync(Guid campaignId, CancellationToken ct);
     Task<ProspectingAnalyticsResponse> GetAnalyticsAsync(DateTime from, DateTime to, CancellationToken ct);
     Task<GenerateEmailResponse> GenerateEmailAsync(Guid tenantId, GenerateEmailRequest request, CancellationToken ct);
-    Task<ClassifyReplyResponse> ClassifyReplyAsync(ClassifyReplyRequest request, CancellationToken ct);
+    Task<ProspectingClassifyReplyResponse> ClassifyReplyAsync(ProspectingClassifyReplyRequest request, CancellationToken ct);
     Task<AutoReplyResponse> AutoReplyAsync(Guid tenantId, AutoReplyRequest request, CancellationToken ct);
     Task<ProspectDto?> UpdateOptOutAsync(string email, CancellationToken ct);
     Task<IReadOnlyList<ProspectReplyDto>> GetRepliesAsync(ReplyIntent? intent, CancellationToken ct);
@@ -556,7 +556,7 @@ public sealed class ProspectingService : IProspectingService
         return new GenerateEmailResponse(generation.Id, subject, html, text, generation.Variant, promptTokens, completionTokens, costUsd);
     }
 
-    public async Task<ClassifyReplyResponse> ClassifyReplyAsync(ClassifyReplyRequest request, CancellationToken ct)
+    public async Task<ProspectingClassifyReplyResponse> ClassifyReplyAsync(ProspectingClassifyReplyRequest request, CancellationToken ct)
     {
         var reply = await _db.ProspectReplies.FirstOrDefaultAsync(r => r.Id == request.ReplyId, ct);
         if (reply is null)
@@ -570,7 +570,7 @@ public sealed class ProspectingService : IProspectingService
         reply.ExtractedDatesJson = datesJson;
         reply.ProcessedAtUtc = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
-        return new ClassifyReplyResponse(reply.Id, intent, confidence, datesJson);
+        return new ProspectingClassifyReplyResponse(reply.Id, intent, confidence, datesJson);
     }
 
     public async Task<AutoReplyResponse> AutoReplyAsync(Guid tenantId, AutoReplyRequest request, CancellationToken ct)

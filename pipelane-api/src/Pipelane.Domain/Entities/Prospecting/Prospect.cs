@@ -12,6 +12,9 @@ public class Prospect : BaseEntity
     public string? Company { get; set; }
     public string? Title { get; set; }
     public string? Phone { get; set; }
+    public string? City { get; set; }
+    public string? Country { get; set; }
+    public string? Website { get; set; }
     public ProspectStatus Status { get; set; } = ProspectStatus.New;
     public bool OptedOut { get; set; }
     public DateTime? OptedOutAtUtc { get; set; }
@@ -36,4 +39,6 @@ public class Prospect : BaseEntity
     public ICollection<SendLog> Sends { get; set; } = new List<SendLog>();
     public ICollection<ProspectReply> Replies { get; set; } = new List<ProspectReply>();
     public ICollection<EmailGeneration> Generations { get; set; } = new List<EmailGeneration>();
+    public ProspectScore? Score { get; set; }
+    public ICollection<ProspectListItem> ListItems { get; set; } = new List<ProspectListItem>();
 }

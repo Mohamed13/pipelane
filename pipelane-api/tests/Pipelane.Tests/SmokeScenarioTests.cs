@@ -22,6 +22,7 @@ using Pipelane.Domain.Entities;
 using Pipelane.Domain.Enums;
 using Pipelane.Domain.Enums.Prospecting;
 using Pipelane.Infrastructure.Automations;
+using Pipelane.Infrastructure.Background;
 using Pipelane.Infrastructure.Persistence;
 
 using Xunit;
@@ -70,7 +71,13 @@ public class SmokeScenarioTests
         await db.SaveChangesAsync();
 
         var aiService = new StubTextAiService();
-        var controller = new AiController(aiService, new StubTenantProvider(tenantId), db, NullLogger<AiController>.Instance);
+        var controller = new AiController(
+            aiService,
+            new StubTenantProvider(tenantId),
+            db,
+            NullLogger<AiController>.Instance,
+            new InMemoryProposalStore(),
+            Options.Create(new MessagingLimitsOptions()));
 
         var generateRequest = new AiController.GenerateMessageRequest
         {
@@ -114,7 +121,13 @@ public class SmokeScenarioTests
         {
             ClassifyResponse = new ClassifyReplyResult(AiReplyIntent.Interested, 0.91, AiContentSource.OpenAi)
         };
-        var controller = new AiController(aiService, new StubTenantProvider(tenantId), db, NullLogger<AiController>.Instance);
+        var controller = new AiController(
+            aiService,
+            new StubTenantProvider(tenantId),
+            db,
+            NullLogger<AiController>.Instance,
+            new InMemoryProposalStore(),
+            Options.Create(new MessagingLimitsOptions()));
 
         var response = await controller.ClassifyReply(new AiController.ClassifyReplyRequest
         {
@@ -248,5 +261,23 @@ public class SmokeScenarioTests
             public static readonly EmptyDisposable Instance = new();
             public void Dispose() { }
         }
+    }
+
+    private sealed class InMemoryProposalStore : IFollowupProposalStore
+    {
+        private readonly Dictionary<(Guid TenantId, Guid ProposalId), FollowupProposalData> _storage = new();
+
+        public Guid Save(Guid tenantId, FollowupProposalData proposal)
+        {
+            var id = Guid.NewGuid();
+            _storage[(tenantId, id)] = proposal;
+            return id;
+        }
+
+        public bool TryGet(Guid tenantId, Guid proposalId, out FollowupProposalData? proposal)
+            => _storage.TryGetValue((tenantId, proposalId), out proposal);
+
+        public void Remove(Guid tenantId, Guid proposalId)
+            => _storage.Remove((tenantId, proposalId));
     }
 }

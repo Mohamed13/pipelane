@@ -42,6 +42,11 @@ public class FakeDbContext : DbContext, IAppDbContext
     public DbSet<EmailGeneration> EmailGenerations => Set<EmailGeneration>();
     public DbSet<SendLog> ProspectingSendLogs => Set<SendLog>();
     public DbSet<ProspectReply> ProspectReplies => Set<ProspectReply>();
+    public DbSet<RateLimitSnapshot> RateLimitSnapshots => Set<RateLimitSnapshot>();
+    public DbSet<FailedWebhook> FailedWebhooks => Set<FailedWebhook>();
+    public DbSet<ProspectList> ProspectLists => Set<ProspectList>();
+    public DbSet<ProspectListItem> ProspectListItems => Set<ProspectListItem>();
+    public DbSet<ProspectScore> ProspectScores => Set<ProspectScore>();
 }
 
 public class ChannelRulesServiceTests

@@ -37,6 +37,11 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<EmailGeneration> EmailGenerations => Set<EmailGeneration>();
     public DbSet<SendLog> ProspectingSendLogs => Set<SendLog>();
     public DbSet<ProspectReply> ProspectReplies => Set<ProspectReply>();
+    public DbSet<ProspectList> ProspectLists => Set<ProspectList>();
+    public DbSet<ProspectListItem> ProspectListItems => Set<ProspectListItem>();
+    public DbSet<ProspectScore> ProspectScores => Set<ProspectScore>();
+    public DbSet<RateLimitSnapshot> RateLimitSnapshots => Set<RateLimitSnapshot>();
+    public DbSet<FailedWebhook> FailedWebhooks => Set<FailedWebhook>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -157,6 +162,15 @@ public class AppDbContext : DbContext, IAppDbContext
             .Property(p => p.Email)
             .HasMaxLength(320);
         modelBuilder.Entity<Prospect>()
+            .Property(p => p.City)
+            .HasMaxLength(128);
+        modelBuilder.Entity<Prospect>()
+            .Property(p => p.Country)
+            .HasMaxLength(128);
+        modelBuilder.Entity<Prospect>()
+            .Property(p => p.Website)
+            .HasMaxLength(512);
+        modelBuilder.Entity<Prospect>()
             .HasIndex(p => new { p.TenantId, p.Email })
             .IsUnique()
             .HasDatabaseName("IX_Prospects_Tenant_Email");
@@ -166,6 +180,12 @@ public class AppDbContext : DbContext, IAppDbContext
         modelBuilder.Entity<Prospect>()
             .HasIndex(p => new { p.TenantId, p.OwnerUserId })
             .HasDatabaseName("IX_Prospects_Tenant_Owner");
+        modelBuilder.Entity<Prospect>()
+            .HasIndex(p => new { p.TenantId, p.City })
+            .HasDatabaseName("IX_Prospects_Tenant_City");
+        modelBuilder.Entity<Prospect>()
+            .HasIndex(p => new { p.TenantId, p.Company })
+            .HasDatabaseName("IX_Prospects_Tenant_Company");
         modelBuilder.Entity<Prospect>()
             .HasOne(p => p.Sequence)
             .WithMany(s => s.Prospects)
@@ -200,6 +220,42 @@ public class AppDbContext : DbContext, IAppDbContext
             .WithMany(s => s.Campaigns)
             .HasForeignKey(c => c.SequenceId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<ProspectList>()
+            .HasIndex(l => new { l.TenantId, l.Name })
+            .IsUnique()
+            .HasDatabaseName("IX_ProspectLists_Tenant_Name");
+        modelBuilder.Entity<ProspectList>()
+            .Property(l => l.Name)
+            .HasMaxLength(200);
+
+        modelBuilder.Entity<ProspectListItem>()
+            .HasIndex(i => new { i.TenantId, i.ProspectListId, i.ProspectId })
+            .IsUnique()
+            .HasDatabaseName("IX_ProspectListItems_List_Prospect");
+        modelBuilder.Entity<ProspectListItem>()
+            .HasOne(i => i.List)
+            .WithMany(l => l.Items)
+            .HasForeignKey(i => i.ProspectListId)
+            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<ProspectListItem>()
+            .HasOne(i => i.Prospect)
+            .WithMany(p => p.ListItems)
+            .HasForeignKey(i => i.ProspectId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ProspectScore>()
+            .HasIndex(s => new { s.TenantId, s.ProspectId })
+            .IsUnique()
+            .HasDatabaseName("IX_ProspectScores_Tenant_Prospect");
+        modelBuilder.Entity<ProspectScore>()
+            .Property(s => s.FeaturesJson)
+            .HasColumnType("nvarchar(max)");
+        modelBuilder.Entity<ProspectScore>()
+            .HasOne(s => s.Prospect)
+            .WithOne(p => p.Score)
+            .HasForeignKey<ProspectScore>(s => s.ProspectId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<EmailGeneration>()
             .HasIndex(g => new { g.TenantId, g.ProspectId, g.StepId, g.CreatedAtUtc })
@@ -244,7 +300,7 @@ public class AppDbContext : DbContext, IAppDbContext
             .HasOne(s => s.Prospect)
             .WithMany(p => p.Sends)
             .HasForeignKey(s => s.ProspectId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
         modelBuilder.Entity<SendLog>()
             .HasOne(s => s.Campaign)
             .WithMany(c => c.Sends)
@@ -254,7 +310,7 @@ public class AppDbContext : DbContext, IAppDbContext
             .HasOne(s => s.Step)
             .WithMany(step => step.Sends)
             .HasForeignKey(s => s.StepId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.Restrict);
         modelBuilder.Entity<SendLog>()
             .HasOne(s => s.Generation)
             .WithMany(g => g.Sends)
@@ -268,7 +324,7 @@ public class AppDbContext : DbContext, IAppDbContext
             .HasOne(r => r.Prospect)
             .WithMany(p => p.Replies)
             .HasForeignKey(r => r.ProspectId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
         modelBuilder.Entity<ProspectReply>()
             .HasOne(r => r.Campaign)
             .WithMany(c => c.Replies)
@@ -283,12 +339,36 @@ public class AppDbContext : DbContext, IAppDbContext
             .HasOne(r => r.Step)
             .WithMany(s => s.Replies)
             .HasForeignKey(r => r.StepId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.Restrict);
         modelBuilder.Entity<ProspectReply>()
             .HasOne(r => r.AutoReplyGeneration)
             .WithMany()
             .HasForeignKey(r => r.AutoReplyGenerationId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<RateLimitSnapshot>()
+            .HasIndex(r => new { r.TargetTenantId, r.Scope })
+            .IsUnique()
+            .HasDatabaseName("IX_RateLimitSnapshots_Target_Scope");
+        modelBuilder.Entity<RateLimitSnapshot>()
+            .Property(r => r.Scope)
+            .HasMaxLength(64);
+
+        modelBuilder.Entity<FailedWebhook>()
+            .HasIndex(f => new { f.TenantId, f.NextAttemptUtc, f.RetryCount })
+            .HasDatabaseName("IX_FailedWebhooks_Tenant_NextAttempt");
+        modelBuilder.Entity<FailedWebhook>()
+            .Property(f => f.Provider)
+            .HasMaxLength(128);
+        modelBuilder.Entity<FailedWebhook>()
+            .Property(f => f.Kind)
+            .HasMaxLength(128);
+        modelBuilder.Entity<FailedWebhook>()
+            .Property(f => f.Payload)
+            .HasColumnType("nvarchar(max)");
+        modelBuilder.Entity<FailedWebhook>()
+            .Property(f => f.HeadersJson)
+            .HasColumnType("nvarchar(max)");
     }
 
     private void ApplyTenantFilter<TEntity>(ModelBuilder modelBuilder) where TEntity : BaseEntity

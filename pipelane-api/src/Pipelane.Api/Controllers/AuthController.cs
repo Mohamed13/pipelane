@@ -99,6 +99,7 @@ public class AuthController : ControllerBase
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Email, user.Email),
             new("tid", user.TenantId.ToString()),
+            new("tenant_ids", user.TenantId.ToString()),
             new(ClaimTypes.Role, user.Role)
         };
 

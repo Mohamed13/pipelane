@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 using OpenTelemetry.Resources;
@@ -20,6 +21,7 @@ using OpenTelemetry.Trace;
 using Pipelane.Api.MultiTenancy;
 using Pipelane.Application.Ai;
 using Pipelane.Application.Abstractions;
+using Pipelane.Application.Hunter;
 using Pipelane.Application.Prospecting;
 using Pipelane.Application.Services;
 using Pipelane.Application.Storage;
@@ -27,10 +29,16 @@ using Pipelane.Domain.Enums;
 using Pipelane.Infrastructure.Automations;
 using Pipelane.Infrastructure.Background;
 using Pipelane.Infrastructure.Channels;
+using Pipelane.Infrastructure.Hunter;
+using Pipelane.Infrastructure.Followups;
 using Pipelane.Infrastructure.Persistence;
+using Pipelane.Infrastructure.Services;
 using Pipelane.Infrastructure.Security;
 using Pipelane.Infrastructure.Webhooks;
 using Quartz;
+using Pipelane.Infrastructure.Demo;
+using Pipelane.Infrastructure.Reports;
+using Pipelane.Api.Middleware;
 
 using Serilog;
 
@@ -110,9 +118,11 @@ builder.Services.AddHttpClient("OpenAI", client =>
     client.BaseAddress = new Uri(baseUrl);
 });
 builder.Services.AddHttpClient("Automations");
+var demoMode = builder.Configuration.GetValue<bool?>("DEMO_MODE") ?? false;
 
 builder.Services.AddRateLimiter(options =>
 {
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     var automationLimit = builder.Configuration.GetValue<int?>("Automations:RateLimitPerMinute") ?? 300;
 
     options.AddPolicy("tenant-ai", httpContext =>
@@ -147,12 +157,33 @@ builder.Services.AddRateLimiter(options =>
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst
             });
     });
+
+    options.AddPolicy("webhooks", httpContext =>
+    {
+        var limits = httpContext.RequestServices.GetRequiredService<IOptions<MessagingLimitsOptions>>().Value;
+        var perTenant = Math.Max(1, limits.WebhookPerMinutePerTenant);
+        var tenantId = ResolveTenantId(httpContext);
+        var key = tenantId != Guid.Empty
+            ? $"webhook:{tenantId}"
+            : $"webhook:{httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous"}";
+
+        return RateLimitPartition.GetFixedWindowLimiter(
+            key,
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = perTenant,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+            });
+    });
 });
 
 builder.Services.Configure<ProspectingAiOptions>(builder.Configuration.GetSection("OpenAI"));
 builder.Services.Configure<TextAiOptions>(builder.Configuration.GetSection("OpenAI"));
 builder.Services.Configure<MessagingLimitsOptions>(builder.Configuration.GetSection("MessagingLimits"));
 builder.Services.Configure<AutomationsOptions>(builder.Configuration.GetSection("Automations"));
+builder.Services.Configure<DemoOptions>(opts => opts.Enabled = demoMode);
 builder.Services.AddQuartz(q =>
 {
     var jobKey = new JobKey("followup-scheduler");
@@ -170,6 +201,14 @@ builder.Services.AddQuartz(q =>
         .WithIdentity("send-due-messages-trigger")
         .StartNow()
         .WithSimpleSchedule(x => x.WithInterval(TimeSpan.FromMinutes(1)).RepeatForever()));
+
+    var webhookKey = new JobKey("webhook-dead-letter");
+    q.AddJob<WebhookRetryJob>(opts => opts.WithIdentity(webhookKey));
+    q.AddTrigger(opts => opts
+        .ForJob(webhookKey)
+        .WithIdentity("webhook-dead-letter-trigger")
+        .StartNow()
+        .WithSimpleSchedule(x => x.WithInterval(TimeSpan.FromMinutes(5)).RepeatForever()));
 });
 builder.Services.AddQuartzHostedService(options => options.WaitForJobsToComplete = false);
 
@@ -178,20 +217,38 @@ builder.Services.AddSingleton<IEncryptionService>(_ => new AesGcmEncryptionServi
 builder.Services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
 builder.Services.AddScoped<IOutboxService, OutboxService>();
 builder.Services.AddScoped<IChannelRulesService, ChannelRulesService>();
-builder.Services.AddSingleton<IMessageChannel, WhatsAppChannel>();
-builder.Services.AddSingleton<IMessageChannel, EmailChannel>();
-builder.Services.AddSingleton<IMessageChannel, SmsChannel>();
-builder.Services.AddSingleton<IChannelRegistry, ChannelRegistry>();
+builder.Services.AddScoped<IMessageChannel, WhatsAppChannel>();
+builder.Services.AddScoped<IMessageChannel, EmailChannel>();
+builder.Services.AddScoped<IMessageChannel, SmsChannel>();
+builder.Services.AddScoped<IChannelRegistry, ChannelRegistry>();
+builder.Services.AddScoped<IChannelConfigurationProvider, ChannelConfigurationProvider>();
 builder.Services.AddSingleton<OutboxDispatchExecutor>();
 builder.Services.AddScoped<IMessageDispatchGuard, MessageDispatchGuard>();
 builder.Services.AddSingleton<IAutomationEventPublisher, AutomationEventPublisher>();
 builder.Services.AddScoped<IMessagingService, MessagingService>();
 builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<IDemoExperienceService, DemoExperienceService>();
+builder.Services.AddScoped<IHunterDemoSeeder, HunterDemoSeeder>();
 builder.Services.AddSingleton<IProviderWebhookVerifier, ResendWebhookVerifier>();
 builder.Services.AddScoped<ResendWebhookProcessor>();
 builder.Services.AddScoped<IProspectingAiService, ProspectingAiService>();
 builder.Services.AddScoped<IProspectingService, ProspectingService>();
 builder.Services.AddScoped<ITextAiService, TextAiService>();
+builder.Services.AddSingleton<IRateLimitSnapshotStore, RateLimitSnapshotStore>();
+builder.Services.AddSingleton<IMessageSendRateLimiter, MessageSendRateLimiter>();
+builder.Services.AddScoped<IWebhookDeadLetterStore, WebhookDeadLetterStore>();
+builder.Services.AddSingleton<IHunterCsvStore, HunterCsvStore>();
+builder.Services.AddSingleton<IHunterScoreService, HunterScoreService>();
+builder.Services.AddSingleton<IWhyThisLeadService, WhyThisLeadService>();
+builder.Services.AddScoped<IHunterEnrichService, HunterEnrichService>();
+builder.Services.AddScoped<IHunterService, HunterService>();
+builder.Services.AddScoped<MapsStubLeadProvider>();
+builder.Services.AddScoped<ILeadProvider, MapsStubLeadProvider>();
+builder.Services.AddScoped<ILeadProvider, CsvLeadProvider>();
+builder.Services.AddScoped<ILeadProvider, DirectoryStubLeadProvider>();
+builder.Services.AddSingleton<IMessagingLimitsProvider, MessagingLimitsProvider>();
+builder.Services.AddSingleton<IFollowupProposalStore, FollowupProposalStore>();
 
 // Background services
 builder.Services.AddHostedService<OutboxProcessor>();
@@ -224,6 +281,7 @@ app.UseRateLimiter();
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 app.UseAuthentication();
+app.UseMiddleware<TenantScopeMiddleware>();
 app.UseAuthorization();
 
 app.UseSwagger();
@@ -235,5 +293,23 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok" })).AllowAnonymous();
 
 app.Run();
 
+static Guid ResolveTenantId(HttpContext context)
+{
+    if (context.Request.Query.TryGetValue("tenant", out var tenantValues)
+        && Guid.TryParse(tenantValues.ToString(), out var queryTenant)
+        && queryTenant != Guid.Empty)
+    {
+        return queryTenant;
+    }
+
+    if (context.Request.Headers.TryGetValue("X-Tenant-Id", out var headerValues)
+        && Guid.TryParse(headerValues.ToString(), out var headerTenant)
+        && headerTenant != Guid.Empty)
+    {
+        return headerTenant;
+    }
+
+    return Guid.Empty;
+}
 
 

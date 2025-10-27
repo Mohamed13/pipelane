@@ -5,7 +5,7 @@ Omni-Channel Revenue Engine backend (ASP.NET Core + EF Core + SQL Server). Imple
 ## Quickstart
 - Start DB: `docker compose up -d sqlserver`
 - Run API: `dotnet run --project src/Pipelane.Api`
-- Health: `GET http://localhost:5000/health`
+- Health: `GET http://localhost:56667/health`
 
 Set tenant per request via header: `X-Tenant-Id: <GUID>`.
 
@@ -17,6 +17,9 @@ Set tenant per request via header: `X-Tenant-Id: <GUID>`.
 - POST `/messages/send`
 - POST `/campaigns`, GET `/campaigns/{id}`
 - GET `/analytics/overview?from&to`
+- POST `/api/demo/run` (requires `DEMO_MODE=true`, seeds demo conversations)
+- GET `/api/reports/summary?from&to`
+- GET `/api/reports/summary.pdf?from&to`
 - GET `/webhooks/whatsapp` (verify), POST `/webhooks/whatsapp|email|sms`
 - POST `/conversions`
 - Prospecting:
