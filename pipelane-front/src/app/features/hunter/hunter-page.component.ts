@@ -1,10 +1,11 @@
 import { SelectionModel } from '@angular/cdk/collections';
-import { ScrollingModule } from '@angular/cdk/scrolling';
+import { CdkVirtualScrollViewport, ScrollingModule } from '@angular/cdk/scrolling';
 import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ViewChild,
   computed,
   effect,
   inject,
@@ -30,6 +31,7 @@ import { finalize } from 'rxjs';
 
 import { ApiService } from '../../core/api.service';
 import { environment } from '../../core/environment';
+import { MAPBOX_TOKEN } from '../../core/env.generated';
 import {
   AddToListPayload,
   HunterFilters,
@@ -37,6 +39,7 @@ import {
   HunterSearchCriteria,
   ListSummary,
 } from '../../core/models';
+import { HunterMapComponent, type HunterResultVm } from './hunter-map.component';
 
 interface HunterFormValue {
   industry: string;
@@ -55,7 +58,9 @@ interface PersonaShortcut {
   key: string;
   label: string;
   industry: string;
-  filters?: Partial<Pick<HunterFormValue, 'hasSite' | 'booking' | 'socialActive' | 'siteIssuesOnly'>>;
+  filters?: Partial<
+    Pick<HunterFormValue, 'hasSite' | 'booking' | 'socialActive' | 'siteIssuesOnly'>
+  >;
   hint?: string;
 }
 
@@ -63,16 +68,6 @@ interface HeatmapSlot {
   hour: string;
   label: string;
   intensity: number;
-}
-
-interface MapPoint {
-  lat: number;
-  lng: number;
-  top: string;
-  left: string;
-  label: string;
-  score: number;
-  color: string;
 }
 
 const HEATMAP_HOURS = ['10h', '11h', '14h', '15h', '16h'] as const;
@@ -103,7 +98,10 @@ function jitter(coord: { lat: number; lng: number }, seed: number): { lat: numbe
   };
 }
 
-function approximateCoordinates(city: string | null | undefined, seed: number): { lat: number; lng: number } {
+function approximateCoordinates(
+  city: string | null | undefined,
+  seed: number,
+): { lat: number; lng: number } {
   if (!city) {
     return jitter({ lat: 46.6, lng: 2.3 }, seed);
   }
@@ -115,19 +113,12 @@ function approximateCoordinates(city: string | null | undefined, seed: number): 
   }
 
   const hash =
-    Array.from(key).reduce((acc, char) => acc + char.charCodeAt(0), 0) + seed * 17 + key.length * 13;
+    Array.from(key).reduce((acc, char) => acc + char.charCodeAt(0), 0) +
+    seed * 17 +
+    key.length * 13;
   const lat = 42 + ((hash % 1000) / 1000) * (51 - 42);
   const lng = -1 + ((Math.floor(hash / 3) % 1000) / 1000) * (8 - -1);
   return jitter({ lat, lng }, seed);
-}
-
-function toCssPosition(lat: number, lng: number): { top: string; left: string } {
-  const top = 100 - ((lat - 42) / (51 - 42)) * 100;
-  const left = ((lng - -1) / (8 - -1)) * 100;
-  return {
-    top: `${clamp(top, 0, 100)}%`,
-    left: `${clamp(left, 0, 100)}%`,
-  };
 }
 
 function scoreToColor(score: number): string {
@@ -168,6 +159,7 @@ function titleCase(input: string): string {
     MatSnackBarModule,
     MatDividerModule,
     MatSidenavModule,
+    HunterMapComponent,
   ],
 })
 export class HunterPageComponent {
@@ -212,8 +204,8 @@ export class HunterPageComponent {
     },
   ];
 
-  private readonly defaultPersona: PersonaShortcut =
-    this.personas[1] ?? this.personas[0] ?? { key: 'default', label: 'Général', industry: '' };
+  private readonly defaultPersona: PersonaShortcut = this.personas[1] ??
+    this.personas[0] ?? { key: 'default', label: 'Général', industry: '' };
   readonly activePersona = signal<PersonaShortcut>(this.defaultPersona);
   readonly naturalLanguage = signal('');
   readonly uploadedCsvId = signal<string | null>(null);
@@ -239,6 +231,7 @@ export class HunterPageComponent {
   readonly duplicates = signal(0);
   readonly lists = signal<ListSummary[]>([]);
   readonly lastRunMode = signal<'live' | 'dry' | null>(null);
+  @ViewChild(CdkVirtualScrollViewport) private viewport?: CdkVirtualScrollViewport;
 
   readonly excluded = signal<Set<string>>(new Set());
   readonly favorites = signal<Set<string>>(new Set());
@@ -266,21 +259,20 @@ export class HunterPageComponent {
     });
   });
 
-  readonly mapPoints = computed<MapPoint[]>(() =>
-    this.visibleResults().map((result, index) => {
-      const coords = approximateCoordinates(result.prospect.city, index);
-      const pos = toCssPosition(coords.lat, coords.lng);
+  readonly mapboxToken = MAPBOX_TOKEN;
+  readonly mapItems = computed<HunterResultVm[]>(() => {
+    const results = this.visibleResults();
+    return results.map((result, index) => {
+      const coords = this.extractCoordinates(result, index);
       return {
+        ...result,
         lat: coords.lat,
         lng: coords.lng,
-        top: pos.top,
-        left: pos.left,
-        label: result.prospect.company ?? 'Prospect',
-        score: result.score,
-        color: scoreToColor(result.score),
+        why: result.why ?? [],
       };
-    }),
-  );
+    });
+  });
+  readonly mapSelectedId = computed(() => this.activeProspect()?.prospectId ?? null);
 
   readonly selection = new SelectionModel<string>(true);
   readonly selectionCount = computed(() => this.selection.selected.length);
@@ -498,19 +490,40 @@ export class HunterPageComponent {
     this.selection.toggle(row.prospectId);
   }
 
-  trackRow = (_: number, item: HunterResult) => item.prospectId;
-  trackPoint = (index: number, point?: MapPoint | null) => {
-    if (!point) {
-      return `point-${index}`;
+  handleMapSelect(prospectId: string): void {
+    if (!prospectId) {
+      return;
     }
-    const safeLabel = point.label?.trim() || 'Prospect';
-    const safeLat = Number.isFinite(point.lat) ? point.lat : 0;
-    const safeLng = Number.isFinite(point.lng) ? point.lng : 0;
-    return `${safeLabel}-${safeLat}-${safeLng}`;
-  };
 
+    const match = this.visibleResults().find((item) => item.prospectId === prospectId);
+    if (!match) {
+      return;
+    }
+
+    if (!this.selection.isSelected(prospectId)) {
+      this.selection.select(prospectId);
+    }
+
+    this.openProspect(match);
+    this.scrollToProspect(prospectId);
+  }
+
+  handleMapAddToList(prospectId: string): void {
+    if (!prospectId) {
+      return;
+    }
+    const match = this.visibleResults().find((item) => item.prospectId === prospectId);
+    if (match) {
+      this.addProspectToCurrentList(match);
+    }
+  }
+
+  trackRow = (_: number, item: HunterResult) => item.prospectId;
   openProspect(row: HunterResult): void {
     this.activeProspect.set(row);
+    if (row.prospectId) {
+      this.selection.select(row.prospectId);
+    }
   }
 
   closeProspect(): void {
@@ -548,10 +561,12 @@ export class HunterPageComponent {
       .sort((a, b) => b.score - a.score)
       .forEach((item) => {
         const key = (item.prospect.city ?? 'Autres').toLowerCase();
-        if (!grouped.has(key)) {
-          grouped.set(key, []);
+        const existing = grouped.get(key);
+        if (existing) {
+          existing.push(item);
+        } else {
+          grouped.set(key, [item]);
         }
-        grouped.get(key)!.push(item);
       });
 
     const picks: string[] = [];
@@ -612,7 +627,7 @@ export class HunterPageComponent {
         },
         error: () => {
           this.loading.set(false);
-          this.snackbar.open("Impossible de créer la liste.", 'Fermer', { duration: 3000 });
+          this.snackbar.open('Impossible de créer la liste.', 'Fermer', { duration: 3000 });
         },
       });
   }
@@ -763,6 +778,79 @@ export class HunterPageComponent {
             duration: 3000,
           }),
       });
+  }
+
+  private scrollToProspect(prospectId: string): void {
+    if (!prospectId) {
+      return;
+    }
+
+    const index = this.visibleResults().findIndex((item) => item.prospectId === prospectId);
+    if (index >= 0) {
+      this.viewport?.scrollToIndex(index, 'smooth');
+    }
+
+    if (!this.viewport) {
+      const element = document.getElementById(`prospect-row-${prospectId}`);
+      element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
+  private extractCoordinates(result: HunterResult, seed: number): { lat?: number; lng?: number } {
+    const candidates: Array<{ lat?: unknown; lng?: unknown }> = [];
+    const anyResult = result as unknown as Record<string, unknown>;
+
+    if (anyResult['lat'] !== undefined || anyResult['lng'] !== undefined) {
+      candidates.push({ lat: anyResult['lat'], lng: anyResult['lng'] });
+    }
+
+    if (typeof anyResult['geo'] === 'object' && anyResult['geo'] !== null) {
+      candidates.push(anyResult['geo'] as { lat?: unknown; lng?: unknown });
+    }
+
+    const prospectGeo = (result.prospect as unknown as Record<string, unknown>)?.['geo'];
+    if (typeof prospectGeo === 'object' && prospectGeo !== null) {
+      candidates.push(prospectGeo as { lat?: unknown; lng?: unknown });
+    }
+
+    const featureGeo = (result.features as unknown as Record<string, unknown>)?.['geo'];
+    if (typeof featureGeo === 'object' && featureGeo !== null) {
+      candidates.push(featureGeo as { lat?: unknown; lng?: unknown });
+    }
+
+    const featureLat = (result.features as unknown as Record<string, unknown>)?.['lat'];
+    const featureLng = (result.features as unknown as Record<string, unknown>)?.['lng'];
+    if (featureLat !== undefined || featureLng !== undefined) {
+      candidates.push({ lat: featureLat, lng: featureLng });
+    }
+
+    for (const candidate of candidates) {
+      const lat = this.numberOrUndefined(candidate?.lat);
+      const lng = this.numberOrUndefined(candidate?.lng);
+      if (lat !== undefined && lng !== undefined) {
+        return { lat, lng };
+      }
+    }
+
+    const city = result.prospect.city;
+    if (!city) {
+      return {};
+    }
+
+    return approximateCoordinates(city, seed);
+  }
+
+  private numberOrUndefined(value: unknown): number | undefined {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+    if (typeof value === 'string') {
+      const parsed = Number.parseFloat(value);
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    }
+    return undefined;
   }
 
   private buildCriteria(form: HunterFormValue): HunterSearchCriteria {

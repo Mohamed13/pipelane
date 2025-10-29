@@ -1,0 +1,159 @@
+:host {
+  display: block;
+}
+
+.map-wrapper {
+  display: block;
+}
+
+.map-container {
+  padding: 0;
+  overflow: hidden;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(7, 24, 39, 0.72), rgba(5, 18, 31, 0.9));
+}
+
+.map-canvas {
+  height: clamp(220px, 32vh, 320px);
+  width: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.map-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap-md, 1.5rem);
+  padding: var(--space-4, 1.25rem) var(--space-5, 1.75rem);
+  border-radius: 16px;
+  background: rgba(7, 24, 39, 0.9);
+  border: 1px solid rgba(111, 162, 255, 0.16);
+  color: var(--color-text, #e6eaf2);
+}
+
+.map-fallback__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.95rem;
+}
+
+.map-fallback__link {
+  color: var(--color-primary, #6ae2ff);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+}
+
+.map-fallback__link:hover,
+.map-fallback__link:focus-visible {
+  text-decoration: underline;
+  outline: none;
+}
+
+:host ::ng-deep .hunter-map-popup .mapboxgl-popup-content {
+  border-radius: 18px;
+  background: rgba(7, 24, 39, 0.92);
+  border: 1px solid rgba(111, 162, 255, 0.24);
+  color: var(--color-text, #e6eaf2);
+  padding: 0.85rem 1rem 1rem;
+  box-shadow: 0 18px 40px rgba(4, 16, 27, 0.56);
+}
+
+:host ::ng-deep .hunter-map-popup .mapboxgl-popup-close-button {
+  color: var(--color-text-muted, #9aa8bf);
+  font-size: 1rem;
+  padding: 0.3rem;
+}
+
+:host ::ng-deep .hunter-map-popup .popup-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+:host ::ng-deep .hunter-map-popup .popup-title .heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+:host ::ng-deep .hunter-map-popup .popup-title strong {
+  font-size: 1rem;
+  letter-spacing: 0.01em;
+}
+
+:host ::ng-deep .hunter-map-popup .popup-title .city {
+  font-size: 0.85rem;
+  color: var(--color-text-muted, #9aa8bf);
+}
+
+:host ::ng-deep .hunter-map-popup .score-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0.25rem 0.65rem;
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: #04101b;
+  background: linear-gradient(135deg, rgba(96, 247, 163, 0.8), rgba(106, 226, 255, 0.8));
+  box-shadow: 0 6px 16px rgba(69, 182, 142, 0.4);
+}
+
+:host ::ng-deep .hunter-map-popup ul {
+  margin: 0 0 0.8rem 1rem;
+  padding: 0;
+  list-style: disc;
+  font-size: 0.85rem;
+  color: var(--color-text-muted, #9aa8bf);
+}
+
+:host ::ng-deep .hunter-map-popup .hint {
+  margin: 0 0 0.85rem;
+  font-size: 0.85rem;
+  color: var(--color-text-muted, #9aa8bf);
+}
+
+:host ::ng-deep .hunter-map-popup .popup-actions {
+  display: flex;
+  gap: 0.6rem;
+}
+
+:host ::ng-deep .hunter-map-popup .popup-actions button {
+  flex: 1;
+  border-radius: 999px;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--color-text, #e6eaf2);
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+:host ::ng-deep .hunter-map-popup .popup-actions button.primary {
+  background: linear-gradient(135deg, rgba(122, 201, 255, 0.35), rgba(96, 247, 163, 0.35));
+  border-color: rgba(106, 226, 255, 0.65);
+  color: #04101b;
+}
+
+:host ::ng-deep .hunter-map-popup .popup-actions button:hover,
+:host ::ng-deep .hunter-map-popup .popup-actions button:focus-visible {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.32);
+  outline: none;
+}
+
+:host ::ng-deep .hunter-map-popup .popup-actions button.primary:hover,
+:host ::ng-deep .hunter-map-popup .popup-actions button.primary:focus-visible {
+  background: linear-gradient(135deg, rgba(122, 201, 255, 0.55), rgba(96, 247, 163, 0.55));
+  border-color: rgba(106, 226, 255, 0.85);
+}

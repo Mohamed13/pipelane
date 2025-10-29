@@ -93,8 +93,25 @@ export class ApiService {
     });
   }
 
+  private isAuthError(error: HttpErrorResponse): boolean {
+    const code = error.status;
+    return code === 401 || code === 403 || code === 419;
+  }
+
+  private handleAuthFailure(): void {
+    this.openInfo('Session expirée. Veuillez vous reconnecter.');
+    this.auth.logout();
+  }
+
   private handleError(context: string) {
     return (error: HttpErrorResponse) => {
+      if (this.isAuthError(error)) {
+        if (this.isDev && typeof console !== 'undefined') {
+          console.warn(`[API] ${context} -> auth failure`, error);
+        }
+        this.handleAuthFailure();
+        return throwError(() => error);
+      }
       const detail = this.extractErrorMessage(error);
       if (this.isDev && typeof console !== 'undefined') {
         console.error(`[API] ${context}`, error);
@@ -242,11 +259,7 @@ export class ApiService {
       );
   }
 
-  getTopMessages(
-    from?: string,
-    to?: string,
-    tenantId?: string,
-  ): Observable<TopMessagesResponse> {
+  getTopMessages(from?: string, to?: string, tenantId?: string): Observable<TopMessagesResponse> {
     const params = new HttpParams({
       fromObject: {
         from: from ?? '',
@@ -275,7 +288,11 @@ export class ApiService {
       );
   }
 
-  getReportSummary(from?: string, to?: string, tenantId?: string): Observable<ReportSummaryResponse> {
+  getReportSummary(
+    from?: string,
+    to?: string,
+    tenantId?: string,
+  ): Observable<ReportSummaryResponse> {
     const params = new HttpParams({
       fromObject: {
         from: from ?? '',
@@ -283,7 +300,7 @@ export class ApiService {
       },
     });
     return this.http
-      .get<ReportSummaryResponse>( `${this.base}/api/reports/summary`, { 
+      .get<ReportSummaryResponse>(`${this.base}/api/reports/summary`, {
         params,
         headers: this.headers(tenantId),
       })
@@ -305,7 +322,7 @@ export class ApiService {
       },
     });
     return this.http
-      .get<Blob>( `${this.base}/api/reports/summary.pdf`, { 
+      .get<Blob>(`${this.base}/api/reports/summary.pdf`, {
         params,
         headers: this.headers(tenantId),
         responseType: 'blob' as 'json',
@@ -468,7 +485,10 @@ export class ApiService {
       .pipe(catchError(this.handleError('Loading prospecting analytics')));
   }
 
-  getProspectingReplies(intent?: ReplyIntent, tenantId?: string): Observable<ProspectReplyRecord[]> {
+  getProspectingReplies(
+    intent?: ReplyIntent,
+    tenantId?: string,
+  ): Observable<ProspectReplyRecord[]> {
     let params = new HttpParams();
     if (intent && intent !== 'unknown') {
       params = params.set('intent', intent);
@@ -486,9 +506,13 @@ export class ApiService {
     tenantId?: string,
   ): Observable<GenerateProspectingEmailResponse> {
     return this.http
-      .post<GenerateProspectingEmailResponse>(`${this.base}/api/prospecting/ai/generate-email`, payload, {
-        headers: this.headers(tenantId),
-      })
+      .post<GenerateProspectingEmailResponse>(
+        `${this.base}/api/prospecting/ai/generate-email`,
+        payload,
+        {
+          headers: this.headers(tenantId),
+        },
+      )
       .pipe(catchError(this.handleError('Generating prospecting email')));
   }
 
@@ -522,7 +546,7 @@ export class ApiService {
       .post<AiGenerateMessageResponse>(`${this.base}/api/ai/generate-message`, payload, {
         headers: this.headers(tenantId),
       })
-      .pipe(catchError(this.handleError("Générer un message")));
+      .pipe(catchError(this.handleError('Générer un message')));
   }
 
   classifyAiReply(
@@ -533,7 +557,7 @@ export class ApiService {
       .post<AiClassifyReplyResponse>(`${this.base}/api/ai/classify-reply`, payload, {
         headers: this.headers(tenantId),
       })
-      .pipe(catchError(this.handleError("Classer la réponse")));
+      .pipe(catchError(this.handleError('Classer la réponse')));
   }
 
   suggestSmartFollowup(
@@ -552,11 +576,9 @@ export class ApiService {
     tenantId?: string,
   ): Observable<Record<string, unknown>> {
     return this.http
-      .post<Record<string, unknown>>(
-        `${this.base}/api/prospecting/hooks/${slug}`,
-        {},
-        { headers: this.headers(tenantId) },
-      )
+      .post<
+        Record<string, unknown>
+      >(`${this.base}/api/prospecting/hooks/${slug}`, {}, { headers: this.headers(tenantId) })
       .pipe(catchError(this.handleError('Triggering automation hook')));
   }
 
@@ -622,7 +644,10 @@ export class ApiService {
       );
   }
 
-  hunterSearch(criteria: HunterSearchCriteria, options?: { dryRun?: boolean }): Observable<HunterSearchResponse> {
+  hunterSearch(
+    criteria: HunterSearchCriteria,
+    options?: { dryRun?: boolean },
+  ): Observable<HunterSearchResponse> {
     let params = new HttpParams();
     if (options?.dryRun) {
       params = params.set('dryRun', 'true');
@@ -656,9 +681,13 @@ export class ApiService {
 
   seedHunterDemo(): Observable<HunterSearchResponse> {
     return this.http
-      .post<HunterSearchResponse>(`${this.base}/api/hunter/seed-demo`, {}, {
-        headers: this.headers(),
-      })
+      .post<HunterSearchResponse>(
+        `${this.base}/api/hunter/seed-demo`,
+        {},
+        {
+          headers: this.headers(),
+        },
+      )
       .pipe(
         map((res) => ({
           ...res,

@@ -23,56 +23,82 @@ public class AppDbContext : DbContext, IAppDbContext, IDatabaseDiagnostics
 
     /// <inheritdoc/>
     public DbSet<Contact> Contacts => Set<Contact>();
+
     /// <inheritdoc/>
     public DbSet<Tenant> Tenants => Set<Tenant>();
+
     /// <inheritdoc/>
     public DbSet<Consent> Consents => Set<Consent>();
+
     /// <inheritdoc/>
     public DbSet<Conversation> Conversations => Set<Conversation>();
+
     /// <inheritdoc/>
     public DbSet<Message> Messages => Set<Message>();
+
     /// <inheritdoc/>
     public DbSet<MessageEvent> MessageEvents => Set<MessageEvent>();
+
     /// <inheritdoc/>
     public DbSet<Template> Templates => Set<Template>();
+
     /// <inheritdoc/>
     public DbSet<Campaign> Campaigns => Set<Campaign>();
+
     /// <inheritdoc/>
     public DbSet<Event> Events => Set<Event>();
+
     /// <inheritdoc/>
     public DbSet<Conversion> Conversions => Set<Conversion>();
+
     /// <inheritdoc/>
     public DbSet<LeadScore> LeadScores => Set<LeadScore>();
+
     /// <inheritdoc/>
     public DbSet<ChannelSettings> ChannelSettings => Set<ChannelSettings>();
+
     /// <inheritdoc/>
     public DbSet<OutboxMessage> Outbox => Set<OutboxMessage>();
+
     /// <inheritdoc/>
     public DbSet<User> Users => Set<User>();
+
     /// <inheritdoc/>
     public DbSet<FollowupTask> FollowupTasks => Set<FollowupTask>();
+
     /// <inheritdoc/>
     public DbSet<Prospect> Prospects => Set<Prospect>();
+
     /// <inheritdoc/>
     public DbSet<ProspectingSequence> ProspectingSequences => Set<ProspectingSequence>();
+
     /// <inheritdoc/>
     public DbSet<ProspectingSequenceStep> ProspectingSequenceSteps => Set<ProspectingSequenceStep>();
+
     /// <inheritdoc/>
     public DbSet<ProspectingCampaign> ProspectingCampaigns => Set<ProspectingCampaign>();
+
     /// <inheritdoc/>
     public DbSet<EmailGeneration> EmailGenerations => Set<EmailGeneration>();
+
     /// <inheritdoc/>
     public DbSet<SendLog> ProspectingSendLogs => Set<SendLog>();
+
     /// <inheritdoc/>
     public DbSet<ProspectReply> ProspectReplies => Set<ProspectReply>();
+
     /// <inheritdoc/>
     public DbSet<ProspectList> ProspectLists => Set<ProspectList>();
+
     /// <inheritdoc/>
     public DbSet<ProspectListItem> ProspectListItems => Set<ProspectListItem>();
+
     /// <inheritdoc/>
     public DbSet<ProspectScore> ProspectScores => Set<ProspectScore>();
+
     /// <inheritdoc/>
     public DbSet<RateLimitSnapshot> RateLimitSnapshots => Set<RateLimitSnapshot>();
+
     /// <inheritdoc/>
     public DbSet<FailedWebhook> FailedWebhooks => Set<FailedWebhook>();
 

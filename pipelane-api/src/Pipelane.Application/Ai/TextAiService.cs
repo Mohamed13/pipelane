@@ -36,7 +36,7 @@ public sealed class TextAiOptions
 
 public sealed class AiDisabledException : InvalidOperationException
 {
-    public AiDisabledException() : base("AI integration is disabled. Provide OPENAI_API_KEY.") { }
+    public AiDisabledException() : base("AI integration is disabled. Provide OPEN_AI_KEY (or legacy OPENAI_API_KEY).") { }
 }
 
 public sealed class AiBudgetExceededException : InvalidOperationException

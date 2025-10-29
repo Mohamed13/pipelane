@@ -12,12 +12,9 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
 import { MatListModule } from '@angular/material/list';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
@@ -37,7 +34,9 @@ import { filter } from 'rxjs';
 import { ApiService } from './core/api.service';
 import { environment } from './core/environment';
 import { HelpCenterComponent } from './core/help-center/help-center.component';
-import { I18nService } from './core/i18n.service';
+import { LanguageService } from './core/i18n/language.service';
+import { CommandPaletteComponent } from './core/search/command-palette.component';
+import { TranslatePipe } from './core/i18n/translate.pipe';
 import { ThemeService } from './core/theme.service';
 import { TourService } from './core/tour.service';
 import { PipelaneLogoComponent } from './shared/ui/pipelane-logo/pipelane-logo.component';
@@ -71,19 +70,17 @@ const fadeIn = animation([
     RouterLink,
     RouterLinkActive,
     CommonModule,
-    FormsModule,
     MatSidenavModule,
     MatToolbarModule,
     MatListModule,
     MatIconModule,
     MatButtonModule,
-    MatFormFieldModule,
-    MatInputModule,
     MatMenuModule,
     MatTooltipModule,
     MatSnackBarModule,
     MatDialogModule,
     PipelaneLogoComponent,
+    TranslatePipe,
   ],
   animations: [
     trigger('headerAnimate', [
@@ -151,9 +148,7 @@ const fadeIn = animation([
             [disabled]="demoRunning()"
             class="launch-button launch-button--demo"
           >
-            <mat-icon aria-hidden="true">{{
-              demoRunning() ? 'hourglass_top' : 'bolt'
-            }}</mat-icon>
+            <mat-icon aria-hidden="true">{{ demoRunning() ? 'hourglass_top' : 'bolt' }}</mat-icon>
             <span>{{ demoRunning() ? 'Launching...' : 'Launch demo' }}</span>
           </button>
         </div>
@@ -178,21 +173,15 @@ const fadeIn = animation([
             <span>Demo mode</span>
           </div>
           <span class="spacer"></span>
-          <mat-form-field
-            appearance="outline"
-            class="search"
-            floatLabel="never"
+          <button
+            mat-icon-button
+            class="search-trigger neon-outline"
+            aria-label="Ouvrir la palette de commande"
             matTooltip="Rechercher (Ctrl+K)"
+            (click)="openCommandPalette()"
           >
-            <mat-icon matPrefix aria-hidden="true">search</mat-icon>
-            <input
-              #globalSearchField
-              matInput
-              type="search"
-              placeholder="Search journeys, contacts…"
-              [(ngModel)]="search"
-            />
-          </mat-form-field>
+            <mat-icon aria-hidden="true">search</mat-icon>
+          </button>
           <div
             class="theme-toggle neon-outline"
             (click)="toggleTheme()"
@@ -210,18 +199,18 @@ const fadeIn = animation([
           <button
             mat-icon-button
             [matMenuTriggerFor]="langMenu"
-            aria-label="Change language"
-            matTooltip="Language"
+            [attr.aria-label]="'language.switch' | translate"
+            [matTooltip]="'language.switch' | translate"
           >
             <mat-icon aria-hidden="true">translate</mat-icon>
           </button>
           <mat-menu #langMenu="matMenu">
             <button mat-menu-item (click)="setLang('en')">
-              <span>English</span>
+              <span>{{ 'language.label.en' | translate }}</span>
               <mat-icon *ngIf="lang() === 'en'">check</mat-icon>
             </button>
             <button mat-menu-item (click)="setLang('fr')">
-              <span>Français</span>
+              <span>{{ 'language.label.fr' | translate }}</span>
               <mat-icon *ngIf="lang() === 'fr'">check</mat-icon>
             </button>
           </mat-menu>
@@ -278,9 +267,7 @@ const fadeIn = animation([
               matTooltip="Inject demo conversations and stats"
               data-tour="quick-action-demo"
             >
-              <mat-icon aria-hidden="true">{{
-                demoRunning() ? 'hourglass_top' : 'bolt'
-              }}</mat-icon>
+              <mat-icon aria-hidden="true">{{ demoRunning() ? 'hourglass_top' : 'bolt' }}</mat-icon>
               <span>{{ demoRunning() ? 'Running...' : 'Launch demo' }}</span>
             </button>
             <button
@@ -454,6 +441,16 @@ const fadeIn = animation([
         backdrop-filter: blur(6px);
       }
 
+      .search-trigger {
+        margin-right: var(--space-2);
+        color: rgba(230, 234, 242, 0.78);
+      }
+
+      .search-trigger:hover,
+      .search-trigger:focus-visible {
+        color: #fff;
+      }
+
       @media (max-width: 1024px) {
         .quick-actions {
           flex-wrap: wrap;
@@ -468,10 +465,6 @@ const fadeIn = animation([
 
         .header-band {
           margin: var(--space-4);
-        }
-
-        .search {
-          display: none;
         }
       }
 
@@ -491,7 +484,7 @@ const fadeIn = animation([
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent {
-  private readonly i18n = inject(I18nService);
+  private readonly language = inject(LanguageService);
   private readonly themeSvc = inject(ThemeService);
   private readonly bp = inject(BreakpointObserver);
   private readonly router = inject(Router);
@@ -502,7 +495,6 @@ export class AppComponent {
   private readonly dialog = inject(MatDialog);
 
   @ViewChild('snav') private sidenav?: MatSidenav;
-  @ViewChild('globalSearchField') private globalSearchField?: ElementRef<HTMLInputElement>;
 
   readonly navItems: NavItem[] = [
     {
@@ -548,9 +540,8 @@ export class AppComponent {
   ];
 
   readonly demoMode = environment.DEMO_MODE;
-  lang = this.i18n.lang;
+  lang = this.language.current;
   theme = this.themeSvc.theme;
-  search = '';
   opened = signal<boolean>(this.readBool('snav_opened', true));
   collapsed = signal<boolean>(this.readBool('snav_collapsed', false));
   sidenavMode = signal<'side' | 'over'>('side');
@@ -600,7 +591,7 @@ export class AppComponent {
   }
 
   setLang(language: 'en' | 'fr') {
-    this.i18n.setLang(language);
+    this.language.set(language);
   }
 
   toggleTheme() {
@@ -667,11 +658,9 @@ export class AppComponent {
               queryParams: { demo: 'true' },
             });
           }
-          const ref = this.snackbar.open(
-            'Demo launched - analytics refreshed.',
-            'View analytics',
-            { duration: 6000 },
-          );
+          const ref = this.snackbar.open('Demo launched - analytics refreshed.', 'View analytics', {
+            duration: 6000,
+          });
           const _demoActionSubscription = ref
             .onAction()
             .pipe(takeUntilDestroyed())
@@ -702,7 +691,7 @@ export class AppComponent {
 
     if ((event.ctrlKey || event.metaKey) && key === 'k') {
       event.preventDefault();
-      this.focusGlobalSearch();
+      this.openCommandPalette();
       this.resetShortcutBuffer();
       return;
     }
@@ -753,13 +742,6 @@ export class AppComponent {
     setBuffer(key);
   }
 
-  private focusGlobalSearch(): void {
-    if (!this.globalSearchField) {
-      return;
-    }
-    queueMicrotask(() => this.globalSearchField?.nativeElement.focus());
-  }
-
   private resetShortcutBuffer(): void {
     if (this.shortcutTimer !== null && typeof window !== 'undefined') {
       window.clearTimeout(this.shortcutTimer);
@@ -777,6 +759,22 @@ export class AppComponent {
     if (typeof window !== 'undefined') {
       window.open('https://support.pipelane.dev', '_blank', 'noopener');
     }
+  }
+
+  openCommandPalette(): void {
+    const alreadyOpen = this.dialog.openDialogs.some(
+      (ref) => ref.componentInstance instanceof CommandPaletteComponent,
+    );
+    if (alreadyOpen) {
+      return;
+    }
+    this.dialog.open(CommandPaletteComponent, {
+      panelClass: 'command-palette-dialog',
+      width: '720px',
+      maxWidth: '92vw',
+      autoFocus: false,
+      restoreFocus: false,
+    });
   }
 
   openHelpCenter(): void {
@@ -825,9 +823,9 @@ export class AppComponent {
         trail.forEach((crumb, index) => {
           const isLast = index === trail.length - 1;
           const crumbLabel =
-            (typeof crumb?.label === 'string' && crumb.label.trim().length
+            typeof crumb?.label === 'string' && crumb.label.trim().length
               ? crumb.label.trim()
-              : this.toTitleCase(segment.replace(/-/g, ' ')));
+              : this.toTitleCase(segment.replace(/-/g, ' '));
           const breadcrumb: Breadcrumb = { label: crumbLabel };
           if (!isLast) {
             breadcrumb.url = crumb.url ?? url;
@@ -876,5 +874,3 @@ export class AppComponent {
       .join(' ');
   }
 }
-
-

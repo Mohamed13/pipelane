@@ -9,7 +9,7 @@ Mettre en place 3 endpoints IA dans pipelane-api (ASP.NET 8) :
 Tâches
 1) Configuration
 - Ajouter variables d’environnement (fichier .env.example et appsettings.json):
-  OPENAI_API_KEY=
+  OPEN_AI_KEY=
   OPENAI_MODEL=text-davinci-003-ou-GPT-actuel (placeholder, configurable)
   AI_DAILY_BUDGET_EUR=5
 - Lire ces valeurs via IOptions. Si absent, renvoyer 503 sur les endpoints IA.
@@ -47,5 +47,5 @@ Tâches
 
 Acceptance
 - Les 3 endpoints répondent en < 2 s avec données de test.
-- Pas d’appel si OPENAI_API_KEY absent (503).
+- Pas d’appel si OPEN_AI_KEY (ou legacy OPENAI_API_KEY) absent (503).
 - Rate limit fonctionne (429 si dépassé).

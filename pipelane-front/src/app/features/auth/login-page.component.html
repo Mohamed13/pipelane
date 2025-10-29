@@ -1,0 +1,165 @@
+<div class="login-layout">
+  <section class="form-column">
+    <div class="form-frame glass container-narrow" role="form">
+      <header class="brand-header">
+        <app-pipelane-logo class="brand-mark" size="md" />
+        <div class="brand-copy">
+          <span class="brand-name on-surface-strong">Pipelane</span>
+          <span class="brand-tagline muted">{{ 'login.brand.tagline' | translate }}</span>
+        </div>
+        <div class="language-switch" [attr.aria-label]="'language.switch' | translate">
+          <button
+            type="button"
+            class="lang-chip"
+            [class.active]="lang() === 'fr'"
+            (click)="setLanguage('fr')"
+            [attr.aria-pressed]="lang() === 'fr'"
+          >
+            {{ 'language.fr' | translate }}
+          </button>
+          <button
+            type="button"
+            class="lang-chip"
+            [class.active]="lang() === 'en'"
+            (click)="setLanguage('en')"
+            [attr.aria-pressed]="lang() === 'en'"
+          >
+            {{ 'language.en' | translate }}
+          </button>
+        </div>
+      </header>
+
+      <section class="alert-banner" *ngIf="error() === 'invalid'" aria-live="polite" role="alert">
+        <mat-card class="alert-card alert-error">
+          <span class="alert-title">{{ 'errors.invalidCredentials' | translate }}</span>
+          <span class="alert-message muted">
+            {{ 'errors.invalidCredentials.detail' | translate }}
+          </span>
+        </mat-card>
+      </section>
+
+      <section class="alert-banner" *ngIf="error() === 'server'" aria-live="polite" role="alert">
+        <mat-card class="alert-card alert-warn">
+          <span class="alert-title">{{ 'errors.serviceUnavailable' | translate }}</span>
+          <span class="alert-message muted">
+            {{ 'errors.serviceUnavailable.detail' | translate }}
+          </span>
+        </mat-card>
+      </section>
+
+      <h1>{{ 'login.title' | translate }}</h1>
+      <p class="muted intro">{{ 'login.subtitle' | translate }}</p>
+
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'login.email' | translate }}</mat-label>
+          <input
+            matInput
+            formControlName="email"
+            type="email"
+            inputmode="email"
+            autocomplete="email"
+            required
+            aria-required="true"
+            [attr.aria-invalid]="email.invalid && email.touched"
+          />
+          <mat-error *ngIf="email.hasError('required')">
+            {{ 'errors.emailRequired' | translate }}
+          </mat-error>
+          <mat-error *ngIf="email.hasError('email')">
+            {{ 'errors.emailInvalid' | translate }}
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'login.password' | translate }}</mat-label>
+          <input
+            matInput
+            formControlName="password"
+            [type]="showPassword() ? 'text' : 'password'"
+            autocomplete="current-password"
+            required
+            aria-required="true"
+            [attr.aria-invalid]="password.invalid && password.touched"
+          />
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            class="toggle-visibility"
+            (click)="togglePasswordVisibility()"
+            [attr.aria-label]="
+              (showPassword() ? 'login.hidePassword' : 'login.showPassword') | translate
+            "
+          >
+            <mat-icon>{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          <mat-error *ngIf="password.hasError('required')">
+            {{ 'errors.passwordRequired' | translate }}
+          </mat-error>
+        </mat-form-field>
+
+        <div class="form-meta">
+          <mat-checkbox formControlName="remember">
+            {{ 'login.remember' | translate }}
+          </mat-checkbox>
+          <a routerLink="/forgot" class="muted forgot-link">
+            {{ 'login.forgot' | translate }}
+          </a>
+        </div>
+
+        <button
+          class="btn-primary"
+          mat-raised-button
+          color="primary"
+          type="submit"
+          [disabled]="loading() || form.invalid"
+        >
+          <span>{{ 'login.submit' | translate }}</span>
+          <mat-progress-spinner
+            *ngIf="loading()"
+            [diameter]="18"
+            mode="indeterminate"
+          ></mat-progress-spinner>
+        </button>
+      </form>
+
+      <div class="divider">
+        <mat-divider></mat-divider>
+        <span class="muted">{{ 'common.or' | translate }}</span>
+        <mat-divider></mat-divider>
+      </div>
+
+      <div class="sso-buttons">
+        <button mat-stroked-button color="primary" type="button" disabled>
+          <mat-icon fontIcon="g_translate"></mat-icon>
+          <span>{{ 'login.sso.google' | translate }}</span>
+        </button>
+        <button mat-stroked-button color="primary" type="button" disabled>
+          <mat-icon fontIcon="business_center"></mat-icon>
+          <span>{{ 'login.sso.microsoft' | translate }}</span>
+        </button>
+      </div>
+
+      <footer class="signup-hint muted">
+        <span>{{ 'login.noAccount' | translate }}</span>
+        <a class="disabled-link" aria-disabled="true">
+          {{ 'login.createAccount' | translate }}
+        </a>
+      </footer>
+    </div>
+  </section>
+
+  <aside class="visual-column" aria-hidden="true">
+    <div class="visual-inner">
+      <div class="glow"></div>
+      <div class="visual-copy">
+        <h2>{{ 'login.hero.title' | translate }}</h2>
+        <p>
+          Visualisez vos indicateurs clés, automatisez les relances et concentrez-vous sur les
+          conversations qui comptent.
+        </p>
+      </div>
+    </div>
+  </aside>
+</div>

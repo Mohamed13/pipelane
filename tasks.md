@@ -1,179 +1,172 @@
-Tu travailles dans pipelane-marketing (Astro + Tailwind, dark-only).
-Objectif: corriger les bugs visuels (nav en “pilule”, titres qui dépassent, chevauchements, bannière cookies, contrastes) et stabiliser le responsive (desktop ↔ mobile) sans casser le design.
+Tu travailles dans pipelane-front (Angular 20 standalone + Angular Material + ng-apexcharts).
+Objectif: 
+1) Refondre la page **Connexion** (UX moderne, agréable, dark futuriste).
+2) Ajouter/moderniser la **barre de recherche globale** (palette de commande Ctrl+K) avec historique, filtres et navigation rapide.
+3) **Réparer le switch FR/EN** (i18n) et uniformiser les traductions (persistante, instantanée).
 
-RÈGLES
-- Procède SECTION par SECTION. Pour chaque section:
-  1) ouvre les fichiers concernés, 2) résume les tâches, 3) applique les changements par petits commits,
-  4) vérifie `npm run build`, `npm run test:a11y`, `npm run test:lighthouse`, 5) exécute `/compact`.
-- Dark-only, contraste AA, rythme vertical 56px (48–72 ok).
+RÈGLES GÉNÉRALES
+- Commits atomiques, messages explicites. 
+- Ne casse pas les contrats d’API. Null-safety systématique.
+- Respecte le design system (tokens, .glass, contrastes AA). 
+- Accessibilité: focus visible, roles ARIA, labels, `prefers-reduced-motion`.
+- Tests Jest à chaque gros bloc, puis `/compact`.
 
 ========================================================
-SECTION A — Globals (containers, typographie, rythme, safe-area)
+SECTION A — Design & Tokens (bases communes)
 ========================================================
-Fichiers: `src/styles/globals.css`, `src/theme/tokens.css` (ou `_tokens.css`), `src/layouts/Base.astro`.
+Fichiers: src/theme/_tokens.scss, src/styles.scss
 
 Tâches:
-1) Containers & gutters
-- Ajoute des utilitaires pour un conteneur cohérent:
-  .container-page { max-width: 1200px; margin-inline:auto; padding-inline: clamp(16px, 4vw, 32px); }
+1) Vérifie/ajoute utilitaires:
+   .container-narrow { max-width: 520px; margin-inline:auto; padding-inline: clamp(16px,4vw,32px); }
+   .glass { background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); backdrop-filter: blur(10px); border-radius:16px; }
+   .btn-primary { min-height:44px; padding:0 18px; border-radius:12px; }
+   .on-surface { color: rgba(230,234,242,.92); }
+   .on-surface-strong { color:#fff; }
+   .muted { color: rgba(230,234,242,.64); }
 
-2) Typographie responsive (clamp)
-- Applique un scale pour h1/h2:
-  h1 { font-size: clamp(28px, 5vw, 56px); line-height: 1.05; letter-spacing: -0.01em; }
-  h2 { font-size: clamp(22px, 3.6vw, 36px); line-height: 1.12; }
+2) Typo clamp:
+   h1{ font-size: clamp(24px,3.2vw,32px); line-height:1.15; letter-spacing:-0.012em }
+   h2{ font-size: clamp(20px,2.6vw,26px); line-height:1.2 }
 
-3) Rythme vertical
-- Ajoute util `.section`:
-  .section { padding-block: 56px; }
-  @media (min-width: 1024px){ .section { padding-block: 72px; } }
-
-4) Safe-area & scroll-margin
-- :root { --safe-bottom: env(safe-area-inset-bottom); }
-- body { padding-bottom: max(0px, var(--safe-bottom)); }
-- [id] { scroll-margin-top: 96px; } /* pour éviter titres sous la nav */
-
-5) Z-index & stacking context
-- Définir couches:
-  :root { --z-nav: 50; --z-banner: 40; --z-modal: 60; }
-
-6) Réduire le blur coûteux
-- Crée la classe `.glass` performante:
-  .glass { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-radius: 16px; }
-
-Acceptance: build OK, classes disponibles. `/compact`
+Build → OK, /compact.
 
 ========================================================
-SECTION B — Navbar “pilule” (overflow, wrap, contraste, hover)
+SECTION B — Page de Connexion (UI + UX + erreurs lisibles)
 ========================================================
-Fichier: `src/components/Navbar.astro`
+Fichiers: src/app/features/auth/login-page.component.{ts,html,scss} (standalone), src/app/core/auth.service.ts
 
 Tâches:
-1) Empêcher le débordement horizontal
-- Sur le conteneur des items, utiliser `overflow-x-auto` + `scrollbar-gutter: stable;` + `snap-x`.
-- Autoriser le wrap sur desktop moyen: `flex-wrap md:flex-nowrap`.
+1) Nouveau composant `LoginPageComponent` (standalone, OnPush), route `/login`:
+   - Layout centré verticale (min-height:100vh) : 
+     gauche (desktop): image ou gradient sobre; droite: card `.glass container-narrow`.
+     mobile: stack (card en premier).
+   - Card contenu:
+     • Logo/nom produit en haut.
+     • Titre h1: “Connexion”.
+     • Form Reactive: email, mot de passe, Remember me (MatCheckbox), Accès FR/EN (voir Section D).
+     • Icone “voir/masquer” mot de passe.
+     • Lien “Mot de passe oublié ?” (placeholder route /forgot).
+     • Bouton Se connecter (disabled tant que form invalide).
+     • Petit séparateur “ou”.
+     • Boutons SSO placeholder (Google/Microsoft) `mat-stroked-button` (désactivés si pas configurés).
+     • Bas de carte: “Pas de compte ? Créer un compte” (route /signup si existe, sinon disabled).
+   - État d’erreur:
+     • Afficher `mat-error` sous les champs (email invalide, mdp requis).
+     • Si API renvoie 401/403: bannière `mat-card` rouge clair (AA) : “Identifiants invalides”.
+     • Si 5xx: bannière orange: “Service indisponible, réessayez.”
 
-2) Padding & rayons stables
-- Appliquer `.glass` sur la capsule; arrondis uniformes `rounded-2xl`; `px-3 md:px-4 py-2`.
+2) Auth flow:
+   - `AuthService.login(email, password, remember)` → POST /api/auth/login (existant).
+   - Si succès: stocker token + claims; si `remember` → localStorage, sinon sessionStorage.
+   - Redirect: vers la page d’origine (query `redirect=`) ou `/analytics`.
 
-3) État actif/hover lisibles
-- Actif: texte `on-surface-strong`, légère lueur: `ring-1 ring-white/10`.
-- Hover: underlines animées (via `after:` pseudo avec `scale-x`).
+3) Sécurité & feedback:
+   - Désactiver bouton pendant la requête, `mat-progress-spinner` en suffixe.
+   - Guard `AuthGuard` redirige vers `/login?redirect=<url>` si non authentifié.
 
-4) Z-index
-- Nav: `z-[var(--z-nav)]` et `sticky top-0` (si sticky).
-- Ajoute un fond `backdrop-blur` sur scroll (util `data-scrolled` sur window, classe `backdrop-blur-md` + `bg-white/5`).
+4) Tests Jest:
+   - Affichage erreurs de validation.
+   - Appel login et redirection.
+   - Bannière 401 bien affichée.
 
-Pseudo-code dans le composant (extraits):
-- wrapper class: `glass sticky top-4 z-[var(--z-nav)] w-full overflow-x-auto snap-x`
-- item class: `inline-flex items-center gap-2 px-3 md:px-4 py-2 rounded-xl hover:after:scale-x-100`
-
-Acceptance: nav ne coupe plus, pas de chevauchement. `/compact`
+Commit: `feat(auth): new LoginPage modern UI/UX with proper validation & error banners`  
+/compact.
 
 ========================================================
-SECTION C — Hero (grille, ratios, CTA, badges)
+SECTION C — Barre de recherche globale (Ctrl+K Command Palette)
 ========================================================
-Fichier: `src/pages/index.astro` (et sections connexes).
+Fichiers: src/app/core/search/command-palette.component.{ts,html,scss}, src/app/core/search/search.service.ts, header/shell
 
 Tâches:
-1) Grille stable
-- Utilise `grid md:grid-cols-2 gap-8 md:gap-12` dans le hero.
-- Forcer les médias de droite avec aspect ratio: `aspect-[16/10] md:aspect-[4/3]` + `object-cover rounded-2xl glass`.
+1) `SearchService`:
+   - `search(term: string, filters?:{type?: 'prospect'|'conversation'|'campaign'|'list'})`
+     → interroger endpoints existants (ou stub) et renvoyer observable `CommandItem[]`:
+       { id, label, type, subtitle?, route?, icon? }
+   - `recent$`: BehaviorSubject<string[]> (derniers 10 termes).
+   - Debounce 200ms, cancel en vol, null-safe.
 
-2) Titres & sous-titres
-- Appliquer h1/h2 clamp (SECTION A), éviter `<br>` non nécessaires.
-- Limiter largeur du texte: `max-w-[42ch]`.
+2) `CommandPaletteComponent` (standalone, OnPush):
+   - `MatDialog` pleine largeur max 720px, `.glass`, `role="dialog"`, focus input auto.
+   - Champ input (Ctrl+K pour ouvrir, ESC pour fermer) avec placeholder: “Rechercher (prospects, conversations, campagnes…)”.
+   - Résultats en liste virtuelle; items groupés par type (Prospects / Conversations / Campagnes / Listes).
+   - Affichage:
+     • label fort, subtitle (muted), icône par type.
+     • navigation clavier ↑/↓, Enter pour ouvrir `route`, Tab pour changer de filtre (chips).
+   - Historique: si `term=''` → montrer “Recherches récentes”.
+   - Pas de résultat: empty state utile + suggestions.
 
-3) CTA
-- Boutons `min-h-[44px] px-5 rounded-xl` ; focus visible: `ring-2 ring-primary/60`.
-- Stack mobile: `flex-col sm:flex-row gap-3`.
+3) Intégration shell:
+   - Icône loupe dans la top bar; `(click)` et `Ctrl+K` ouvrent le dialog.
+   - **Important**: ignorer raccourcis si focus dans input/textarea (guard).
 
-4) Badges
-- Chips sous le H1 (`+ de réponses / zéro oubli / tout au même endroit`) en `flex flex-wrap gap-2` avec `rounded-full px-3 py-1 bg-white/8`.
+4) Tests Jest:
+   - Debounce & cancel.
+   - Navigation clavier items.
+   - Persistance récents (localStorage).
 
-Acceptance: pas de chevauchement, visuel droit bien cadré. `/compact`
+Commit: `feat(search): global command palette (Ctrl+K) with recent, filters, keyboard nav`  
+/compact.
 
 ========================================================
-SECTION D — Bannières & Consentement (ne plus masquer le contenu)
+SECTION D — i18n FR/EN : switch instantané + persistance
 ========================================================
-Fichier: `src/components/ConsentManager.astro`
+Fichiers: src/app/core/i18n/language.service.ts, assets/i18n/{fr.json,en.json}, app.config, header
 
 Tâches:
-1) Éviter le recouvrement
-- Quand la bannière apparaît, ajoute `document.body.style.paddingBottom = 'calc(16px + var(--safe-bottom))'`; à la fermeture, remets `0`.
-- Place la bannière avec `position: fixed; left: clamp(8px,3vw,24px); right: clamp(8px,3vw,24px); bottom: max(8px, var(--safe-bottom));`
+1) Implémenter un `LanguageService`:
+   - Utiliser **ngx-translate** (si déjà présent) ou Angular i18n alternatif.
+   - `current$` BehaviorSubject<'fr'|'en'>; persister `lang` dans localStorage (`pipelane_lang`).
+   - `set(lang)` → charger les fichiers et appliquer instantanément.
 
-2) Z-index
-- `z-[var(--z-banner)]`.
+2) Switch FR/EN (header):
+   - Bouton `MatMenu` avec FR/EN; coche sur langue active; `(click)` → `LanguageService.set`.
+   - Mettre à jour `dir='ltr'` (les deux langues sont LTR).
+   - Pas de hard refresh.
 
-3) A11y
-- `role="dialog"` + `aria-live="polite"` + tab focus sur boutons.
+3) Couverture:
+   - Ajoute/complète `fr.json` / `en.json` pour les clés:
+     `login.title`, `login.email`, `login.password`, `login.remember`, `login.submit`, `login.forgot`, 
+     `search.placeholder`, `search.recent`, `search.noResults`, 
+     `errors.network`, `errors.invalidCredentials`, etc.
+   - Pages clés: login, header, search, errors.
+   - Fallback par défaut FR.
 
-Acceptance: la bannière n’écrase plus les CTA et remonte la page. `/compact`
+4) Fix du bug “ne fonctionne pas”:
+   - Vérifier que les pipes/Directives utilisent translate instantané (`| translate`) et que modules chargent `TranslateModule`.
+   - Si le shell ne réagit pas: `cdr.markForCheck()` après `set(lang)`.
 
-========================================================
-SECTION E — Sections internes (Relance, Prospection IA, Prix)
-========================================================
-Fichiers: `src/pages/relance-intelligente.astro`, `src/pages/prospection-ia.astro`, `src/pages/prix.astro`
+5) Tests Jest:
+   - Switch FR→EN met à jour un label sans reload.
+   - Persistance: reload app → conserve la langue choisie.
 
-Tâches:
-1) Uniformiser le rythme
-- Envelopper chaque grande section avec `.section container-page`.
-- Supprimer padding inline redondant; ne pas doubler les marges.
-
-2) Encarts “carte”
-- Appliquer `.glass p-5 md:p-6 rounded-2xl border border-white/10`.
-- Titre `text-on-surface-strong`, texte `text-on-surface`.
-
-3) Listes à puces
-- Utiliser `grid md:grid-cols-2 gap-6` pour “Pourquoi ce choix ?”.
-- Empêcher les longues lignes: `max-w-[60ch]`.
-
-4) Page prix
-- Large titre centré avec clamp; tableaux en `grid md:grid-cols-3 gap-6`.
-- Ajoute `scroll-margin-top` sur les ancres (si présentes).
-
-Acceptance: pas de débordement de titres, pas d’espace “bizarre”. `/compact`
+Commit: `fix(i18n): working FR/EN instant switch with persistence; translations added`  
+/compact.
 
 ========================================================
-SECTION F — Contrastes & classes “on-surface”
-========================================================
-Fichiers: `src/theme/tokens.css`, `globals.css`, composants divers.
-
-Tâches:
-1) Définir variables:
-- --on-surface: hsla(220 20% 90% / 0.92); --on-surface-strong: #fff;
-- Classes: `.on-surface{color:var(--on-surface)} .on-surface-strong{color:var(--on-surface-strong)}`
-
-2) Appliquer aux textes de cartes, nav, badges; éviter `text-white/50` sur fond clair.
-
-Acceptance: pa11y ne remonte plus d’alertes contraste. `/compact`
-
-========================================================
-SECTION G — Petits bugs récurrents (overflow, CLS, images)
+SECTION E — Accessibilité, focus, micro-interactions
 ========================================================
 Tâches:
-1) Empêcher les débordements
-- Ajoute `overflow-hidden` sur grands wrappers de cards avec gros rayons (pour ne pas couper la lueur).
-2) CLS
-- Réserve la hauteur pour images (`aspect-[16/9]`) + `loading="lazy"` + `decoding="async"`.
-3) Ancre cookie/CTA
-- Assure-toi que le premier CTA hero est au-dessus de la bannière: `scroll-margin-bottom` n/a (géré via padding body, SECTION D).
+1) Focus ring (global) sur tous les boutons/lien/inputs: outline 2px #75F0FF/60 sur `:focus-visible`.
+2) Login: associer `for` aux labels, `aria-invalid` quand erreur, `aria-live="polite"` pour bannière d’erreur.
+3) Command Palette: `role="listbox"`, `role="option"`, `aria-activedescendant` mis à jour; ESC ferme; annonces concises.
 
-Acceptance: Lighthouse CLS stable. `/compact`
+Tests: a11y lints si présent.  
+Commit: `chore(a11y): focus ring + aria improvements for login & search`  
+/compact.
 
 ========================================================
-SECTION H — Tests & CI
+SECTION F — QA & Tests finaux
 ========================================================
 Tâches:
-1) Relance la QA
-- `npm run build`
-- `npm run test:a11y`
-- `npm run test:lighthouse`
+1) `npm run build && npm run ui:test`
+2) Scénarios manuels:
+   - Connexion réussie/échouée; Remember me; spinner; redirection post-login.
+   - Ctrl+K: ouvrir/fermer; taper, naviguer au clavier; ouvrir un résultat; voir historiques.
+   - FR/EN: basculer sans reload; persister au reload.
+3) Light perf: vérifier que la palette se charge lazy (dialog).
 
-2) Si score <95
-- Réduire blur (`blur(10px)` max), limiter box-shadow lourds, compresser SVG bruyants (subset).
-
-3) Commit final + changelog:
-- “fix(marketing): stable navbar pill, hero grid clamp, consent banner safe-area, vertical rhythm, on-surface contrasts; QA ≥95”
+Commit final: 
+`feat(front): polished Login, global Search (Ctrl+K), working FR/EN switch — modern, accessible, and fast`
 
 /compact

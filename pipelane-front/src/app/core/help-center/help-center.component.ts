@@ -36,8 +36,16 @@ export class HelpCenterComponent {
   ];
 
   readonly links: HelpLink[] = [
-    { label: 'Documentation Lead Hunter AI', url: 'https://www.pipelane.app/prospection-ia', icon: 'rocket_launch' },
-    { label: 'Relance intelligente', url: 'https://www.pipelane.app/relance-intelligente', icon: 'timelapse' },
+    {
+      label: 'Documentation Lead Hunter AI',
+      url: 'https://www.pipelane.app/prospection-ia',
+      icon: 'rocket_launch',
+    },
+    {
+      label: 'Relance intelligente',
+      url: 'https://www.pipelane.app/relance-intelligente',
+      icon: 'timelapse',
+    },
     { label: 'Contacter le support', url: 'mailto:support@pipelane.app', icon: 'support_agent' },
   ];
 

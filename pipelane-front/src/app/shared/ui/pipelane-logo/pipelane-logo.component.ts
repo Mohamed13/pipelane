@@ -22,13 +22,7 @@ let instanceCounter = 0;
             aria-hidden="true"
           >
             <defs>
-              <linearGradient
-                [attr.id]="compactGradientId"
-                x1="0%"
-                y1="0%"
-                x2="100%"
-                y2="0%"
-              >
+              <linearGradient [attr.id]="compactGradientId" x1="0%" y1="0%" x2="100%" y2="0%">
                 <stop offset="0%" stop-color="#28C0B0" />
                 <stop offset="100%" stop-color="#7CE4D9" />
               </linearGradient>
@@ -81,13 +75,7 @@ let instanceCounter = 0;
             aria-hidden="true"
           >
             <defs>
-              <linearGradient
-                [attr.id]="defaultGradientId"
-                x1="0%"
-                y1="0%"
-                x2="100%"
-                y2="0%"
-              >
+              <linearGradient [attr.id]="defaultGradientId" x1="0%" y1="0%" x2="100%" y2="0%">
                 <stop offset="0%" stop-color="#28C0B0" />
                 <stop offset="100%" stop-color="#7CE4D9" />
               </linearGradient>
@@ -134,7 +122,11 @@ let instanceCounter = 0;
       </ng-container>
       <ng-template #imgTag>
         <img
-          [src]="variant === 'compact' ? 'assets/brand/pipelane-compact.svg' : 'assets/brand/pipelane-logo.svg'"
+          [src]="
+            variant === 'compact'
+              ? 'assets/brand/pipelane-compact.svg'
+              : 'assets/brand/pipelane-logo.svg'
+          "
           [alt]="ariaLabel"
           decoding="async"
           loading="eager"

@@ -237,7 +237,8 @@ export class AnalyticsOverviewComponent implements AfterViewInit {
         caption: 'Replies marked as interested',
         value: meetingsCurrent,
         icon: 'event_available',
-        tooltip: 'Replies classified as interested or meeting requested during the selected period.',
+        tooltip:
+          'Replies classified as interested or meeting requested during the selected period.',
         delta: deltaPercent(meetingsCurrent, meetingsPrevious),
         deltaLabel: 'vs previous period',
       },
@@ -389,7 +390,9 @@ export class AnalyticsOverviewComponent implements AfterViewInit {
     const source = this.rankTopMessages(this.topMessages());
 
     if (!source.length) {
-      const fallback = [...(analytics.byTemplate ?? [])].sort((a, b) => b.delivered - a.delivered).slice(0, 6);
+      const fallback = [...(analytics.byTemplate ?? [])]
+        .sort((a, b) => b.delivered - a.delivered)
+        .slice(0, 6);
       if (!fallback.length) {
         return {
           title: 'Top messages',
@@ -479,9 +482,10 @@ export class AnalyticsOverviewComponent implements AfterViewInit {
         categories: labels,
         labels: { style: { colors: labels.map(() => palette.textMuted) } },
       },
-      colors: series.length > 1
-        ? [palette.accent, palette.primary, palette.secondary]
-        : [palette.primary],
+      colors:
+        series.length > 1
+          ? [palette.accent, palette.primary, palette.secondary]
+          : [palette.primary],
       tooltip: {
         theme: palette.mode,
         y: { formatter: (value: number) => formatNumber(value) },
@@ -571,6 +575,10 @@ export class AnalyticsOverviewComponent implements AfterViewInit {
   retry(): void {
     const range = this.selectedRange() ?? computePresetRange(this.rangePreset());
     this.loadRange(range);
+  }
+
+  trackKpi(index: number, item: KpiViewModel | null | undefined): string | number {
+    return item?.label ?? index;
   }
 
   downloadSummary(): void {
@@ -685,22 +693,26 @@ export class AnalyticsOverviewComponent implements AfterViewInit {
       }));
   }
 
-  private normalizeTopMessages(top: TopMessagesResponse | null | undefined): TopMessagesResponse | null {
+  private normalizeTopMessages(
+    top: TopMessagesResponse | null | undefined,
+  ): TopMessagesResponse | null {
     if (!top) {
       return null;
     }
     const sanitize = (source: TopMessageItem[] | null | undefined) =>
       (source ?? []).map(ensureLabel).filter(isValidTopMessage);
-    return { ...top, topByReplies: sanitize(top.topByReplies), topByOpens: sanitize(top.topByOpens) };
+    return {
+      ...top,
+      topByReplies: sanitize(top.topByReplies),
+      topByOpens: sanitize(top.topByOpens),
+    };
   }
 
   private rankTopMessages(top: TopMessagesResponse | null): TopMessageItem[] {
     if (!top) {
       return [];
     }
-    const replies = [...(top.topByReplies ?? [])]
-      .filter(isValidTopMessage)
-      .sort((a, b) => {
+    const replies = [...(top.topByReplies ?? [])].filter(isValidTopMessage).sort((a, b) => {
       const replyDelta = b.replies - a.replies;
       if (replyDelta !== 0) {
         return replyDelta;
@@ -716,9 +728,7 @@ export class AnalyticsOverviewComponent implements AfterViewInit {
       return repliesWithActivity.slice(0, 6);
     }
 
-    const opens = [...(top.topByOpens ?? [])]
-      .filter(isValidTopMessage)
-      .sort((a, b) => {
+    const opens = [...(top.topByOpens ?? [])].filter(isValidTopMessage).sort((a, b) => {
       const openDelta = b.opened - a.opened;
       if (openDelta !== 0) {
         return openDelta;

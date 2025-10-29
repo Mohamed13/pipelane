@@ -8,10 +8,15 @@ Operator console for the Omni-Channel Revenue Engine.
 - Dev server: `npm start` (http://localhost:4200) — env injected automatically
 - Lint + format check: `npm run ui:check`
 - Unit tests: `npm run ui:test`
-- E2E: `npm run ui:e2e` *(start the app separately with `npm start` or serve the `dist/` folder, e.g. `npx http-server dist/pipelane-front -p 4200 -c-1 --proxy http://localhost:4200?`)*
+- E2E: `npm run ui:e2e` *(start the app separately with `npm start` or serve the `dist/` folder, e.g. `npx http-server dist/pipelane-front -p 4200 -c-1 --proxy http://localhost:4200?`)* 
 
 Env injection writes `src/app/core/env.generated.ts` at build/start time.
 Send tenant with `X-Tenant-Id` (ApiService supports header injection when provided).
+
+## Hunter map (Mapbox)
+- Configure `MAPBOX_TOKEN` in your `.env` file (see `.env.example`), then rerun `npm start`/`npm run build` so `tools/inject-env.mjs` regenerates `env.generated.ts`.
+- The Hunter page loads the Mapbox GL map only when the token is present; otherwise a disabled banner is shown and the list remains usable.
+- Never commit real tokens—keep them in your local `.env`.
 
 ## Routes
 - `/onboarding`, `/templates`, `/contacts`, `/conversations/:contactId`, `/campaigns`, `/analytics`, `/settings`

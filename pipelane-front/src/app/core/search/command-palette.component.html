@@ -1,0 +1,111 @@
+<section class="command-shell" role="dialog" aria-modal="true">
+  <header class="command-header">
+    <mat-icon aria-hidden="true">search</mat-icon>
+    <input
+      #queryInput
+      type="text"
+      [formControl]="queryControl"
+      [placeholder]="'search.placeholder' | translate"
+      autocomplete="off"
+      spellcheck="false"
+      [attr.aria-label]="'search.inputLabel' | translate"
+    />
+    <button
+      mat-icon-button
+      type="button"
+      class="close-button"
+      [attr.aria-label]="'common.close' | translate"
+      (click)="close()"
+    >
+      <mat-icon aria-hidden="true">close</mat-icon>
+    </button>
+  </header>
+
+  <div
+    class="command-filters"
+    role="toolbar"
+    [attr.aria-label]="'search.filters.ariaLabel' | translate"
+  >
+    <button
+      *ngFor="let option of filterOptions; trackBy: trackFilter"
+      type="button"
+      class="filter-chip"
+      [class.is-active]="filter() === option.value"
+      (click)="setFilter(option.value)"
+    >
+      {{ option.labelKey | translate }}
+    </button>
+  </div>
+
+  <mat-divider></mat-divider>
+
+  <div class="recent-container" *ngIf="!hasQuery()">
+    <div class="recent-title muted">{{ 'search.recent' | translate }}</div>
+    <ng-container *ngIf="recents().length; else noRecent">
+      <button
+        type="button"
+        class="recent-item"
+        *ngFor="let term of recents(); trackBy: trackRecent"
+        (click)="onRecentSelect(term)"
+      >
+        <mat-icon aria-hidden="true">history</mat-icon>
+        <span>{{ term }}</span>
+      </button>
+      <button type="button" class="recent-clear muted" (click)="clearRecents()">
+        {{ 'search.clearHistory' | translate }}
+      </button>
+    </ng-container>
+    <ng-template #noRecent>
+      <p class="empty muted">{{ 'search.noRecent' | translate }}</p>
+    </ng-template>
+  </div>
+
+  <div
+    class="results-container"
+    *ngIf="hasQuery()"
+    role="listbox"
+    [attr.aria-activedescendant]="activeOptionId()"
+  >
+    <cdk-virtual-scroll-viewport
+      class="results-viewport"
+      itemSize="60"
+      minBufferPx="180"
+      maxBufferPx="360"
+    >
+      <ng-container *cdkVirtualFor="let row of viewRows(); trackBy: trackRow">
+        <div *ngIf="row.kind === 'header'" class="group-header">
+          <mat-icon aria-hidden="true">{{ iconFor(row.type) }}</mat-icon>
+          <span>{{ row.label | translate }}</span>
+        </div>
+        <button
+          *ngIf="row.kind === 'item'"
+          type="button"
+          class="result-row"
+          [attr.id]="optionId(row.index)"
+          role="option"
+          [attr.aria-selected]="activeIndex() === row.index"
+          [class.is-active]="activeIndex() === row.index"
+          (click)="selectIndex(row.index)"
+          (mouseenter)="hoverIndex(row.index)"
+        >
+          <mat-icon aria-hidden="true">{{ row.item.icon || iconFor(row.item.type) }}</mat-icon>
+          <div class="result-copy">
+            <span class="result-label">{{ row.item.label }}</span>
+            <span class="result-subtitle muted" *ngIf="row.item.subtitle">{{
+              row.item.subtitle
+            }}</span>
+          </div>
+          <mat-icon class="result-arrow" aria-hidden="true">north_east</mat-icon>
+        </button>
+      </ng-container>
+    </cdk-virtual-scroll-viewport>
+
+    <div class="empty muted" *ngIf="!loading() && !items().length">
+      {{ 'search.noResults' | translate }} « {{ queryValue().trim() }} ».
+    </div>
+
+    <div class="loading-overlay" *ngIf="loading()">
+      <mat-progress-spinner diameter="32" mode="indeterminate"></mat-progress-spinner>
+    </div>
+  </div>
+</section>

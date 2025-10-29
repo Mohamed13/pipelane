@@ -2,7 +2,9 @@
   <header>
     <div>
       <h1>{{ campaign.name }}</h1>
-      <p>Status: <strong>{{ campaign.status | titlecase }}</strong></p>
+      <p>
+        Status: <strong>{{ campaign.status | titlecase }}</strong>
+      </p>
     </div>
     <div class="actions">
       <button
@@ -31,9 +33,9 @@
     <p>{{ campaign.sequenceId }}</p>
     <h2>Schedule</h2>
     <p>
-      Scheduled: {{ campaign.scheduledAtUtc | date : 'medium' : undefined : 'UTC' }}<br />
-      Started: {{ campaign.startedAtUtc | date : 'medium' : undefined : 'UTC' || '—' }}<br />
-      Completed: {{ campaign.completedAtUtc ? (campaign.completedAtUtc | date : 'medium') : '—' }}
+      Scheduled: {{ campaign.scheduledAtUtc | date: 'medium' : undefined : 'UTC' }}<br />
+      Started: {{ campaign.startedAtUtc | date: 'medium' : undefined : 'UTC' || '—' }}<br />
+      Completed: {{ campaign.completedAtUtc ? (campaign.completedAtUtc | date: 'medium') : '—' }}
     </p>
   </section>
 
@@ -43,7 +45,7 @@
       <mat-list-item *ngFor="let step of preview.steps">
         <mat-icon matListItemIcon>schedule</mat-icon>
         <div matListItemTitle>{{ step.label }}</div>
-        <div matListItemLine>{{ step.scheduledAtUtc | date : 'medium' : undefined : 'UTC' }}</div>
+        <div matListItemLine>{{ step.scheduledAtUtc | date: 'medium' : undefined : 'UTC' }}</div>
       </mat-list-item>
     </mat-list>
   </section>

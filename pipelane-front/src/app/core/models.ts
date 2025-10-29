@@ -268,7 +268,13 @@ export interface ProspectingSequencePayload {
   steps: Array<Omit<ProspectingSequenceStep, 'id'>>;
 }
 
-export type ProspectingCampaignStatus = 'draft' | 'scheduled' | 'running' | 'paused' | 'completed' | 'cancelled';
+export type ProspectingCampaignStatus =
+  | 'draft'
+  | 'scheduled'
+  | 'running'
+  | 'paused'
+  | 'completed'
+  | 'cancelled';
 
 export interface ProspectingCampaign {
   id: string;
@@ -415,13 +421,7 @@ export interface AiGenerateMessageResponse {
   languageDetected?: string | null;
 }
 
-export type AiIntent =
-  | 'Interested'
-  | 'Maybe'
-  | 'NotNow'
-  | 'NotRelevant'
-  | 'OOO'
-  | 'AutoReply';
+export type AiIntent = 'Interested' | 'Maybe' | 'NotNow' | 'NotRelevant' | 'OOO' | 'AutoReply';
 
 export interface AiClassifyReplyRequest {
   text: string;

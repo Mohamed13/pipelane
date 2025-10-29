@@ -88,7 +88,7 @@
             <mat-icon>emoji_objects</mat-icon>
             {{ insight.intent }}
             <span class="ai-actions__confidence">
-              {{ (insight.confidence || 0) | percent: '1.0-0' }}
+              {{ insight.confidence || 0 | percent: '1.0-0' }}
             </span>
           </mat-chip>
           <mat-slide-toggle
@@ -105,7 +105,9 @@
       <mat-card class="pitch-card glass" data-tour="conversation-pitch">
         <mat-card-header>
           <mat-card-title>Votre pitch</mat-card-title>
-          <mat-card-subtitle>Personnalisez le contexte IA partagé avec chaque message.</mat-card-subtitle>
+          <mat-card-subtitle
+            >Personnalisez le contexte IA partagé avec chaque message.</mat-card-subtitle
+          >
         </mat-card-header>
         <mat-card-content>
           <mat-form-field appearance="outline" class="pitch-card__field">
@@ -160,7 +162,10 @@
           <span class="muted">Calcul de la meilleure relance...</span>
         </div>
         <ng-template #followupReady>
-          <div class="smart-followup__body" *ngIf="followupPreview() as preview; else followupEmpty">
+          <div
+            class="smart-followup__body"
+            *ngIf="followupPreview() as preview; else followupEmpty"
+          >
             <p class="smart-followup__when">
               {{ preview.scheduledAtIso | date: 'fullDate' }}
               &middot;
@@ -183,10 +188,20 @@
               >
                 Valider
               </button>
-              <button mat-button type="button" (click)="onModifyFollowup()" [disabled]="followupLoading()">
+              <button
+                mat-button
+                type="button"
+                (click)="onModifyFollowup()"
+                [disabled]="followupLoading()"
+              >
                 Modifier
               </button>
-              <button mat-button type="button" (click)="onDeferFollowup()" [disabled]="followupLoading()">
+              <button
+                mat-button
+                type="button"
+                (click)="onDeferFollowup()"
+                [disabled]="followupLoading()"
+              >
                 Reporter
               </button>
               <button

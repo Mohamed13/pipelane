@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 using Microsoft.EntityFrameworkCore;
 
 using Pipelane.Application.Storage;
@@ -13,6 +15,10 @@ public class DataSeeder
 {
     private readonly IAppDbContext _db;
     private readonly IPasswordHasher _hasher;
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly string[] HunterCities = { "Paris", "Lyon", "Marseille", "Toulouse", "Bordeaux", "Nantes", "Montpellier", "Lille", "Rennes", "Strasbourg" };
+    private static readonly string[] HunterIndustries = { "Restaurants", "PME Services", "Beauté & Bien-être", "Hôtellerie", "Coaching" };
+
     public DataSeeder(IAppDbContext db, IPasswordHasher hasher) { _db = db; _hasher = hasher; }
 
     public async Task SeedAsync(CancellationToken ct = default)
@@ -237,27 +243,85 @@ public class DataSeeder
             _db.ProspectingCampaigns.Add(campaign);
 
             var prospects = new List<Prospect>();
+            var prospectScores = new List<ProspectScore>();
             var rng = new Random(84);
             for (int i = 0; i < 50; i++)
             {
-                prospects.Add(new Prospect
+                var companyBase = $"Acme {i % 10}";
+                var city = HunterCities[i % HunterCities.Length];
+                var industry = HunterIndustries[i % HunterIndustries.Length];
+                var hasSite = rng.NextDouble() > 0.2;
+                var socialActive = rng.NextDouble() > 0.35;
+                var booking = rng.NextDouble() > (industry.Contains("Restaurants", StringComparison.OrdinalIgnoreCase) ? 0.55 : 0.75);
+                var mobileOk = !hasSite || rng.NextDouble() > 0.25;
+                var rating = Math.Round(3.4 + rng.NextDouble() * 1.3, 1);
+                var reviews = rng.Next(18, 420);
+                var pixelPresent = hasSite && rng.NextDouble() > 0.55;
+                var lcpSlow = hasSite && !mobileOk && rng.NextDouble() > 0.4;
+                var cmsIndex = i % 3;
+                var cms = hasSite
+                    ? cmsIndex switch
+                    {
+                        0 => "WordPress",
+                        1 => "Webflow",
+                        _ => "Wix"
+                    }
+                    : null;
+                var scoreValue = Math.Clamp(
+                    (int)Math.Round(rating * 18 + (hasSite ? 12 : 0) + (socialActive ? 6 : -4) + (booking ? 5 : 0) - (mobileOk ? 0 : 6)),
+                    48,
+                    96);
+
+                var reasons = BuildWhyReasons(rating, reviews, hasSite, socialActive, booking, mobileOk);
+                var enriched = new
+                {
+                    rating,
+                    reviews,
+                    hasSite,
+                    booking,
+                    socialActive,
+                    cms,
+                    mobileOk,
+                    pixelPresent,
+                    lcpSlow
+                };
+
+                var prospect = new Prospect
                 {
                     Id = Guid.NewGuid(),
                     TenantId = tenantId,
                     Email = $"prospect{i}@acme{i % 10}.com",
                     FirstName = $"Alex{i}",
                     LastName = "Demo",
-                    Company = $"Acme {i % 10}",
+                    Company = companyBase,
                     Title = i % 3 == 0 ? "VP Sales" : "Head of Revenue",
                     Persona = "RevOps",
                     Source = "seed",
                     Status = ProspectStatus.New,
                     CreatedAtUtc = now.AddDays(-rng.Next(1, 20)),
                     UpdatedAtUtc = now.AddDays(-rng.Next(0, 5)),
-                    TagsJson = "[\"demo\",\"import\"]"
+                    City = city,
+                    Country = "France",
+                    Website = hasSite ? $"https://{Slugify(companyBase)}.{(industry.Contains("Restaurants", StringComparison.OrdinalIgnoreCase) ? "fr" : "com")}" : null,
+                    Industry = industry,
+                    TagsJson = "[\"demo\",\"import\",\"hunter\"]",
+                    EnrichedJson = JsonSerializer.Serialize(enriched, JsonOptions)
+                };
+
+                prospects.Add(prospect);
+
+                prospectScores.Add(new ProspectScore
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = tenantId,
+                    ProspectId = prospect.Id,
+                    Score = scoreValue,
+                    FeaturesJson = JsonSerializer.Serialize(new { enriched, why = reasons }, JsonOptions),
+                    UpdatedAtUtc = now.AddMinutes(-rng.Next(15, 240))
                 });
             }
             _db.Prospects.AddRange(prospects);
+            _db.ProspectScores.AddRange(prospectScores);
         }
 
         await _db.SaveChangesAsync(ct);
@@ -728,5 +792,51 @@ public class DataSeeder
                 }
             }
         }
+    }
+
+    private static string[] BuildWhyReasons(double rating, int reviews, bool hasSite, bool socialActive, bool booking, bool mobileOk)
+    {
+        var reasons = new List<string>
+        {
+            $"Note Google {rating:F1} ({reviews} avis)"
+        };
+        if (hasSite)
+        {
+            reasons.Add("Site web détecté");
+        }
+        if (socialActive)
+        {
+            reasons.Add("Présence sociale active");
+        }
+        if (booking)
+        {
+            reasons.Add("Réservation en ligne disponible");
+        }
+        if (!mobileOk)
+        {
+            reasons.Add("Performance mobile à optimiser");
+        }
+
+        return reasons.Take(3).ToArray();
+    }
+
+    private static string Slugify(string input)
+    {
+        var normalized = input
+            .Trim()
+            .ToLowerInvariant()
+            .Replace("é", "e")
+            .Replace("è", "e")
+            .Replace("ê", "e")
+            .Replace("à", "a")
+            .Replace("â", "a")
+            .Replace("î", "i")
+            .Replace("ï", "i")
+            .Replace("ô", "o")
+            .Replace("ö", "o")
+            .Replace("ù", "u")
+            .Replace("û", "u")
+            .Replace(" ", "-");
+        return new string(normalized.Where(ch => char.IsLetterOrDigit(ch) || ch == '-' || ch == '_').ToArray());
     }
 }

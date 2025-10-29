@@ -1,12 +1,12 @@
 using System;
 using System.Linq;
+using System.Net.Http;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
-using System.Net.Http;
 
 using FluentValidation;
 using FluentValidation.AspNetCore;
@@ -22,8 +22,6 @@ using Microsoft.IdentityModel.Tokens;
 
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
-using Polly;
-using Polly.Extensions.Http;
 
 using Pipelane.Api.Middleware;
 using Pipelane.Api.MultiTenancy;
@@ -33,8 +31,8 @@ using Pipelane.Application.Hunter;
 using Pipelane.Application.Prospecting;
 using Pipelane.Application.Services;
 using Pipelane.Application.Storage;
-using Pipelane.Domain.Enums;
 using Pipelane.Domain.Entities;
+using Pipelane.Domain.Enums;
 using Pipelane.Infrastructure.Automations;
 using Pipelane.Infrastructure.Background;
 using Pipelane.Infrastructure.Channels;
@@ -46,6 +44,9 @@ using Pipelane.Infrastructure.Reports;
 using Pipelane.Infrastructure.Security;
 using Pipelane.Infrastructure.Services;
 using Pipelane.Infrastructure.Webhooks;
+
+using Polly;
+using Polly.Extensions.Http;
 
 using Quartz;
 
@@ -230,8 +231,27 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 
-builder.Services.Configure<ProspectingAiOptions>(builder.Configuration.GetSection("OpenAI"));
-builder.Services.Configure<TextAiOptions>(builder.Configuration.GetSection("OpenAI"));
+var openAiSection = builder.Configuration.GetSection("OpenAI");
+var openAiApiKey = Environment.GetEnvironmentVariable("OPEN_AI_KEY")
+                   ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+
+builder.Services.Configure<ProspectingAiOptions>(options =>
+{
+    openAiSection.Bind(options);
+    if (string.IsNullOrWhiteSpace(options.ApiKey) && !string.IsNullOrWhiteSpace(openAiApiKey))
+    {
+        options.ApiKey = openAiApiKey;
+    }
+});
+
+builder.Services.Configure<TextAiOptions>(options =>
+{
+    openAiSection.Bind(options);
+    if (string.IsNullOrWhiteSpace(options.ApiKey) && !string.IsNullOrWhiteSpace(openAiApiKey))
+    {
+        options.ApiKey = openAiApiKey;
+    }
+});
 builder.Services.Configure<MessagingLimitsOptions>(builder.Configuration.GetSection("MessagingLimits"));
 builder.Services.Configure<AutomationsOptions>(builder.Configuration.GetSection("Automations"));
 builder.Services.Configure<DemoOptions>(opts => opts.Enabled = demoMode);
@@ -379,46 +399,6 @@ app.MapHealthChecks("/health", new HealthCheckOptions
         }));
     }
 }).AllowAnonymous();
-
-app.MapGet("/health/metrics", async (IServiceProvider services, CancellationToken ct) =>
-    {
-        await using var scope = services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-        var queueDepth = await db.Outbox.AsNoTracking()
-            .CountAsync(o => o.Status == OutboxStatus.Queued || o.Status == OutboxStatus.Sending, ct)
-            .ConfigureAwait(false);
-
-        var latencies = await db.Messages.AsNoTracking()
-            .Where(m => m.Direction == MessageDirection.Out && m.DeliveredAt != null)
-            .OrderByDescending(m => m.CreatedAt)
-            .Take(100)
-            .Select(m => new { m.CreatedAt, m.DeliveredAt })
-            .ToListAsync(ct)
-            .ConfigureAwait(false);
-
-        var avgSendLatencyMs = latencies.Count == 0
-            ? 0d
-            : latencies.Average(m => (m.DeliveredAt!.Value - m.CreatedAt).TotalMilliseconds);
-
-        var deadWebhookBacklog = await db.FailedWebhooks.AsNoTracking()
-            .CountAsync(ct)
-            .ConfigureAwait(false);
-
-        return Results.Json(new
-        {
-            queueDepth,
-            avgSendLatencyMs,
-            deadWebhookBacklog,
-            timestamp = DateTimeOffset.UtcNow
-        }, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
-    })
-    .WithName("HealthMetrics")
-    .Produces(StatusCodes.Status200OK)
-    .AllowAnonymous();
 
 app.Run();
 

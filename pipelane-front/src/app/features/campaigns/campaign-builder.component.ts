@@ -1,7 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FormBuilder,
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
@@ -183,7 +189,7 @@ export class CampaignBuilderComponent {
     const template = this.selectedTemplate();
     const timezone =
       typeof Intl !== 'undefined' && Intl.DateTimeFormat
-        ? Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC'
+        ? (Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC')
         : 'UTC';
 
     return {
@@ -240,11 +246,17 @@ export class CampaignBuilderComponent {
       });
 
     this.generateSegmentJson();
-    this.updatePreview(this.audienceGroup.get('segmentJson')!.value ?? '{}');
+    const segmentControl = this.audienceGroup.get('segmentJson');
+    const initialSegment =
+      typeof segmentControl?.value === 'string' ? segmentControl.value.trim() : '';
+    this.updatePreview(initialSegment && initialSegment.length ? initialSegment : '{}');
   }
 
   toggleTag(tag: string): void {
-    const control = this.audienceGroup.get('tags')!;
+    const control = this.audienceGroup.get('tags');
+    if (!control) {
+      return;
+    }
     const current = new Set(control.value ?? []);
     current.has(tag) ? current.delete(tag) : current.add(tag);
     control.setValue(Array.from(current));
@@ -256,7 +268,10 @@ export class CampaignBuilderComponent {
   }
 
   toggleChannel(channel: Channel): void {
-    const control = this.audienceGroup.get('channels')!;
+    const control = this.audienceGroup.get('channels');
+    if (!control) {
+      return;
+    }
     const current = new Set(control.value ?? []);
     if (current.has(channel)) {
       if (current.size > 1) {
@@ -356,7 +371,10 @@ export class CampaignBuilderComponent {
     };
 
     const nextJson = JSON.stringify(segment);
-    const control = this.audienceGroup.get('segmentJson')!;
+    const control = this.audienceGroup.get('segmentJson');
+    if (!control) {
+      return;
+    }
     if (control.value !== nextJson) {
       control.setValue(nextJson, { emitEvent: false });
       this.updatePreview(nextJson);

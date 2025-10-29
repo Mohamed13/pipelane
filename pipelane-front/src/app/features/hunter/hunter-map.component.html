@@ -1,0 +1,24 @@
+<div class="map-wrapper">
+  <div *ngIf="!hasToken" class="map-fallback glass">
+    <div class="map-fallback__content">
+      <span>Carte désactivée (token manquant).</span>
+      <a
+        class="map-fallback__link"
+        href="https://docs.mapbox.com/help/getting-started/access-tokens/"
+        rel="noreferrer"
+        target="_blank"
+      >
+        Paramétrer MAPBOX_TOKEN
+      </a>
+    </div>
+  </div>
+
+  <div *ngIf="hasToken" class="map-container glass">
+    <div
+      #mapEl
+      class="map-canvas"
+      aria-label="Carte des prospects Hunter"
+      role="presentation"
+    ></div>
+  </div>
+</div>

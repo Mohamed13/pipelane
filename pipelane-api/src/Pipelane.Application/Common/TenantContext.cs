@@ -8,6 +8,7 @@ public interface ITenantContext
 public sealed class TenantContext : ITenantContext
 {
     public TenantContext(Guid tenantId) => TenantId = tenantId;
+
     /// <inheritdoc/>
     public Guid TenantId { get; }
 }

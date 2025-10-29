@@ -11,7 +11,7 @@ import { of } from 'rxjs';
 
 import { AppComponent } from '../app/app.component';
 import { ApiService } from '../app/core/api.service';
-import { I18nService } from '../app/core/i18n.service';
+import { LanguageService, LangCode } from '../app/core/i18n/language.service';
 import { ThemeService } from '../app/core/theme.service';
 import { TourService } from '../app/core/tour.service';
 
@@ -21,13 +21,11 @@ class BreakpointObserverStub {
   }
 }
 
-class I18nStub {
-  lang = signal<'en' | 'fr'>('en');
-  dict = signal<Record<string, string>>({});
-  setLang = jest.fn();
-  t(key: string) {
-    return key;
-  }
+class LanguageStub {
+  current = signal<LangCode>('en');
+  dictionary$ = of<Record<string, string>>({});
+  set = jest.fn((lang: LangCode) => this.current.set(lang));
+  translate = jest.fn((key: string) => key);
 }
 
 class ThemeStub {
@@ -57,7 +55,7 @@ describe('AppComponent tooltips', () => {
       providers: [
         provideRouter([]),
         { provide: BreakpointObserver, useClass: BreakpointObserverStub },
-        { provide: I18nService, useClass: I18nStub },
+        { provide: LanguageService, useClass: LanguageStub },
         { provide: ThemeService, useClass: ThemeStub },
         { provide: TourService, useClass: TourStub },
         { provide: ApiService, useValue: apiStub },

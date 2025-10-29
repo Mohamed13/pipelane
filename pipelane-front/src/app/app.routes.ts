@@ -23,10 +23,7 @@ export const routes: Routes = [
     data: {
       title: 'Prospecting onboarding',
       breadcrumb: 'Onboarding',
-      breadcrumbTrail: [
-        { label: 'Prospecting', url: '/prospecting' },
-        { label: 'Onboarding' },
-      ],
+      breadcrumbTrail: [{ label: 'Prospecting', url: '/prospecting' }, { label: 'Onboarding' }],
     },
   },
   {
@@ -39,10 +36,7 @@ export const routes: Routes = [
     data: {
       title: 'Prospecting sequences',
       breadcrumb: 'Sequences',
-      breadcrumbTrail: [
-        { label: 'Prospecting', url: '/prospecting' },
-        { label: 'Sequences' },
-      ],
+      breadcrumbTrail: [{ label: 'Prospecting', url: '/prospecting' }, { label: 'Sequences' }],
     },
   },
   {
@@ -55,10 +49,7 @@ export const routes: Routes = [
     data: {
       title: 'Prospecting campaign',
       breadcrumb: 'Campaign',
-      breadcrumbTrail: [
-        { label: 'Prospecting', url: '/prospecting' },
-        { label: 'Campaign' },
-      ],
+      breadcrumbTrail: [{ label: 'Prospecting', url: '/prospecting' }, { label: 'Campaign' }],
     },
   },
   {
@@ -84,15 +75,13 @@ export const routes: Routes = [
     data: {
       title: 'Prospecting inbox',
       breadcrumb: 'Inbox',
-      breadcrumbTrail: [
-        { label: 'Prospecting', url: '/prospecting' },
-        { label: 'Inbox' },
-      ],
+      breadcrumbTrail: [{ label: 'Prospecting', url: '/prospecting' }, { label: 'Inbox' }],
     },
   },
   {
     path: 'login',
-    loadComponent: () => import('./features/auth/login.component').then((m) => m.LoginComponent),
+    loadComponent: () =>
+      import('./features/auth/login-page.component').then((m) => m.LoginPageComponent),
     data: { title: 'Sign in', breadcrumb: 'Sign in' },
   },
   {
@@ -169,10 +158,7 @@ export const routes: Routes = [
     data: {
       title: 'List detail',
       breadcrumb: 'List detail',
-      breadcrumbTrail: [
-        { label: 'Lists', url: '/lists' },
-        { label: 'Detail' },
-      ],
+      breadcrumbTrail: [{ label: 'Lists', url: '/lists' }, { label: 'Detail' }],
     },
   },
   {
@@ -193,5 +179,3 @@ export const routes: Routes = [
   },
   { path: '**', redirectTo: 'analytics' },
 ];
-
-

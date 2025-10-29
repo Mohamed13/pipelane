@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Diagnostics;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -13,6 +13,7 @@ using Microsoft.Extensions.Options;
 
 using Pipelane.Application.Abstractions;
 using Pipelane.Application.Ai;
+using Pipelane.Application.Common;
 using Pipelane.Application.DTOs;
 using Pipelane.Application.Services;
 using Pipelane.Application.Storage;
@@ -20,7 +21,6 @@ using Pipelane.Domain.Entities;
 using Pipelane.Domain.Enums;
 using Pipelane.Infrastructure.Background;
 using Pipelane.Infrastructure.Persistence;
-using Pipelane.Application.Common;
 
 namespace Pipelane.Api.Controllers;
 
@@ -76,15 +76,14 @@ public sealed class FollowupsController : ControllerBase
         using var activity = TelemetrySources.Followups.StartActivity("followup.preview.request", ActivityKind.Server);
         activity?.SetTag("followup.tenant_id", _tenantProvider.TenantId);
 
-        if (request is null)
-        {
-            activity?.SetStatus(ActivityStatusCode.Error, "missing_request");
-            return BadRequest(CreateConversationIdProblem());
-        }
+        var effectiveRequest = request ?? new FollowupPreviewRequest();
+        effectiveRequest.SegmentJson = string.IsNullOrWhiteSpace(effectiveRequest.SegmentJson)
+            ? "{}"
+            : effectiveRequest.SegmentJson;
 
-        if (request.ConversationId.HasValue)
+        if (effectiveRequest.ConversationId.HasValue)
         {
-            var conversationId = request.ConversationId.Value;
+            var conversationId = effectiveRequest.ConversationId.Value;
             activity?.SetTag("followup.conversation_id", conversationId);
             if (conversationId == Guid.Empty)
             {
@@ -108,12 +107,12 @@ public sealed class FollowupsController : ControllerBase
 
         var query = _db.Contacts.AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(request.SegmentJson))
+        if (!string.IsNullOrWhiteSpace(effectiveRequest.SegmentJson))
         {
             Dictionary<string, string>? segment;
             try
             {
-                segment = JsonSerializer.Deserialize<Dictionary<string, string>>(request.SegmentJson, _jsonOptions);
+                segment = JsonSerializer.Deserialize<Dictionary<string, string>>(effectiveRequest.SegmentJson, _jsonOptions);
             }
             catch (JsonException)
             {

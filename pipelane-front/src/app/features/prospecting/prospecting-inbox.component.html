@@ -3,10 +3,18 @@
     <h1>Prospecting inbox</h1>
     <mat-button-toggle-group [value]="filter()" aria-label="Filter replies">
       <mat-button-toggle value="all" (click)="setFilter('all')">All</mat-button-toggle>
-      <mat-button-toggle value="interested" (click)="setFilter('interested')">Interested</mat-button-toggle>
-      <mat-button-toggle value="meetingRequested" (click)="setFilter('meetingRequested')">Meetings</mat-button-toggle>
-      <mat-button-toggle value="unsubscribe" (click)="setFilter('unsubscribe')">Unsub</mat-button-toggle>
-      <mat-button-toggle value="notInterested" (click)="setFilter('notInterested')">No</mat-button-toggle>
+      <mat-button-toggle value="interested" (click)="setFilter('interested')"
+        >Interested</mat-button-toggle
+      >
+      <mat-button-toggle value="meetingRequested" (click)="setFilter('meetingRequested')"
+        >Meetings</mat-button-toggle
+      >
+      <mat-button-toggle value="unsubscribe" (click)="setFilter('unsubscribe')"
+        >Unsub</mat-button-toggle
+      >
+      <mat-button-toggle value="notInterested" (click)="setFilter('notInterested')"
+        >No</mat-button-toggle
+      >
     </mat-button-toggle-group>
   </header>
 
@@ -16,7 +24,8 @@
         <mat-icon matListItemIcon [ngClass]="reply.intent">mail</mat-icon>
         <div matListItemTitle>{{ reply.subject || '(no subject)' }}</div>
         <div matListItemLine>
-          {{ reply.prospectEmail }} • {{ reply.receivedAtUtc | date : 'short' }} • Intent: {{ reply.intent | titlecase }}
+          {{ reply.prospectEmail }} • {{ reply.receivedAtUtc | date: 'short' }} • Intent:
+          {{ reply.intent | titlecase }}
         </div>
         <div class="buttons">
           <button mat-icon-button matTooltip="Analyse intent" (click)="classify(reply)">

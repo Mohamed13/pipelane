@@ -162,45 +162,52 @@
   }
 }
 
-.hunter-map__canvas {
-  position: relative;
-  min-height: 260px;
-  border-radius: 20px;
-  overflow: hidden;
-  background: radial-gradient(circle at 20% 20%, rgba(33, 150, 243, 0.25), transparent 55%),
-    radial-gradient(circle at 80% 40%, rgba(255, 193, 7, 0.25), transparent 60%),
-    rgba(18, 18, 26, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+.hunter-map__body {
+  display: block;
+  padding: 0.5rem;
 }
 
-.hunter-map__point {
-  position: absolute;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #0f0f14;
-  font-weight: 600;
-  box-shadow: 0 10px 25px rgba(15, 87, 255, 0.25);
-  backdrop-filter: blur(8px);
-  border: 2px solid rgba(255, 255, 255, 0.65);
+.hunter-map__body app-hunter-map {
+  display: block;
+}
 
-  span {
+.hunter-map__disabled {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: 18px;
+  border: 1px dashed rgba(111, 162, 255, 0.35);
+  background: rgba(6, 20, 33, 0.86);
+  color: rgba(230, 234, 242, 0.85);
+  align-items: center;
+  flex-wrap: wrap;
+
+  strong {
     font-size: 0.95rem;
+    display: block;
+    margin-bottom: 0.3rem;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: rgba(230, 234, 242, 0.65);
   }
 }
 
-.hunter-map__empty {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.95rem;
+.hunter-map__doc {
+  color: var(--color-primary, #6ae2ff);
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s ease;
+
+  &:hover,
+  &:focus-visible {
+    border-color: currentColor;
+    outline: none;
+  }
 }
 
 .hunter-list__table {
@@ -512,11 +519,7 @@
   position: relative;
   height: 8px;
   border-radius: 6px;
-  background: linear-gradient(
-    90deg,
-    rgba(129, 212, 250, 0.2),
-    rgba(129, 212, 250, 0.6)
-  );
+  background: linear-gradient(90deg, rgba(129, 212, 250, 0.2), rgba(129, 212, 250, 0.6));
   transition: width 0.25s ease;
 }
 

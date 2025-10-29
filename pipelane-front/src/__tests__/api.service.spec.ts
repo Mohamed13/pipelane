@@ -25,6 +25,7 @@ describe('ApiService', () => {
   const authMock = {
     tenantId: () => 'tenant-123',
     token: () => 'token',
+    logout: jest.fn(),
   };
 
   beforeEach(() => {
@@ -46,6 +47,7 @@ describe('ApiService', () => {
     snackbar.dismiss.mockReset();
     snackbar.openFromComponent.mockClear();
     snackbar.open.mockClear();
+    authMock.logout.mockClear();
   });
 
   afterEach(() => {
@@ -85,6 +87,27 @@ describe('ApiService', () => {
     });
   });
 
+  it('redirects to login on authentication errors without showing error toast', () => {
+    const errorSpy = jest.fn();
+
+    service.getTemplates().subscribe({ error: errorSpy });
+
+    const req = http.expectOne('https://localhost:56667/templates');
+    req.flush({ detail: 'Unauthorized' }, { status: 401, statusText: 'Unauthorized' });
+
+    expect(authMock.logout).toHaveBeenCalledTimes(1);
+    expect(snackbar.openFromComponent).not.toHaveBeenCalled();
+    expect(snackbar.open).toHaveBeenCalledWith(
+      'Session expirée. Veuillez vous reconnecter.',
+      undefined,
+      expect.objectContaining({
+        duration: 5000,
+        panelClass: ['info-snackbar'],
+      }),
+    );
+    expect(errorSpy).toHaveBeenCalled();
+  });
+
   it('calls followup preview with /api prefix', () => {
     service.previewFollowups('{}').subscribe();
 
@@ -109,7 +132,9 @@ describe('ApiService', () => {
   it('fetches followup conversation preview via GET', () => {
     service.getFollowupConversationPreview('conv-1').subscribe();
 
-    const req = http.expectOne((request) => request.url === 'https://localhost:56667/api/followups/preview');
+    const req = http.expectOne(
+      (request) => request.url === 'https://localhost:56667/api/followups/preview',
+    );
     expect(req.request.method).toBe('GET');
     expect(req.request.params.get('conversationId')).toBe('conv-1');
     req.flush({
@@ -129,7 +154,9 @@ describe('ApiService', () => {
   it('falls back to POST when GET followup preview is not allowed', () => {
     service.getFollowupConversationPreview('conv-fallback').subscribe();
 
-    const getReq = http.expectOne('https://localhost:56667/api/followups/preview?conversationId=conv-fallback');
+    const getReq = http.expectOne(
+      'https://localhost:56667/api/followups/preview?conversationId=conv-fallback',
+    );
     expect(getReq.request.method).toBe('GET');
     getReq.flush('Method Not Allowed', { status: 405, statusText: 'Method Not Allowed' });
 
@@ -173,7 +200,9 @@ describe('ApiService', () => {
   it('loads report summary with explicit range', () => {
     service.getReportSummary('2025-01-01T00:00:00Z', '2025-01-07T23:59:59Z').subscribe();
 
-    const req = http.expectOne((request) => request.url === 'https://localhost:56667/api/reports/summary');
+    const req = http.expectOne(
+      (request) => request.url === 'https://localhost:56667/api/reports/summary',
+    );
     expect(req.request.params.get('from')).toBe('2025-01-01T00:00:00Z');
     expect(req.request.params.get('to')).toBe('2025-01-07T23:59:59Z');
     expect(req.request.headers.get('X-Tenant-Id')).toBe('tenant-123');
@@ -197,7 +226,9 @@ describe('ApiService', () => {
   it('requests report summary pdf download', () => {
     service.downloadReportSummaryPdf('2025-01-01T00:00:00Z', '2025-01-07T23:59:59Z').subscribe();
 
-    const req = http.expectOne((request) => request.url === 'https://localhost:56667/api/reports/summary.pdf');
+    const req = http.expectOne(
+      (request) => request.url === 'https://localhost:56667/api/reports/summary.pdf',
+    );
     expect(req.request.params.get('from')).toBe('2025-01-01T00:00:00Z');
     expect(req.request.params.get('to')).toBe('2025-01-07T23:59:59Z');
     expect(req.request.responseType).toBe('blob');
@@ -232,7 +263,9 @@ describe('ApiService', () => {
     let result: TopMessagesResponse | undefined;
     service.getTopMessages().subscribe((res) => (result = res));
 
-    const req = http.expectOne((request) => request.url === 'https://localhost:56667/analytics/top-messages');
+    const req = http.expectOne(
+      (request) => request.url === 'https://localhost:56667/analytics/top-messages',
+    );
     expect(req.request.params.get('from')).toBe('');
     expect(req.request.params.get('to')).toBe('');
     req.flush({
@@ -250,7 +283,9 @@ describe('ApiService', () => {
     let result: TopMessagesResponse | undefined;
     service.getTopMessages().subscribe((res) => (result = res));
 
-    const req = http.expectOne((request) => request.url === 'https://localhost:56667/analytics/top-messages');
+    const req = http.expectOne(
+      (request) => request.url === 'https://localhost:56667/analytics/top-messages',
+    );
     req.flush({
       from: '2025-01-01T00:00:00Z',
       to: '2025-01-07T00:00:00Z',
@@ -348,15 +383,51 @@ describe('ApiService', () => {
 
     const req = http.expectOne('https://localhost:56667/api/lists');
     req.flush([
-      { id: 'list-1', name: null, count: 0, createdAtUtc: '2025-01-01', updatedAtUtc: '2025-01-01' },
-      { id: 'list-2', name: '  ', count: 5, createdAtUtc: '2025-01-02', updatedAtUtc: '2025-01-03' },
-      { id: 'list-3', name: 'Demand Gen', count: 7, createdAtUtc: '2025-01-02', updatedAtUtc: '2025-01-04' },
+      {
+        id: 'list-1',
+        name: null,
+        count: 0,
+        createdAtUtc: '2025-01-01',
+        updatedAtUtc: '2025-01-01',
+      },
+      {
+        id: 'list-2',
+        name: '  ',
+        count: 5,
+        createdAtUtc: '2025-01-02',
+        updatedAtUtc: '2025-01-03',
+      },
+      {
+        id: 'list-3',
+        name: 'Demand Gen',
+        count: 7,
+        createdAtUtc: '2025-01-02',
+        updatedAtUtc: '2025-01-04',
+      },
     ]);
 
     expect(lists).toEqual([
-      { id: 'list-1', name: 'Sans titre', count: 0, createdAtUtc: '2025-01-01', updatedAtUtc: '2025-01-01' },
-      { id: 'list-2', name: 'Sans titre', count: 5, createdAtUtc: '2025-01-02', updatedAtUtc: '2025-01-03' },
-      { id: 'list-3', name: 'Demand Gen', count: 7, createdAtUtc: '2025-01-02', updatedAtUtc: '2025-01-04' },
+      {
+        id: 'list-1',
+        name: 'Sans titre',
+        count: 0,
+        createdAtUtc: '2025-01-01',
+        updatedAtUtc: '2025-01-01',
+      },
+      {
+        id: 'list-2',
+        name: 'Sans titre',
+        count: 5,
+        createdAtUtc: '2025-01-02',
+        updatedAtUtc: '2025-01-03',
+      },
+      {
+        id: 'list-3',
+        name: 'Demand Gen',
+        count: 7,
+        createdAtUtc: '2025-01-02',
+        updatedAtUtc: '2025-01-04',
+      },
     ]);
   });
 
@@ -375,4 +446,3 @@ describe('ApiService', () => {
     expect(lists).toEqual([]);
   });
 });
-

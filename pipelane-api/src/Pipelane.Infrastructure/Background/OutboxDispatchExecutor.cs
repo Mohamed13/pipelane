@@ -10,9 +10,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 using Pipelane.Application.Abstractions;
+using Pipelane.Application.Common;
 using Pipelane.Application.Services;
 using Pipelane.Application.Storage;
-using Pipelane.Application.Common;
 using Pipelane.Domain.Entities;
 using Pipelane.Domain.Enums;
 using Pipelane.Infrastructure.Automations;

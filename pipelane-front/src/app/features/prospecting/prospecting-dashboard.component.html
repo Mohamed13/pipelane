@@ -45,12 +45,14 @@
         <a mat-button color="primary" [routerLink]="['/prospecting/sequences']">Manage</a>
       </div>
       <ul>
-        <li *ngFor="let seq of sequences() | slice : 0 : 5">
+        <li *ngFor="let seq of sequences() | slice: 0 : 5">
           <div>
             <strong>{{ seq.name }}</strong>
             <span>{{ seq.steps.length }} steps</span>
           </div>
-          <span class="status" [class.inactive]="!seq.isActive">{{ seq.isActive ? 'Active' : 'Paused' }}</span>
+          <span class="status" [class.inactive]="!seq.isActive">{{
+            seq.isActive ? 'Active' : 'Paused'
+          }}</span>
         </li>
         <li *ngIf="sequences().length === 0" class="empty">No sequences yet.</li>
       </ul>
@@ -59,13 +61,23 @@
     <mat-card class="list-card">
       <div class="card-header">
         <h2>Campaigns</h2>
-        <a mat-button color="primary" [routerLink]="['/prospecting/campaigns', campaigns()[0]?.id]" *ngIf="campaigns().length > 0">Open latest</a>
+        <a
+          mat-button
+          color="primary"
+          [routerLink]="['/prospecting/campaigns', campaigns()[0]?.id]"
+          *ngIf="campaigns().length > 0"
+          >Open latest</a
+        >
       </div>
       <ul>
-        <li *ngFor="let camp of campaigns() | slice : 0 : 5" [routerLink]="['/prospecting/campaigns', camp.id]" matTooltip="View campaign details">
+        <li
+          *ngFor="let camp of campaigns() | slice: 0 : 5"
+          [routerLink]="['/prospecting/campaigns', camp.id]"
+          matTooltip="View campaign details"
+        >
           <div>
             <strong>{{ camp.name }}</strong>
-            <span>Sequence • {{ camp.sequenceId | slice : 0 : 8 }}</span>
+            <span>Sequence • {{ camp.sequenceId | slice: 0 : 8 }}</span>
           </div>
           <span class="status">{{ camp.status | titlecase }}</span>
         </li>
@@ -89,6 +101,8 @@
   <div class="empty-state">
     <h2>Set up prospecting</h2>
     <p>Kick off by importing leads, crafting a sequence, and launching your first campaign.</p>
-    <button mat-raised-button color="primary" [routerLink]="['/prospecting/onboarding']">Run onboarding</button>
+    <button mat-raised-button color="primary" [routerLink]="['/prospecting/onboarding']">
+      Run onboarding
+    </button>
   </div>
 </ng-template>

@@ -129,15 +129,23 @@ describe('HunterPageComponent', () => {
     expect(component.total()).toBe(2);
   });
 
-  it('provides stable track keys even when map point data is incomplete', () => {
-    const undefinedKey = component.trackPoint(3, null as unknown as any);
-    expect(undefinedKey).toBe('point-3');
+  it('builds map items with heuristic coordinates when API lacks lat/lng', () => {
+    const result = createResult('map-1', 82, 'Paris');
+    component['results'].set([result]);
 
-    const fallbackKey = component.trackPoint(1, {
-      label: '',
-      lat: Number.NaN,
-      lng: undefined,
-    } as unknown as any);
-    expect(fallbackKey).toBe('Prospect-0-0');
+    const mapItems = component.mapItems();
+    expect(mapItems).toHaveLength(1);
+    expect(mapItems[0]?.lat).toBeDefined();
+    expect(mapItems[0]?.lng).toBeDefined();
+  });
+
+  it('leaves map coordinates undefined when no location information is available', () => {
+    const result = createResult('map-2', 70, '');
+    result.prospect.city = null;
+    component['results'].set([result]);
+
+    const mapItems = component.mapItems();
+    expect(mapItems[0]?.lat).toBeUndefined();
+    expect(mapItems[0]?.lng).toBeUndefined();
   });
 });

@@ -41,7 +41,11 @@
                 {{ prospect.prospect.website }}
               </a>
             </li>
-            <li *ngIf="!prospect.prospect.email && !prospect.prospect.phone && !prospect.prospect.website">
+            <li
+              *ngIf="
+                !prospect.prospect.email && !prospect.prospect.phone && !prospect.prospect.website
+              "
+            >
               Aucune coordonnée enrichie pour le moment.
             </li>
           </ul>
@@ -51,7 +55,9 @@
           <h4>Why this lead ?</h4>
           <ul class="hunter-drawer__reasons">
             <li *ngFor="let reason of prospect.why ?? []">{{ reason }}</li>
-            <li *ngIf="(prospect.why?.length ?? 0) === 0">Score disponible, mais aucune raison détaillée.</li>
+            <li *ngIf="(prospect.why?.length ?? 0) === 0">
+              Score disponible, mais aucune raison détaillée.
+            </li>
           </ul>
         </section>
 
@@ -69,12 +75,24 @@
         <section class="hunter-drawer__section">
           <h4>Signaux</h4>
           <div class="hunter-drawer__chips">
-            <mat-chip color="primary" selected *ngIf="prospect.features.hasSite">Site en ligne</mat-chip>
-            <mat-chip color="primary" selected *ngIf="prospect.features.booking">Réservation en ligne</mat-chip>
-            <mat-chip color="primary" selected *ngIf="prospect.features.socialActive">Réseaux actifs</mat-chip>
-            <mat-chip color="accent" selected *ngIf="prospect.features.cms">CMS {{ prospect.features.cms }}</mat-chip>
-            <mat-chip color="warn" selected *ngIf="prospect.features.pixelPresent === false">Pixel manquant</mat-chip>
-            <mat-chip color="warn" selected *ngIf="prospect.features.mobileOk === false">Mobile KO</mat-chip>
+            <mat-chip color="primary" selected *ngIf="prospect.features.hasSite"
+              >Site en ligne</mat-chip
+            >
+            <mat-chip color="primary" selected *ngIf="prospect.features.booking"
+              >Réservation en ligne</mat-chip
+            >
+            <mat-chip color="primary" selected *ngIf="prospect.features.socialActive"
+              >Réseaux actifs</mat-chip
+            >
+            <mat-chip color="accent" selected *ngIf="prospect.features.cms"
+              >CMS {{ prospect.features.cms }}</mat-chip
+            >
+            <mat-chip color="warn" selected *ngIf="prospect.features.pixelPresent === false"
+              >Pixel manquant</mat-chip
+            >
+            <mat-chip color="warn" selected *ngIf="prospect.features.mobileOk === false"
+              >Mobile KO</mat-chip
+            >
             <mat-chip color="warn" selected *ngIf="prospect.features.lcpSlow">Site lent</mat-chip>
             <span
               *ngIf="
@@ -104,7 +122,10 @@
           <header class="hunter-criteria__header">
             <div>
               <h2>Lead Hunter</h2>
-              <p>Décrivez votre cible, laissez l’IA enrichir, scorer et proposer les meilleurs prospects.</p>
+              <p>
+                Décrivez votre cible, laissez l’IA enrichir, scorer et proposer les meilleurs
+                prospects.
+              </p>
             </div>
             <mat-chip class="hunter-criteria__badge" color="primary" selected>
               Nouvelle génération
@@ -137,7 +158,10 @@
           </div>
 
           <form [formGroup]="filtersForm" class="hunter-form" (ngSubmit)="search(false)">
-            <mat-form-field appearance="outline" class="hunter-form__field hunter-form__field--full">
+            <mat-form-field
+              appearance="outline"
+              class="hunter-form__field hunter-form__field--full"
+            >
               <mat-label>Décrivez en français…</mat-label>
               <textarea
                 matInput
@@ -168,12 +192,18 @@
                 <input matInput formControlName="city" placeholder="Paris, Lyon…" />
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="hunter-form__field hunter-form__field--sm">
+              <mat-form-field
+                appearance="outline"
+                class="hunter-form__field hunter-form__field--sm"
+              >
                 <mat-label>Rayon (km)</mat-label>
                 <input matInput type="number" formControlName="radiusKm" min="1" max="50" />
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="hunter-form__field hunter-form__field--sm">
+              <mat-form-field
+                appearance="outline"
+                class="hunter-form__field hunter-form__field--sm"
+              >
                 <mat-label>Source</mat-label>
                 <mat-select formControlName="source">
                   <mat-option value="mapsStub">Cartographie simulée</mat-option>
@@ -186,7 +216,14 @@
             <div class="hunter-form__row">
               <mat-form-field appearance="outline" class="hunter-form__field">
                 <mat-label>Note minimale</mat-label>
-                <input matInput type="number" formControlName="ratingMin" min="0" max="5" step="0.1" />
+                <input
+                  matInput
+                  type="number"
+                  formControlName="ratingMin"
+                  min="0"
+                  max="5"
+                  step="0.1"
+                />
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="hunter-form__field">
@@ -231,7 +268,12 @@
                 <mat-icon aria-hidden="true">radar</mat-icon>
                 Trouver
               </button>
-              <button mat-stroked-button type="button" (click)="search(true)" [disabled]="loading()">
+              <button
+                mat-stroked-button
+                type="button"
+                (click)="search(true)"
+                [disabled]="loading()"
+              >
                 <mat-icon aria-hidden="true">science</mat-icon>
                 Simulation
               </button>
@@ -261,21 +303,34 @@
               </button>
             </header>
 
-            <div class="hunter-map__canvas">
-              <div
-                class="hunter-map__point"
-                *ngFor="let point of mapPoints(); trackBy: trackPoint"
-                [style.top]="point.top"
-                [style.left]="point.left"
-                [style.background]="point.color"
-                matTooltip="{{ point.label }} · Score {{ point.score }}"
-              >
-                <span>{{ point.score }}</span>
-              </div>
-
-              <div class="hunter-map__empty" *ngIf="mapPoints().length === 0">
-                Lancez une recherche pour visualiser la carte.
-              </div>
+            <div class="hunter-map__body">
+              <ng-container *ngIf="mapboxToken; else mapDisabled">
+                <app-hunter-map
+                  [items]="mapItems()"
+                  [selectedId]="mapSelectedId()"
+                  (select)="handleMapSelect($event)"
+                  (addToList)="handleMapAddToList($event)"
+                ></app-hunter-map>
+              </ng-container>
+              <ng-template #mapDisabled>
+                <div class="hunter-map__disabled glass">
+                  <div>
+                    <strong>Carte désactivée (token manquant).</strong>
+                    <p>
+                      Ajoutez <code>MAPBOX_TOKEN</code> à votre fichier <code>.env</code> puis
+                      relancez l'application pour activer la carte Mapbox.
+                    </p>
+                  </div>
+                  <a
+                    class="hunter-map__doc"
+                    href="https://docs.mapbox.com/help/getting-started/access-tokens/"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Paramétrer le token
+                  </a>
+                </div>
+              </ng-template>
             </div>
           </mat-card>
 
@@ -284,9 +339,8 @@
               <div>
                 <h3>Liste des résultats</h3>
                 <p>
-                  Sélection : {{ selectionCount() }} ·
-                  {{ visibleResults().length }} affichés (filtre “problèmes site” :
-                  {{ siteIssuesOnly() ? 'actif' : 'désactivé' }})
+                  Sélection : {{ selectionCount() }} · {{ visibleResults().length }} affichés
+                  (filtre “problèmes site” : {{ siteIssuesOnly() ? 'actif' : 'désactivé' }})
                 </p>
               </div>
               <button
@@ -320,6 +374,7 @@
                 <div
                   class="hunter-list__row"
                   *cdkVirtualFor="let row of visibleResults(); trackBy: trackRow"
+                  [attr.id]="row.prospectId ? 'prospect-row-' + row.prospectId : null"
                 >
                   <div class="col col--select">
                     <mat-checkbox
@@ -333,7 +388,9 @@
                     <div class="hunter-list__company">
                       <strong>{{ row.prospect.company || 'Sans raison sociale' }}</strong>
                       <span class="hunter-list__contact">
-                        {{ row.prospect.email || row.prospect.phone || 'Coordonnées indisponibles' }}
+                        {{
+                          row.prospect.email || row.prospect.phone || 'Coordonnées indisponibles'
+                        }}
                       </span>
                     </div>
                     <div class="hunter-list__why">
@@ -348,7 +405,9 @@
                   </div>
 
                   <div class="col col--rating">
-                    <span *ngIf="row.features.rating as rating">{{ rating | number: '1.1-1' }} ★</span>
+                    <span *ngIf="row.features.rating as rating"
+                      >{{ rating | number: '1.1-1' }} ★</span
+                    >
                     <span class="muted">({{ row.features.reviews || 0 }})</span>
                   </div>
 
@@ -365,7 +424,10 @@
                   </div>
 
                   <div class="col col--social">
-                    <mat-icon [class.hunter-positive]="row.features.socialActive" aria-hidden="true">
+                    <mat-icon
+                      [class.hunter-positive]="row.features.socialActive"
+                      aria-hidden="true"
+                    >
                       share
                     </mat-icon>
                   </div>

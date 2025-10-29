@@ -50,7 +50,12 @@ export class ProspectingInboxComponent implements OnInit {
         this.replies.update((items) =>
           items.map((item) =>
             item.id === reply.id
-              ? { ...item, intent: result.intent, intentConfidence: result.confidence, processedAtUtc: new Date().toISOString() }
+              ? {
+                  ...item,
+                  intent: result.intent,
+                  intentConfidence: result.confidence,
+                  processedAtUtc: new Date().toISOString(),
+                }
               : item,
           ),
         );
@@ -61,12 +66,15 @@ export class ProspectingInboxComponent implements OnInit {
   }
 
   draftAutoReply(reply: ProspectReplyRecord): void {
-    this.api.autoReplyDraft({ replyId: reply.id, campaignId: reply.campaignId ?? undefined }).subscribe({
-      next: () => {
-        this.snackbar?.open('Draft generated via AI', 'Dismiss', { duration: 4000 });
-      },
-      error: () => this.snackbar?.open('Unable to craft auto-reply', 'Dismiss', { duration: 5000 }),
-    });
+    this.api
+      .autoReplyDraft({ replyId: reply.id, campaignId: reply.campaignId ?? undefined })
+      .subscribe({
+        next: () => {
+          this.snackbar?.open('Draft generated via AI', 'Dismiss', { duration: 4000 });
+        },
+        error: () =>
+          this.snackbar?.open('Unable to craft auto-reply', 'Dismiss', { duration: 5000 }),
+      });
   }
 
   private load(): void {

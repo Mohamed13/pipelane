@@ -47,7 +47,7 @@
     plRevealOnScroll="stagger"
   >
     <pl-kpi-card
-      *ngFor="let kpi of kpis(); trackBy: kpi.label"
+      *ngFor="let kpi of kpis(); trackBy: trackKpi"
       [label]="kpi.label"
       [caption]="kpi.caption"
       [value]="kpi.value"

@@ -23,9 +23,7 @@
       </p>
       <div class="palette-grid">
         <div *ngFor="let color of colors" class="palette-chip">
-          <div class="palette-swatch" [style.background]="
-              'var(' + color.variable + ')'
-            "></div>
+          <div class="palette-swatch" [style.background]="'var(' + color.variable + ')'"></div>
           <div>
             <span class="palette-name">{{ color.name }}</span>
             <code>{{ color.variable }}</code>

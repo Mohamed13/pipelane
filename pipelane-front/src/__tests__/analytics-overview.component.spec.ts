@@ -314,7 +314,9 @@ describe('AnalyticsOverviewComponent mapping', () => {
       ],
       topByOpens: [],
     };
-    const normalized = (component as unknown as { normalizeTopMessages: Function }).normalizeTopMessages(rawTop);
+    const normalized = (
+      component as unknown as { normalizeTopMessages: Function }
+    ).normalizeTopMessages(rawTop);
     component['topMessages'].set(normalized);
 
     const chart = component.templateBar();
@@ -329,8 +331,16 @@ describe('AnalyticsOverviewComponent mapping', () => {
     component['paginator'] = undefined;
     component['sort'] = undefined;
 
-    expect(() =>
-      TestBed.runInInjectionContext(() => component.ngAfterViewInit()),
-    ).not.toThrow();
+    expect(() => TestBed.runInInjectionContext(() => component.ngAfterViewInit())).not.toThrow();
+  });
+
+  it('trackKpi falls back to index when item missing', () => {
+    const fixture = TestBed.createComponent(AnalyticsOverviewComponent);
+    const component = fixture.componentInstance;
+
+    expect(
+      component.trackKpi(2, { label: 'Test', value: 0, icon: 'send', tooltip: '' } as any),
+    ).toBe('Test');
+    expect(component.trackKpi(5, undefined)).toBe(5);
   });
 });

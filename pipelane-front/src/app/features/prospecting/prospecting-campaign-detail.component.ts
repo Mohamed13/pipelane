@@ -103,4 +103,3 @@ export class ProspectingCampaignDetailComponent implements OnInit, OnDestroy {
     });
   }
 }
-

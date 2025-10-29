@@ -35,6 +35,7 @@
     "@angular/router": "^20.3.4",
     "angular-shepherd": "^20.0.0",
     "apexcharts": "^5.3.5",
+    "mapbox-gl": "^3.16.0",
     "ng-apexcharts": "^2.0.3",
     "rxjs": "^7.8.0",
     "zone.js": "~0.15.1"
@@ -47,6 +48,7 @@
     "@angular/cli": "^20.3.5",
     "@angular/compiler-cli": "^20.3.4",
     "@types/jest": "^29.5.12",
+    "@types/mapbox-gl": "^3.4.1",
     "@types/node": "^20.10.0",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",

@@ -110,7 +110,7 @@ public class FollowupsControllerTests
     }
 
     [Fact]
-    public async Task Preview_400_on_missing_conversationId()
+    public async Task Preview_handles_missing_conversationId()
     {
         var options = new DbContextOptionsBuilder<FakeDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
@@ -132,9 +132,8 @@ public class FollowupsControllerTests
         getProblem.Detail.Should().Be("conversationId required");
 
         var nullResponse = await controller.Preview(null, CancellationToken.None);
-        var nullBadRequest = nullResponse.Result.Should().BeOfType<BadRequestObjectResult>().Which;
-        var nullProblem = nullBadRequest.Value.Should().BeOfType<ProblemDetails>().Which;
-        nullProblem.Detail.Should().Be("conversationId required");
+        var nullOk = nullResponse.Result.Should().BeOfType<OkObjectResult>().Which;
+        nullOk.Value.Should().BeEquivalentTo(new { count = 0 });
 
         var postResponse = await controller.Preview(new FollowupPreviewRequest { ConversationId = Guid.Empty }, CancellationToken.None);
         var postBadRequest = postResponse.Result.Should().BeOfType<BadRequestObjectResult>().Which;

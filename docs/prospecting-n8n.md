@@ -34,7 +34,7 @@
 
 ## Webhook Secrets
 - Configure SendGrid signature validation via environment variables.
-- Keep OPENAI_API_KEY set for live AI prompts. Without it, the service falls back to deterministic templates.
+- Keep OPEN_AI_KEY (or legacy OPENAI_API_KEY) set for live AI prompts. Without it, the service falls back to deterministic templates.
 
 ## TODO
 - Expose PATCH /api/prospects/{id} endpoint for enrichment

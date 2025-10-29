@@ -43,7 +43,6 @@ import {
 } from '../../core/models';
 import { PolicyService } from '../../core/policy.service';
 
-
 type ComposerMode = 'text' | 'template';
 type QuickActionKey = 'send-test' | 'import-contacts' | 'open-onboarding';
 
@@ -116,7 +115,8 @@ export class ConversationThreadComponent {
     HTMLInputElement | HTMLTextAreaElement
   >;
 
-  readonly contactId = this.route.snapshot.paramMap.get('contactId')!;
+  private readonly contactIdParam = this.route.snapshot.paramMap.get('contactId');
+  readonly contactId = this.contactIdParam ?? '';
 
   conversation = signal<ConversationResponse | null>(null);
   sending = signal(false);
@@ -404,6 +404,10 @@ export class ConversationThreadComponent {
 
   constructor() {
     this.destroyRef.onDestroy(() => this.stopPolling());
+    if (!this.contactId) {
+      Promise.resolve().then(() => this.router.navigate(['/contacts']));
+      return;
+    }
     this.fetchConversation();
 
     effect(
@@ -468,6 +472,9 @@ export class ConversationThreadComponent {
       this.textControl.markAsTouched();
       return;
     }
+    if (!this.contactId) {
+      return;
+    }
     const tracking = this.beginMessageSend();
     this.api
       .sendMessage({
@@ -489,6 +496,9 @@ export class ConversationThreadComponent {
   sendTemplate(): void {
     if (this.templateControl.invalid) {
       this.templateControl.markAsTouched();
+      return;
+    }
+    if (!this.contactId) {
       return;
     }
     const tracking = this.beginMessageSend();
@@ -610,6 +620,13 @@ export class ConversationThreadComponent {
   }
 
   private fetchConversation(options: { skipSendingReset?: boolean } = {}): void {
+    if (!this.contactId) {
+      if (!options.skipSendingReset) {
+        this.sending.set(false);
+      }
+      this.conversation.set({ conversationId: undefined, messages: [] });
+      return;
+    }
     this.api.getConversation(this.contactId).subscribe({
       next: (response) => {
         const messages = response.messages ?? [];
@@ -761,6 +778,9 @@ export class ConversationThreadComponent {
   }
 
   private buildAiMessagePayload(): AiGenerateMessageRequest | null {
+    if (!this.contactId) {
+      return null;
+    }
     const convo = this.conversation();
     if (!convo?.messages?.length) {
       return null;
@@ -919,22 +939,3 @@ export class ConversationThreadComponent {
     }
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

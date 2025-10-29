@@ -12,7 +12,11 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { ApiService } from '../../core/api.service';
-import { ProspectingSequence, ProspectingSequencePayload, SequenceStepType } from '../../core/models';
+import {
+  ProspectingSequence,
+  ProspectingSequencePayload,
+  SequenceStepType,
+} from '../../core/models';
 
 @Component({
   selector: 'pl-prospecting-sequences',
@@ -64,7 +68,10 @@ export class ProspectingSequencesComponent implements OnInit {
       this.fb.group({
         stepType: ['email' as SequenceStepType, Validators.required],
         channel: ['email', Validators.required],
-        offsetDays: [this.steps.length === 0 ? 0 : this.steps.length * 3, [Validators.required, Validators.min(0)]],
+        offsetDays: [
+          this.steps.length === 0 ? 0 : this.steps.length * 3,
+          [Validators.required, Validators.min(0)],
+        ],
         promptTemplate: [''],
         subjectTemplate: [''],
         guardrailInstructions: [''],
@@ -115,4 +122,3 @@ export class ProspectingSequencesComponent implements OnInit {
       .add(() => this.loading.set(false));
   }
 }
-

@@ -80,7 +80,7 @@ export class ListsIndexComponent {
         },
         error: () => {
           this.loading.set(false);
-          this.snackbar.open("Impossible de créer la liste.", 'Fermer', { duration: 3000 });
+          this.snackbar.open('Impossible de créer la liste.', 'Fermer', { duration: 3000 });
         },
       });
   }
@@ -104,7 +104,7 @@ export class ListsIndexComponent {
         },
         error: () => {
           this.loading.set(false);
-          this.snackbar.open("Impossible de renommer la liste.", 'Fermer', { duration: 3000 });
+          this.snackbar.open('Impossible de renommer la liste.', 'Fermer', { duration: 3000 });
         },
       });
   }
@@ -128,7 +128,7 @@ export class ListsIndexComponent {
         },
         error: () => {
           this.loading.set(false);
-          this.snackbar.open("Impossible de supprimer la liste.", 'Fermer', { duration: 3000 });
+          this.snackbar.open('Impossible de supprimer la liste.', 'Fermer', { duration: 3000 });
         },
       });
   }
