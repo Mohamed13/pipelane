@@ -9,14 +9,12 @@
 
 .page {
   padding-block: var(--section);
-  padding-inline: clamp(16px, 4vw, 48px);
+  padding-inline: var(--pad-inline);
 }
 
 .container-page {
-  max-width: 1360px;
-  margin-inline: auto;
-  padding-inline: clamp(16px, 3vw, 32px);
   width: 100%;
+  padding-inline: var(--pad-inline);
 }
 
 .gap-sm {

@@ -155,9 +155,10 @@ const fadeIn = animation([
         </div>
       </mat-sidenav>
 
-      <mat-sidenav-content>
-        <a class="skip-link" href="#main-content">Skip to content</a>
-        <mat-toolbar class="toolbar glass">
+    <mat-sidenav-content>
+      <a class="skip-link" href="#main-content">Skip to content</a>
+      <div class="app-shell">
+        <mat-toolbar class="app-header toolbar">
           <button
             mat-icon-button
             class="neon-outline"
@@ -225,24 +226,25 @@ const fadeIn = animation([
             <mat-icon aria-hidden="true">help</mat-icon>
           </button>
         </mat-toolbar>
-
-        <section
-          class="header-band glass"
-          *ngIf="breadcrumbs().length"
-          [@headerAnimate]="breadcrumbs().length"
-        >
-          <nav class="breadcrumb-trail" aria-label="Breadcrumb">
-            <ng-container *ngFor="let crumb of breadcrumbs(); let last = last">
-              <a *ngIf="crumb.url && !last" [routerLink]="crumb.url">{{ crumb.label }}</a>
-              <span *ngIf="!crumb.url || last">{{ crumb.label }}</span>
-              <mat-icon aria-hidden="true" *ngIf="!last">chevron_right</mat-icon>
-            </ng-container>
-          </nav>
-        </section>
-
-        <main class="content" id="main-content">
-          <router-outlet></router-outlet>
-        </main>
+        <div class="app-main">
+          <section
+            class="header-band"
+            *ngIf="breadcrumbs().length"
+            [@headerAnimate]="breadcrumbs().length"
+          >
+            <nav class="breadcrumb-trail" aria-label="Breadcrumb">
+              <ng-container *ngFor="let crumb of breadcrumbs(); let last = last">
+                <a *ngIf="crumb.url && !last" [routerLink]="crumb.url">{{ crumb.label }}</a>
+                <span *ngIf="!crumb.url || last">{{ crumb.label }}</span>
+                <mat-icon aria-hidden="true" *ngIf="!last">chevron_right</mat-icon>
+              </ng-container>
+            </nav>
+          </section>
+          <main class="app-main__content content" id="main-content">
+            <router-outlet></router-outlet>
+          </main>
+        </div>
+      </div>
       </mat-sidenav-content>
     </mat-sidenav-container>
   `,
@@ -250,9 +252,9 @@ const fadeIn = animation([
     `
       .nav-shell {
         width: 240px;
-        border-right: 1px solid rgba(117, 240, 255, 0.12);
-        background: color-mix(in srgb, var(--md-sys-color-surface-container-low) 92%, transparent);
-        backdrop-filter: blur(18px);
+        border-right: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--on-surface);
         display: flex;
         flex-direction: column;
         transition: width 220ms ease;
@@ -303,19 +305,20 @@ const fadeIn = animation([
       }
 
       .nav-rail .mat-mdc-list-item {
-        border-radius: var(--radius-lg);
+        border-radius: var(--radius);
         transition:
           background 180ms ease,
-          transform 180ms ease;
+          transform 180ms ease,
+          border-color 180ms ease;
       }
 
       .nav-rail .mat-mdc-list-item:hover {
-        background: rgba(117, 240, 255, 0.08);
+        background: color-mix(in srgb, var(--primary) 12%, transparent);
       }
 
       .nav-rail .mat-mdc-list-item.is-active {
-        background: rgba(117, 240, 255, 0.18);
-        border: 1px solid rgba(117, 240, 255, 0.32);
+        background: color-mix(in srgb, var(--primary) 18%, white 82%);
+        border: 1px solid color-mix(in srgb, var(--primary) 32%, var(--border));
         transform: translateX(4px);
       }
 
@@ -339,13 +342,15 @@ const fadeIn = animation([
       .launch-button {
         width: 100%;
         border-radius: var(--radius-pill);
-        border-color: rgba(117, 240, 255, 0.28) !important;
-        backdrop-filter: blur(8px);
+        border-color: color-mix(in srgb, var(--primary) 40%, transparent) !important;
+        background: var(--surface);
+        color: var(--primary);
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
       }
 
       .launch-button--demo {
-        border-color: rgba(96, 247, 163, 0.6) !important;
-        color: var(--md-sys-color-tertiary);
+        border-color: color-mix(in srgb, var(--success) 45%, transparent) !important;
+        color: var(--success);
       }
 
       .launch-button--demo[disabled] {
@@ -353,25 +358,66 @@ const fadeIn = animation([
       }
 
       .shell-container {
-        height: 100vh;
+        height: auto;
+        min-height: 100dvh;
         background:
-          radial-gradient(circle at top, rgba(117, 240, 255, 0.08), transparent 55%),
-          var(--color-bg);
-        color: var(--color-text);
+          radial-gradient(
+            circle at top,
+            color-mix(in srgb, var(--primary) 8%, transparent) 0%,
+            transparent 55%
+          ),
+          var(--bg);
+        color: var(--on-surface);
       }
 
-      .toolbar {
+      @supports not (min-height: 100dvh) {
+        .shell-container {
+          min-height: 100vh;
+        }
+      }
+
+      .app-shell {
+        display: grid;
+        grid-template-rows: var(--app-header-h) 1fr;
+        min-height: inherit;
+      }
+
+      mat-sidenav-content {
+        display: block;
+        height: auto;
+        overflow: visible;
+      }
+
+      .app-header {
         position: sticky;
         top: 0;
-        z-index: 14;
-        min-height: 64px;
+        z-index: 100;
+        height: var(--app-header-h);
         display: flex;
         align-items: center;
         gap: var(--gap);
-        padding-inline: clamp(16px, 4vw, 32px);
-        background: color-mix(in srgb, var(--md-sys-color-surface) 88%, transparent);
-        border-bottom: 1px solid rgba(117, 240, 255, 0.14);
-        backdrop-filter: blur(12px);
+        padding-inline: var(--pad-inline);
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+      }
+
+      .toolbar {
+        margin: 0;
+      }
+
+      .app-main {
+        display: flex;
+        flex-direction: column;
+        gap: var(--gap-lg);
+        padding-inline: var(--pad-inline);
+        padding-block: var(--pad-block);
+        min-height: 0;
+      }
+
+      .app-main__content {
+        flex: 1 1 auto;
+        min-height: 0;
       }
 
       .route-title {
@@ -391,22 +437,22 @@ const fadeIn = animation([
         gap: 0.4rem;
         border-radius: var(--radius-pill);
         padding: 0.35rem 0.75rem;
-        border: 1px solid rgba(96, 247, 163, 0.35);
-        background: rgba(96, 247, 163, 0.12);
+        border: 1px solid color-mix(in srgb, var(--success) 35%, var(--border));
+        background: color-mix(in srgb, var(--success) 12%, transparent);
         font-size: 0.75rem;
         text-transform: uppercase;
         letter-spacing: 0.12em;
-        color: var(--md-sys-color-on-surface);
+        color: var(--on-surface);
       }
 
       .search-trigger {
         margin-right: var(--gap-sm);
-        color: var(--md-sys-color-on-surface-variant);
+        color: var(--muted);
       }
 
       .search-trigger:hover,
       .search-trigger:focus-visible {
-        color: var(--md-sys-color-on-surface);
+        color: var(--on-surface);
       }
 
       .theme-toggle {
@@ -415,7 +461,7 @@ const fadeIn = animation([
         gap: 0.5rem;
         border-radius: var(--radius-pill);
         padding: 0.35rem 0.75rem;
-        border: 1px solid rgba(117, 240, 255, 0.16);
+        border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--border));
         cursor: pointer;
       }
 
@@ -423,8 +469,8 @@ const fadeIn = animation([
         position: absolute;
         top: -100px;
         left: 0;
-        background: var(--md-sys-color-primary);
-        color: var(--md-sys-color-on-primary);
+        background: var(--primary);
+        color: var(--on-surface);
         padding: 0.75rem 1rem;
         border-radius: var(--radius-pill);
         transition: top 0.2s ease;
@@ -439,18 +485,19 @@ const fadeIn = animation([
         display: flex;
         align-items: center;
         gap: var(--gap);
-        margin: var(--gap-lg) clamp(16px, 4vw, 32px) 0;
-        padding: var(--gap) clamp(16px, 4vw, 32px);
-        border-radius: var(--radius-lg);
-        border: 1px solid rgba(117, 240, 255, 0.12);
-        background: color-mix(in srgb, var(--md-sys-color-surface-container) 90%, transparent);
+        margin: var(--gap-lg) var(--pad-inline) 0;
+        padding: var(--gap) var(--pad-inline);
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        background: var(--surface);
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
       }
 
       .breadcrumb-trail {
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        color: var(--md-sys-color-on-surface-variant);
+        color: var(--muted);
         font-size: 0.9rem;
         letter-spacing: 0.02em;
       }
@@ -461,12 +508,21 @@ const fadeIn = animation([
       }
 
       .content {
-        padding: clamp(24px, 5vw, 48px);
-        min-height: calc(100vh - 64px);
+        flex: 1 1 auto;
+        width: 100%;
+        padding: 0;
         background:
-          radial-gradient(circle at 20% 10%, rgba(117, 240, 255, 0.12), transparent 45%),
-          radial-gradient(circle at 80% 0%, rgba(155, 140, 255, 0.16), transparent 55%),
-          var(--color-bg);
+          radial-gradient(
+            circle at 20% 10%,
+            color-mix(in srgb, var(--primary) 10%, transparent) 0%,
+            transparent 45%
+          ),
+          radial-gradient(
+            circle at 80% 0%,
+            color-mix(in srgb, var(--secondary) 12%, transparent) 0%,
+            transparent 55%
+          ),
+          var(--bg);
       }
 
       .spacer {
@@ -479,12 +535,12 @@ const fadeIn = animation([
         }
 
         .header-band {
-          margin: var(--gap-lg) var(--gap);
-          padding: var(--gap);
+          margin: var(--gap-lg) var(--pad-inline);
+          padding: var(--gap) var(--pad-inline);
         }
 
-        .toolbar {
-          padding-inline: var(--gap);
+        .app-header {
+          padding-inline: var(--pad-inline);
         }
       }
 
@@ -497,22 +553,14 @@ const fadeIn = animation([
           width: 76px;
         }
 
-        .toolbar {
+        .app-header {
           gap: var(--gap-sm);
-        }
-
-        .content {
-          padding: var(--gap-lg) var(--gap);
         }
       }
 
       @media (max-width: 540px) {
-        .toolbar {
-          padding-inline: var(--gap);
-        }
-
-        .content {
-          padding: var(--gap-lg) var(--gap);
+        .app-header {
+          padding-inline: var(--pad-inline);
         }
       }
     `,
@@ -811,6 +859,7 @@ export class AppComponent {
     }
     this.dialog.open(CommandPaletteComponent, {
       panelClass: 'command-palette-dialog',
+      backdropClass: 'command-palette-backdrop',
       width: '720px',
       maxWidth: '92vw',
       autoFocus: false,
