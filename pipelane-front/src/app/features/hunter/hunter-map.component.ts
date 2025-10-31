@@ -62,6 +62,7 @@ export class HunterMapComponent implements AfterViewInit, OnChanges, OnDestroy {
   private readonly sourceId = 'hunter';
   private currentFeatureStateId?: number;
   private hasFitView = false;
+  private readonly itemsById = new Map<string, HunterResultVm>();
 
   ngAfterViewInit(): void {
     if (!this.hasToken) {
@@ -91,6 +92,7 @@ export class HunterMapComponent implements AfterViewInit, OnChanges, OnDestroy {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['items']) {
       this.hasFitView = false;
+      this.rebuildIndex();
       this.zone.runOutsideAngular(() => this.updateData());
     }
 
@@ -200,16 +202,14 @@ export class HunterMapComponent implements AfterViewInit, OnChanges, OnDestroy {
     const city = typeof properties['city'] === 'string' ? properties['city'] : '';
     const scoreRaw = Number(properties['score']);
     const score = Number.isFinite(scoreRaw) ? Math.round(scoreRaw) : 0;
-    const why = Array.isArray(properties['why'])
-      ? (properties['why'].filter((item) => typeof item === 'string') as string[])
-      : [];
 
     if (!coords || !id) {
       return;
     }
 
     const [lng, lat] = coords as [number, number];
-    const topReasons = why.slice(0, 3);
+    const reasons = this.lookupReasons(id);
+    const topReasons = reasons.slice(0, 3);
     const html = this.buildPopupHtml(company, city, score, topReasons);
 
     this.popup?.remove();
@@ -308,6 +308,27 @@ export class HunterMapComponent implements AfterViewInit, OnChanges, OnDestroy {
         <button type="button" data-action="add" aria-label="Ajouter ce prospect à une liste">Ajouter</button>
       </div>
     `;
+  }
+
+  private rebuildIndex(): void {
+    this.itemsById.clear();
+    for (const item of this.items ?? []) {
+      const id = item?.prospectId;
+      if (typeof id !== 'string' || id.trim().length === 0) {
+        continue;
+      }
+      this.itemsById.set(id, item);
+    }
+  }
+
+  private lookupReasons(id: string): string[] {
+    const match = this.itemsById.get(id);
+    const source = match?.why ?? [];
+    if (!Array.isArray(source)) {
+      return [];
+    }
+
+    return source.filter((reason): reason is string => typeof reason === 'string');
   }
 
   private escape(value: string): string {

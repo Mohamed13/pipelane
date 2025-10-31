@@ -9,7 +9,6 @@ type HunterFeatureProperties = {
   company?: string;
   city?: string;
   score?: number;
-  why?: string[];
 };
 
 type HunterFeature = {
@@ -200,7 +199,6 @@ export function toGeoJSON(
         company: item.prospect?.company ?? 'Prospect',
         city: item.prospect?.city ?? '',
         score: item.score ?? 0,
-        why: item.why ?? [],
       },
     });
   }
