@@ -1,0 +1,495 @@
+---
+import FlowStep from "@components/FlowStep.astro";
+import FeatureCard from "@components/FeatureCard.astro";
+import StatCard from "@components/StatCard.astro";
+import NeonBadge from "@components/NeonBadge.astro";
+import CTA from "@components/CTA.astro";
+import Icon from "@components/Icon.astro";
+import type { DemoFormDictionary, HomeDictionary, Locale } from "@utils/i18n";
+import { Image } from "astro:assets";
+
+import heroGradient from "../../assets/images/hero/hero-gradient.jpg";
+import mapPin from "../../assets/images/lead-hunter/map-pin-abstract.jpg";
+import phoneChat from "../../assets/images/followup/phone-chat.jpg";
+import calMobile from "../../assets/images/booking/calendar-mobile.jpg";
+import datavizBackdrop from "../../assets/images/stats/dataviz-abstract.jpg";
+
+interface Props {
+  locale: Locale;
+  home: HomeDictionary;
+  formCopy: DemoFormDictionary;
+}
+
+const { locale, home, formCopy } = Astro.props as Props;
+
+const { hero, leadHunter, cadences, qualification, relaunch, timeline, stats, cta } = home;
+
+const heroChips = hero.chips ?? [];
+const heroEntries = hero.panels.leadHunter.entries ?? [];
+const cadenceColumns = cadences.columns ?? [];
+const timelineSteps = timeline.steps ?? [];
+const statsItems = stats.items ?? [];
+
+const heroPrimaryHref = locale === "en" ? "/en#demo" : "/#demo";
+const heroSecondaryHref = "#demo-etapes";
+const leadHunterCtaHref = "/prospection-ia";
+const statsCtaHref = "/securite-rgpd";
+
+const localeCopy = {
+  fr: {
+    howBadge: "Pourquoi c’est simple",
+    howTitle: "Comment Pipelane vous aide",
+    howSubtitle: "Trois bénéfices immédiats pour démarrer",
+    howCards: [
+      {
+        title: heroChips[0] ?? "Plus de réponses",
+        description:
+          "Envoi automatique aux heures qui fonctionnent et test A/B simple sur l’accroche.",
+        icon: "spark"
+      },
+      {
+        title: heroChips[1] ?? "Zéro oubli de relance",
+        description: "Suivi des réponses et relance planifiée pour vous, sans tâche manuelle.",
+        icon: "clock"
+      },
+      {
+        title: heroChips[2] ?? "Tout au même endroit",
+        description: "Prospects, messages, relances et rendez-vous dans une seule console claire.",
+        icon: "chartBar"
+      }
+    ],
+    featuresBadge: "1 plateforme • 4 modules",
+    featuresTitle: "Fonctionnalités simples",
+    featuresSubtitle: "Chaque module s’occupe d’une étape du parcours client.",
+    proofsTitle: "Preuves & FAQ courte",
+    proofsSubtitle: "Comprenez ce que vous obtenez avant de lancer la démo.",
+    faqTitle: "Questions fréquentes",
+    faqItems: [
+      {
+        question: "Comment se déroule le flux Lead Hunter → Booking ?",
+        answer:
+          "Lead Hunter trouve vos prospects, la cadence envoie Email/WhatsApp/SMS, puis on propose 2 créneaux."
+      },
+      {
+        question: "Qui gère les règles et la conformité ?",
+        answer:
+          "Pipelane applique STOP SMS, désinscription email et la règle WhatsApp 24 h automatiquement."
+      },
+      {
+        question: "Faut-il ajouter d’autres outils ?",
+        answer:
+          "Non. Tout est inclus, avec exports si vous voulez alimenter votre CRM ou votre calendrier."
+      }
+    ]
+  },
+  en: {
+    howBadge: "Why it’s simple",
+    howTitle: "How Pipelane helps",
+    howSubtitle: "Three quick wins before you start",
+    howCards: [
+      {
+        title: heroChips[0] ?? "More replies",
+        description: "Automatic sending at the best time with simple A/B testing on the hook.",
+        icon: "spark"
+      },
+      {
+        title: heroChips[1] ?? "No missed follow-ups",
+        description: "Replies are tracked and follow-ups scheduled for you, no manual to-dos.",
+        icon: "clock"
+      },
+      {
+        title: heroChips[2] ?? "Everything in one place",
+        description: "Leads, messages, reminders and bookings live in one clear console.",
+        icon: "chartBar"
+      }
+    ],
+    featuresBadge: "1 platform • 4 modules",
+    featuresTitle: "Simple features",
+    featuresSubtitle: "Each module covers the next step of the journey.",
+    proofsTitle: "Proof & quick FAQ",
+    proofsSubtitle: "Know what you get before you launch the demo.",
+    faqTitle: "Quick questions",
+    faqItems: [
+      {
+        question: "How does the Lead Hunter → Booking flow work?",
+        answer:
+          "Lead Hunter finds the leads, the cadence sends Email/WhatsApp/SMS, then we offer two slots."
+      },
+      {
+        question: "Who takes care of compliance and rules?",
+        answer:
+          "Pipelane enforces SMS STOP, email unsubscribe and the WhatsApp 24h rule automatically."
+      },
+      {
+        question: "Do I need other tools to begin?",
+        answer:
+          "No. Everything is included, with exports if you want to push data into your CRM or calendar."
+      }
+    ]
+  }
+}[locale];
+
+const {
+  howBadge,
+  howTitle,
+  howSubtitle,
+  howCards,
+  featuresBadge,
+  featuresTitle,
+  featuresSubtitle,
+  proofsTitle,
+  proofsSubtitle,
+  faqTitle,
+  faqItems
+} = localeCopy;
+---
+<main class="space-y-28 lg:space-y-36">
+  <section id="hero" class="section relative overflow-hidden">
+    <div class="container-page grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)]">
+      <div class="space-y-8">
+        <NeonBadge text={hero.badge} />
+        <h1 class="text-balance font-semibold on-surface-strong max-w-[60ch]">
+          {hero.headline}
+        </h1>
+        <p class="max-w-[60ch] text-lg leading-relaxed on-surface">
+          {hero.description}
+        </p>
+        <ul class="flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.3em]">
+          {heroChips.map((chip) => (
+            <li class="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.28em] on-surface-strong">
+              <span class="h-1.5 w-1.5 rounded-full bg-primary/90"></span>
+              {chip}
+            </li>
+          ))}
+        </ul>
+        <div class="flex flex-col gap-3 pt-4 sm:flex-row sm:items-center">
+          <a
+            href={heroPrimaryHref}
+            class="btn-primary min-h-[44px] rounded-xl px-6 shadow-glow focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+            data-analytics="cta_click"
+            data-location="hero-primary"
+          >
+            {hero.primaryCta}
+          </a>
+          <a
+            href={heroSecondaryHref}
+            class="btn-ghost min-h-[44px] rounded-xl px-6 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+            data-analytics="cta_click"
+            data-location="hero-secondary"
+          >
+            {hero.secondaryCta}
+          </a>
+        </div>
+      </div>
+      <div class="relative isolate" data-parallax data-parallax-speed="0.22">
+       
+        <div class="relative space-y-5">
+          <div class="glass overflow-hidden rounded-[28px] border border-line/25 p-6 shadow-soft">
+            <div class="space-y-5">
+              <div class="flex items-center justify-between rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-primary">
+                <span>{hero.panels.leadHunter.label}</span>
+                <span>{hero.panels.leadHunter.score}</span>
+              </div>
+              <div class="grid gap-3 text-sm on-surface">
+                {heroEntries.map((entry) => (
+                  <div class="glass flex items-center justify-between rounded-2xl border border-line/25 bg-surfaceOverlay/80 px-4 py-3">
+                    <div>
+                      <p class="font-semibold on-surface-strong">{entry.title}</p>
+                      <p class="text-xs text-textMuted">{entry.subtitle}</p>
+                    </div>
+                    <span class="rounded-full bg-primary/15 px-3 py-1 text-xs text-primary/90">
+                      {entry.tag}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div class="rounded-2xl border border-line/30 bg-surfaceOverlay/70 p-4 text-sm on-surface">
+                <p class="text-xs uppercase tracking-[0.3em] text-primary">
+                  {hero.panels.cadence.label}
+                </p>
+                <p class="mt-2 on-surface-strong">{hero.panels.cadence.headline}</p>
+                <p class="text-xs text-textMuted">{hero.panels.cadence.meta}</p>
+              </div>
+              <div class="rounded-2xl border border-line/30 bg-surfaceOverlay/70 p-5 text-sm on-surface space-y-2">
+                <p class="text-xs uppercase tracking-[0.3em] text-primary">
+                  {hero.panels.followUp.label}
+                </p>
+                <p class="font-semibold on-surface-strong">{hero.panels.followUp.headline}</p>
+                <p class="text-xs text-textMuted">{hero.panels.followUp.status}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="comment-on-aide" class="section bg-surface/40">
+    <div class="container-page space-y-10">
+      <div class="space-y-3 text-center">
+        <NeonBadge text={howBadge} />
+        <h2 class="text-3xl font-semibold tracking-tight on-surface-strong sm:text-4xl">
+          {howTitle}
+        </h2>
+        <p class="mx-auto max-w-[60ch] text-base leading-relaxed on-surface">{howSubtitle}</p>
+      </div>
+      <div class="grid gap-6 lg:grid-cols-3">
+        {howCards.map((card, index) => (
+          <FeatureCard
+            title={card.title}
+            description={card.description}
+            icon={card.icon}
+            index={index}
+          />
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section id="fonctionnalites" class="section">
+    <div class="container-page space-y-12">
+      <div class="space-y-3 text-center">
+        <NeonBadge text={featuresBadge} />
+        <h2 class="text-3xl font-semibold tracking-tight on-surface-strong sm:text-4xl">
+          {featuresTitle}
+        </h2>
+        <p class="mx-auto max-w-[60ch] text-base leading-relaxed on-surface">
+          {featuresSubtitle}
+        </p>
+      </div>
+      <div class="grid gap-6 xl:grid-cols-2">
+        <FeatureCard
+          title={leadHunter.title}
+          description={leadHunter.description}
+          badge={leadHunter.badge}
+          icon="search"
+          bullets={leadHunter.bullets}
+          index={0}
+        >
+          <div slot="visual" class="space-y-4">
+            <div class="glass rounded-2xl border border-line/30 p-4 text-left shadow-soft">
+              <p class="text-xs uppercase tracking-[0.3em] text-primary">
+                {leadHunter.card.badge}
+              </p>
+              <p class="mt-2 text-sm font-semibold on-surface-strong">{leadHunter.card.title}</p>
+              <ul class="mt-3 space-y-2 text-xs leading-relaxed on-surface">
+                {leadHunter.card.bullets.map((item) => (
+                  <li class="flex items-start gap-2">
+                    <span class="mt-1 h-1.5 w-1.5 rounded-full bg-primary/75"></span>
+                    <span class="line-clamp-3">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <figure class="overflow-hidden rounded-2xl border border-primary/20 bg-primary/10">
+              <Image
+                src={mapPin}
+                alt={leadHunter.card.imageAlt}
+                widths={[480, 768, 1080]}
+                sizes="(max-width: 768px) 90vw, 32vw"
+                loading="lazy"
+                decoding="async"
+                class="h-full w-full object-cover"
+              />
+            </figure>
+          </div>
+        </FeatureCard>
+
+        <FeatureCard
+          title={cadences.title}
+          description={cadences.description}
+          badge={cadences.badge}
+          icon="send"
+          index={1}
+        >
+          <div slot="visual" class="grid gap-3">
+            {cadenceColumns.map((column) => (
+              <article class="glass rounded-2xl border border-line/30 p-4 text-left shadow-soft">
+                <div class="flex items-center justify-between gap-3">
+                  <p class="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
+                    {column.channel}
+                  </p>
+                  <span class="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                    <Icon name={column.icon} size={20} />
+                  </span>
+                </div>
+                <ul class="mt-3 space-y-2 text-xs leading-relaxed on-surface">
+                  {column.bullets.map((bullet) => (
+                    <li class="flex items-start gap-2">
+                      <span class="mt-1 h-1.5 w-1.5 rounded-full bg-primary/75"></span>
+                      <span class="line-clamp-3">{bullet}</span>
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
+        </FeatureCard>
+
+        <FeatureCard
+          title={qualification.title}
+          description={qualification.description}
+          badge={qualification.badge}
+          icon="calendar"
+          bullets={qualification.bullets}
+          index={2}
+        >
+          <div slot="visual" class="space-y-4">
+            <div class="space-y-3 text-sm on-surface">
+              {qualification.slots.map((slotItem) => (
+                <div class="flex items-center justify-between rounded-2xl border border-line/30 bg-surfaceOverlay/70 px-4 py-3">
+                  <p class="font-semibold on-surface-strong">{slotItem.label}</p>
+                  <button
+                    type="button"
+                    class="rounded-full border border-primary/30 px-3 py-1 text-xs text-primary"
+                  >
+                    {slotItem.action}
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div class="rounded-2xl border border-primary/25 bg-primary/10 p-4 text-xs text-primary">
+              {qualification.note}
+            </div>
+          </div>
+        </FeatureCard>
+
+        <FeatureCard
+          title={relaunch.title}
+          description={relaunch.message}
+          badge={relaunch.badge}
+          icon="bolt"
+          index={3}
+        >
+          <div slot="visual" class="space-y-4">
+            <div class="glass rounded-2xl border border-line/30 p-4 text-left shadow-soft">
+              <p class="text-xs text-textMuted">{relaunch.status}</p>
+              <p class="mt-3 text-xs uppercase tracking-[0.3em] text-primary">
+                {relaunch.reasonsTitle}
+              </p>
+              <ul class="mt-3 space-y-2 text-xs leading-relaxed on-surface">
+                {relaunch.reasons.map((reason) => (
+                  <li class="flex items-start gap-2">
+                    <span class="mt-1 h-1.5 w-1.5 rounded-full bg-primary/75"></span>
+                    <span class="line-clamp-3">{reason}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div class="rounded-2xl border border-primary/25 bg-primary/10 p-4 text-xs text-primary">
+              {relaunch.notice}
+            </div>
+          </div>
+        </FeatureCard>
+      </div>
+      <div class="flex justify-center">
+        <a
+          href={leadHunterCtaHref}
+          class="inline-flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.3em] text-primary transition hover:text-primary/80"
+          data-analytics="cta_click"
+          data-location="lead-hunter-link"
+        >
+          {leadHunter.ctaLabel}
+          <span aria-hidden="true">→</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section id="demo-etapes" class="section">
+    <div class="container-page space-y-10">
+      <div class="space-y-3 text-center">
+        <NeonBadge text={timeline.badge} />
+        <h2 class="text-3xl font-semibold tracking-tight on-surface-strong sm:text-4xl">
+          {timeline.title}
+        </h2>
+        <p class="text-sm uppercase tracking-[0.3em] text-textMuted">{timeline.subtitle}</p>
+      </div>
+      <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+        {timelineSteps.map((step, index) => (
+          <FlowStep title={step.title} description={step.description} icon={step.icon} index={index} />
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section id="preuves" class="section bg-surface/40">
+    <div class="container-page space-y-10">
+      <div class="space-y-3 text-center">
+        <NeonBadge text={stats.badge} />
+        <h2 class="text-3xl font-semibold tracking-tight on-surface-strong sm:text-4xl">
+          {proofsTitle}
+        </h2>
+        <p class="mx-auto max-w-[60ch] text-base leading-relaxed on-surface">{proofsSubtitle}</p>
+      </div>
+      <div class="stack-safe grid gap-6 md:grid-cols-12 md:gap-8">
+        <div class="kpi-grid md:col-span-7 space-y-4">
+          <div aria-hidden="true" class="kpi-grid__backdrop">
+            <div class="aspect-[4/3] w-full">
+              <Image
+                src={datavizBackdrop}
+                alt=""
+                role="presentation"
+                widths={[480, 768, 1024]}
+                sizes="(max-width: 768px) 90vw, 100vw"
+                loading="lazy"
+                decoding="async"
+                class="h-full w-full object-cover opacity-30"
+              />
+            </div>
+          </div>
+          <div class="grid gap-6 md:grid-cols-3">
+            {statsItems.map((item) => (
+              <StatCard
+                label={item.label}
+                value={item.value}
+                hint={item.hint}
+                note={item.note}
+                tooltip={item.tooltip}
+              />
+            ))}
+          </div>
+        </div>
+        <div class="faq-col md:col-span-5 space-y-4">
+          <div class="space-y-4">
+            <h3 class="text-xl font-semibold tracking-tight on-surface-strong">{faqTitle}</h3>
+            <div class="space-y-3">
+              {faqItems.map((faq) => (
+                <div class="faq-card text-left">
+                  <p class="text-sm font-semibold leading-relaxed on-surface-strong">{faq.question}</p>
+                  <p class="mt-2 text-sm leading-relaxed on-surface line-clamp-3">{faq.answer}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <a
+            href={statsCtaHref}
+            class="inline-flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.3em] text-primary transition hover:text-primary/80"
+          >
+            {stats.ctaLabel}
+            <span aria-hidden="true">→</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <CTA
+    id="demo"
+    title={cta.title}
+    description={cta.description}
+    badge={cta.badge}
+    primary={{
+      label: cta.primaryLabel,
+      href: heroPrimaryHref,
+      analyticsId: "cta-demo-primary"
+    }}
+    secondary={{
+      label: cta.secondaryLabel,
+      href: leadHunterCtaHref,
+      analyticsId: "cta-demo-secondary"
+    }}
+    formCopy={formCopy}
+    demoLabel={cta.demoLabel}
+  />
+</main>

@@ -6,6 +6,9 @@ import Section from "@components/Section.astro";
 import CTA from "@components/CTA.astro";
 import Icon from "@components/Icon.astro";
 import NeonBadge from "@components/NeonBadge.astro";
+import { Image } from "astro:assets";
+
+import shieldVisual from "../assets/images/security/shield-glow.jpg";
 
 const metaTitle = "Sécurité & RGPD – Pipelane";
 const metaDescription = "Découvrez comment Pipelane protège vos données : chiffrement, consentements, hébergement UE et audit complet.";
@@ -37,7 +40,7 @@ const guarantees = [
   <Navbar currentPath={Astro.url.pathname} />
   <main class="space-y-32">
     <section class="section">
-      <div class="container-page space-y-6">
+      <div class="container-page space-y-8">
         <NeonBadge text="Sécurité & RGPD" />
         <h1 class="text-balance font-semibold on-surface-strong max-w-[42ch]">
           Sécurité & RGPD
@@ -45,6 +48,19 @@ const guarantees = [
         <p class="max-w-3xl text-lg leading-relaxed on-surface">
           Pipelane est conçu pour respecter vos obligations légales : consentement, opt-out, traçabilité, hébergement UE et gouvernance des accès.
         </p>
+        <div class="overflow-hidden rounded-3xl border border-line/35 bg-surfaceOverlay/60 p-0">
+          <div class="aspect-16-10">
+            <Image
+              src={shieldVisual}
+              alt="Icône de bouclier lumineux pour symboliser la sécurité et le RGPD"
+              widths={[640, 1024, 1440]}
+              sizes="(max-width: 768px) 95vw, 60vw"
+              loading="lazy"
+              decoding="async"
+              class="h-full w-full object-cover"
+            />
+          </div>
+        </div>
       </div>
     </section>
 

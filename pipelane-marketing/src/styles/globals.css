@@ -89,6 +89,22 @@ main {
   padding-inline: clamp(16px, 4vw, 32px);
 }
 
+.aspect-4-3 {
+  aspect-ratio: 4 / 3;
+}
+
+.aspect-4-5 {
+  aspect-ratio: 4 / 5;
+}
+
+.aspect-16-10 {
+  aspect-ratio: 16 / 10;
+}
+
+.aspect-2-1 {
+  aspect-ratio: 2 / 1;
+}
+
 .section {
   padding-block: 56px;
 }
@@ -157,6 +173,87 @@ main {
   color: var(--badge-text);
   background-color: var(--badge-bg);
   border-radius: 9999px;
+}
+
+.stack-safe {
+  isolation: isolate;
+  position: relative;
+}
+
+.kpi-grid {
+  position: relative;
+  isolation: isolate;
+  z-index: 0;
+}
+
+.kpi-grid__backdrop {
+  position: absolute;
+  inset: -32px;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 32px;
+  overflow: hidden;
+  opacity: 0.75;
+  display: flex;
+  justify-content: center;
+}
+
+.kpi-card {
+  position: relative;
+  z-index: 0;
+  display: block;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  overflow: hidden;
+  padding: 20px;
+  min-height: 180px;
+}
+
+.kpi-card::before {
+  content: "";
+  position: absolute;
+  inset: -24px;
+  border-radius: inherit;
+  background:
+    radial-gradient(120px 120px at 25% 20%, rgba(117, 240, 255, 0.18), transparent 60%),
+    radial-gradient(140px 140px at 85% 70%, rgba(155, 140, 255, 0.16), transparent 60%);
+  filter: blur(18px);
+  z-index: -1;
+  pointer-events: none;
+}
+
+.kpi-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.faq-col {
+  position: relative;
+  z-index: 0;
+}
+
+.faq-card {
+  position: relative;
+  z-index: 0;
+  border-radius: 16px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.faq-card::before {
+  content: "";
+  position: absolute;
+  inset: -20px;
+  border-radius: inherit;
+  background: radial-gradient(120px 120px at 15% 25%, rgba(117, 240, 255, 0.16), transparent 60%);
+  filter: blur(18px);
+  z-index: -1;
+  pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

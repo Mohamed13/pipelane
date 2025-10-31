@@ -1,67 +1,47 @@
 ---
-const productLinks = [
-  { href: "/", label: "Produit" },
-  { href: "/prospection-ia", label: "Prospection IA" },
-  { href: "/relance-intelligente", label: "Relance intelligente" },
-  { href: "/prix", label: "Prix" }
-];
+import type { FooterDictionary, Locale } from "@utils/i18n";
+import { DEFAULT_LOCALE, getTranslations, formatWithYear } from "@utils/i18n";
 
-const trustLinks = [
-  { href: "/securite-rgpd", label: "Sécurité & RGPD" },
-  { href: "https://status.pipelane.app", label: "Statut", external: true },
-  { href: "https://docs.pipelane.app", label: "Docs", external: true }
-];
+interface Props {
+  locale?: Locale;
+  footer?: FooterDictionary;
+}
 
-const companyLinks = [
-  { href: "/blog", label: "Ressources" },
-  { href: "mailto:contact@pipelane.app", label: "Contact", external: true },
-  { href: "/mentions-legales", label: "Mentions légales & Privacy" }
-];
+const {
+  locale = DEFAULT_LOCALE,
+  footer
+} = Astro.props as Props;
+
+const footerCopy = footer ?? getTranslations(DEFAULT_LOCALE).footer;
+const currentYear = new Date().getFullYear();
 ---
 <footer class="border-t border-line/20 bg-surfaceOverlay/70 backdrop-blur">
-  <div class="container-page grid gap-12 py-16 md:grid-cols-[repeat(3,minmax(0,1fr))]">
-    <div class="space-y-4">
-      <p class="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Produit</p>
-      <ul class="space-y-2 text-sm on-surface">
-        {productLinks.map((link) => (
-          <li key={link.href}>
-            <a href={link.href} class="transition hover:text-primary" target={link.external ? "_blank" : undefined} rel={link.external ? "noreferrer" : undefined}>
-              {link.label}
-            </a>
-          </li>
-        ))}
-      </ul>
-    </div>
-    <div class="space-y-4">
-      <p class="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Confiance</p>
-      <ul class="space-y-2 text-sm on-surface">
-        {trustLinks.map((link) => (
-          <li key={link.href}>
-            <a href={link.href} class="transition hover:text-primary" target={link.external ? "_blank" : undefined} rel={link.external ? "noreferrer" : undefined}>
-              {link.label}
-            </a>
-          </li>
-        ))}
-      </ul>
-    </div>
-    <div class="space-y-4">
-      <p class="text-xs font-semibold uppercase tracking-[0.3em] text-primary">À propos</p>
-      <ul class="space-y-2 text-sm on-surface">
-        {companyLinks.map((link) => (
-          <li key={link.href}>
-            <a href={link.href} class="transition hover:text-primary" target={link.external ? "_blank" : undefined} rel={link.external ? "noreferrer" : undefined}>
-              {link.label}
-            </a>
-          </li>
-        ))}
-      </ul>
-    </div>
+  <div class="container-page flex flex-wrap items-start justify-between gap-10 py-12">
+    {footerCopy.sections.map((section) => (
+      <div class="flex flex-col gap-3 min-w-[180px]" key={section.title}>
+        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-primary">{section.title}</p>
+        <ul class="flex flex-wrap gap-x-6 gap-y-2 text-sm on-surface">
+          {section.links.map((link) => (
+            <li key={link.href} class="whitespace-nowrap">
+              <a
+                href={link.href}
+                class="transition hover:text-primary"
+                target={link.external ? "_blank" : undefined}
+                rel={link.external ? "noreferrer" : undefined}
+              >
+                {link.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))}
   </div>
   <div class="border-t border-line/15">
     <div class="container-page flex flex-col gap-4 py-8 text-xs uppercase tracking-[0.25em] on-surface md:flex-row md:items-center md:justify-between">
-      <span>Pipelane</span>
-      <span>© {new Date().getFullYear()} Pipelane. Tous droits réservés.</span>
-      <span class="tracking-[0.3em] text-primary/70">Remplissez votre pipe sans écrire un seul email.</span>
+      <span>{footerCopy.brand}</span>
+      <span>{formatWithYear(footerCopy.rights, currentYear)}</span>
+      <span class="tracking-[0.3em] text-primary/70">{footerCopy.tagline}</span>
     </div>
   </div>
 </footer>

@@ -1,0 +1,254 @@
+{
+  "meta": {
+    "title": "Pipelane — Trouver des clients • Prospecter • Relancer • Réserver",
+    "description": "Expliquez votre cible. Pipelane fait le reste : recherche de prospects, messages Email/WhatsApp/SMS, relances intelligentes et prise de rendez-vous en 2 clics.",
+    "canonical": "https://www.pipelane.app",
+    "ogTitle": "Pipelane",
+    "ogDescription": "Trouver • Prospecter • Relancer • Réserver"
+  },
+  "navigation": {
+    "logoLabel": "Pipelane",
+    "openMenu": "Ouvrir la navigation",
+    "appearance": "Apparence",
+    "beta": "BÊTA",
+    "links": {
+      "product": "Produit",
+      "prospection": "Prospection IA",
+      "followUp": "Relance intelligente",
+      "pricing": "Prix",
+      "security": "Sécurité & RGPD",
+      "blog": "Ressources",
+      "demo": "Demander une démo",
+      "launchDemo": "Lancer la démo"
+    },
+    "language": { "label": "Langue", "switchTo": "EN" }
+  },
+  "footer": {
+    "sections": [
+      {
+        "title": "Produit",
+        "links": [
+          { "href": "/", "label": "Produit" },
+          { "href": "/prospection-ia", "label": "Prospection IA" },
+          { "href": "/relance-intelligente", "label": "Relance intelligente" },
+          { "href": "/prix", "label": "Prix" }
+        ]
+      },
+      {
+        "title": "Confiance",
+        "links": [
+          { "href": "/securite-rgpd", "label": "Sécurité & RGPD" },
+          { "href": "https://status.pipelane.app", "label": "Statut", "external": true },
+          { "href": "https://docs.pipelane.app", "label": "Docs", "external": true }
+        ]
+      },
+      {
+        "title": "À propos",
+        "links": [
+          { "href": "/blog", "label": "Ressources" },
+          { "href": "mailto:contact@pipelane.app", "label": "Contact", "external": true },
+          { "href": "/mentions-legales", "label": "Mentions légales & Privacy" }
+        ]
+      }
+    ],
+    "brand": "Pipelane",
+    "rights": "© {year} Pipelane. Tous droits réservés.",
+    "tagline": "Remplissez votre pipe sans écrire un seul email."
+  },
+  "home": {
+    "hero": {
+      "badge": "De la recherche au rendez-vous, en une seule plateforme",
+      "headline": "Votre assistant pour trouver des clients et remplir votre agenda",
+      "description": "Dites qui vous visez (activité, zone). Pipelane trouve les prospects, envoie des messages utiles, relance au bon moment et propose 2 créneaux. Vous ne gérez que les échanges intéressants.",
+      "chips": ["Plus de réponses", "Zéro oubli de relance", "Tout au même endroit"],
+      "primaryCta": "Demander une démo",
+      "secondaryCta": "Voir comment ça marche",
+      "panels": {
+        "leadHunter": {
+          "label": "Trouver des prospects",
+          "score": "Score 0–100",
+          "entries": [
+            { "title": "Maison Nova · 94", "subtitle": "Paris · Site lent sur mobile", "tag": "Pourquoi ce lead ?" },
+            { "title": "Bistro Lumen · 88", "subtitle": "Lyon · Pas de réservation en ligne", "tag": "Score élevé" }
+          ],
+          "badge": "Pourquoi ce lead ?"
+        },
+        "cadence": {
+          "label": "Lancer la prospection",
+          "headline": "Email → WhatsApp → SMS",
+          "meta": "Envoi étalé • Heures optimales • A/B simple"
+        },
+        "followUp": {
+          "label": "Relancer intelligemment",
+          "headline": "« Bonjour Camille, voici un cas proche du vôtre — je vous l’envoie ? »",
+          "status": "Dernier échange lu • Pas de réponse depuis 3 jours",
+          "imageAlt": "Console opérateur Pipelane avec suivi en direct"
+        }
+      }
+    },
+    "leadHunter": {
+      "badge": "Étape 1 — Lead Hunter",
+      "title": "Trouvez des prospects qualifiés en 60 secondes",
+      "description": "Saisissez un secteur et une zone — ou écrivez en langage naturel. Pipelane agrège les sources, enrichit (site/email/réseaux), donne un score 0–100 et explique « Pourquoi ce lead ? ».",
+      "bullets": [
+        "Critères simples (activité, zone, avis, site, réseaux)",
+        "Liste scorée + raisons en clair",
+        "1-clic : créer la liste → créer la cadence"
+      ],
+      "card": {
+        "title": "Pourquoi ce lead ?",
+        "badge": "Score 0–100",
+        "bullets": ["Pas de réservation en ligne", "Site lent sur mobile", "Instagram actif"],
+        "icon": "target",
+        "imageAlt": "Carte et liste de prospects avec score",
+        "imageAspectRatio": "4 / 3"
+      },
+      "ctaLabel": "Voir l’agent de prospection"
+    },
+    "cadences": {
+      "badge": "Étape 2 — Cadences",
+      "title": "Prospectez sans friction : Email, WhatsApp et SMS",
+      "description": "Messages courts (≤ 120 mots). Envoi étalé, heures optimales et A/B simple pour l’objet ou l’introduction.",
+      "columns": [
+        {
+          "channel": "Email",
+          "icon": "mail",
+          "bullets": [
+            "Envoi étalé automatiquement (pas de pics)",
+            "Heures qui répondent le mieux",
+            "Test A/B simple (objet/intro)"
+          ],
+          "imageAlt": "Orchestration email dans Pipelane"
+        },
+        {
+          "channel": "WhatsApp",
+          "icon": "smartphone",
+          "bullets": [
+            "Rythme maîtrisé (sans spam)",
+            "Règle 24 h respectée (template si besoin)",
+            "Modèles approuvés, personnalisés"
+          ],
+          "imageAlt": "Connecteurs WhatsApp et enrichissement automatique"
+        },
+        {
+          "channel": "SMS",
+          "icon": "sms",
+          "bullets": [
+            "Envoi mesuré (volume raisonnable)",
+            "Pas la nuit par défaut",
+            "Désinscription facile (STOP)"
+          ],
+          "imageAlt": "Rappels SMS et confirmations"
+        }
+      ],
+      "compliance": "Conformité : Email (désinscription), SMS (STOP), WhatsApp 24 h (modèles approuvés hors fenêtre)."
+    },
+    "qualification": {
+      "badge": "Étape 3 — Qualification & Booking",
+      "title": "Qualifiez en 3–5 questions, réservez en 2 clics",
+      "description": "Sur réponse, Pipelane pose 3–5 questions, évalue l’intention et propose 2 créneaux (ou un lien). Le rendez-vous est confirmé et ajouté au calendrier/CRM.",
+      "bullets": ["Intent 0–100", "Offre 2 créneaux", "Ajout auto au calendrier/CRM"],
+      "cardTitle": "Offre 2 créneaux",
+      "slots": [
+        { "label": "Mar 10:00–10:30", "action": "Confirmer" },
+        { "label": "Mer 15:30–16:00", "action": "Confirmer" }
+      ],
+      "note": "Synchronisation calendrier & CRM automatique"
+    },
+    "relaunch": {
+      "badge": "Étape 4 — Relance",
+      "title": "La relance qui ne saoule pas",
+      "message": "« Bonjour Camille, vous m’indiquiez vouloir automatiser vos relances. Voici un cas proche du vôtre — je vous l’envoie ? »",
+      "status": "Dernier échange lu • Pas de réponse depuis 3 jours",
+      "reasonsTitle": "Pourquoi cette proposition ?",
+      "reasons": [
+        "Ancienneté de l’échange",
+        "Heure locale qui performe",
+        "Angle “valeur” pour ce secteur"
+      ],
+      "notice": "Opt-out/STOP respecté et règle WhatsApp 24 h (modèles approuvés hors fenêtre).",
+      "imageAlt": "Suggestions de relance Pipelane"
+    },
+    "timeline": {
+      "badge": "Le parcours en clair",
+      "title": "De la recherche au rendez-vous, en 4 étapes",
+      "subtitle": "Trouver → Prospecter → Relancer → Réserver",
+      "steps": [
+        { "title": "Trouver", "description": "Lead Hunter IA → liste scorée", "icon": "search" },
+        { "title": "Prospecter", "description": "Cadence Email/WA/SMS", "icon": "send" },
+        { "title": "Relancer", "description": "Moment + angle + message court", "icon": "bolt" },
+        { "title": "Réserver", "description": "2 créneaux → confirmation → CRM", "icon": "calendar" }
+      ]
+    },
+    "stats": {
+      "badge": "Preuve & repères",
+      "title": "Comprenez vos résultats en un coup d’œil",
+      "items": [
+        {
+          "label": "Vitesse de réponse aux nouveaux messages",
+          "value": "Très rapide",
+          "hint": "Réponse en secondes, pas en heures",
+          "note": "Plus vous répondez vite, plus vous qualifiez. Expliquer simplement dans l’app.",
+          "tooltip": "Répondre très vite garde l’attention du prospect. Au-delà, l’intérêt chute."
+        },
+        {
+          "label": "Réponses obtenues",
+          "value": "En hausse",
+          "hint": "Grâce au bon timing et à l’A/B",
+          "note": "Pipelane étale l’envoi et teste l’accroche (objet/intro) pour maximiser les réponses.",
+          "tooltip": "Le bon créneau + une accroche claire = plus de retours."
+        },
+        {
+          "label": "Rendez-vous",
+          "value": "Plus simples",
+          "hint": "2 créneaux proposés + rappels",
+          "note": "Moins de ping-pong : on confirme et on ajoute au calendrier.",
+          "tooltip": "Deux choix clairs → plus d’acceptation et de présence le jour J."
+        }
+      ],
+      "ctaLabel": "Sécurité & RGPD"
+    },
+    "cta": {
+      "badge": "Plateforme tout-en-un",
+      "title": "Essayez sans tout réinventer.",
+      "description": "On vous aide à démarrer avec 20 prospects de démo, 3 messages et 2 créneaux.",
+      "primaryLabel": "Demander une démo",
+      "secondaryLabel": "Voir la démo en 3 minutes",
+      "demoLabel": "Lancer la démo"
+    }
+  },
+  "forms": {
+    "demo": {
+      "labels": {
+        "name": "Nom",
+        "email": "Email",
+        "company": "Entreprise",
+        "volume": "Volume mensuel",
+        "message": "Message"
+      },
+      "placeholders": {
+        "name": "Votre nom",
+        "email": "vous@entreprise.com",
+        "company": "Pipelane",
+        "message": "Décrivez votre besoin en 1–2 phrases"
+      },
+      "volume": {
+        "placeholder": "Sélectionnez",
+        "options": [
+          { "value": "-5k", "label": "Moins de 5 000" },
+          { "value": "5k-25k", "label": "5 000 – 25 000" },
+          { "value": "25k-100k", "label": "25 000 – 100 000" },
+          { "value": "100k+", "label": "Plus de 100 000" }
+        ]
+      },
+      "submit": "Demander une démo",
+      "status": {
+        "sending": "Envoi…",
+        "success": "Merci, on revient vers vous sous 24 h.",
+        "error": "Impossible d’envoyer le formulaire.",
+        "genericError": "Impossible d’envoyer le formulaire."
+      },
+      "disclaimer": "Réponse sous 24 h · Zéro spam"
+    }
+  }
+}

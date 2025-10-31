@@ -7,18 +7,24 @@ interface Props {
   title?: string;
   description?: string;
   canonical?: string;
+  lang?: string;
+  ogTitle?: string;
+  ogDescription?: string;
 }
 
 const {
   title = "Pipelane — centralisez, automatisez, convertissez.",
   description =
     "Pipelane est la plateforme d'automations omni-canales pour orchestrer WhatsApp, Email et SMS depuis une console unique.",
-  canonical = "https://www.pipelane.app"
+  canonical = "https://www.pipelane.app",
+  lang = "fr",
+  ogTitle = "Pipelane",
+  ogDescription = "Qualify • Relaunch • Book"
 } = Astro.props as Props;
 
 const isDev = import.meta.env.DEV;
 ---
-<html lang="fr" class="dark">
+<html lang={lang} class="dark" data-theme="dark">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -30,14 +36,14 @@ const isDev = import.meta.env.DEV;
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Pipelane" />
-    <meta property="og:title" content="Pipelane" />
-    <meta property="og:description" content="Qualify • Relaunch • Book" />
+    <meta property="og:title" content={ogTitle} />
+    <meta property="og:description" content={ogDescription} />
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content="/og-pipelane.png" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Pipelane" />
-    <meta name="twitter:description" content="Qualify • Relaunch • Book" />
+    <meta name="twitter:title" content={ogTitle} />
+    <meta name="twitter:description" content={ogDescription} />
     <meta name="twitter:image" content="/og-pipelane.png" />
     <meta name="twitter:creator" content="@pipelane" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -46,16 +52,6 @@ const isDev = import.meta.env.DEV;
     <link rel="manifest" href="/site.webmanifest" />
 
     <slot name="head" />
-
-    <script is:inline>
-      const root = document.documentElement;
-      const stored = localStorage.getItem("theme");
-      const media = window.matchMedia("(prefers-color-scheme: light)");
-      const useLight = stored === "light" || (!stored && media.matches);
-      root.classList.toggle("light", useLight);
-      root.classList.toggle("dark", !useLight);
-      root.dataset.theme = useLight ? "light" : "dark";
-    </script>
   </head>
   <body class="min-h-screen bg-bg text-text">
     <div class="pointer-events-none fixed inset-0 -z-30 bg-hero-gradient opacity-80 blur-3xl"></div>

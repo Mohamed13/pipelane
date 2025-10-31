@@ -1,59 +1,107 @@
 ---
-import ThemeToggle from "./ThemeToggle.astro";
-import NeonBadge from "./NeonBadge.astro";
+import type { Locale, NavigationDictionary } from "@utils/i18n";
+import {
+  DEFAULT_LOCALE,
+  getTranslations,
+  buildLocalizedPath,
+  getAlternateLocale
+} from "@utils/i18n";
 
-interface NavLink {
+type NavKey = keyof NavigationDictionary["links"];
+
+interface NavDefinition {
+  key: NavKey;
   href: string;
-  label: string;
   isBeta?: boolean;
   matches: (path: string) => boolean;
 }
 
-interface Props {
-  currentPath?: string;
+interface NavLink extends NavDefinition {
+  label: string;
 }
 
-const { currentPath = "" } = Astro.props as Props;
+interface Props {
+  currentPath?: string;
+  locale?: Locale;
+  navigation?: NavigationDictionary;
+}
+
+const {
+  currentPath = "",
+  locale = DEFAULT_LOCALE,
+  navigation
+} = Astro.props as Props;
+
+const navCopy = navigation ?? getTranslations(DEFAULT_LOCALE).navigation;
 
 const demoMode = (import.meta.env.PUBLIC_DEMO_MODE ?? "false") === "true";
 const consoleUrl = (import.meta.env.PUBLIC_CONSOLE_URL ?? "http://localhost:4200").replace(/\/$/, "");
 
-const links: NavLink[] = [
-  { href: "/", label: "Produit", matches: (path) => path === "/" },
+const baseDefinitions: NavDefinition[] = [
   {
+    key: "product",
+    href: locale === "en" ? "/en" : "/",
+    matches: (path) => (locale === "en" ? path === "/en" || path === "/en/" : path === "/")
+  },
+  {
+    key: "prospection",
     href: "/prospection-ia",
-    label: "Prospection IA",
     isBeta: true,
     matches: (path) => path.startsWith("/prospection-ia")
   },
   {
+    key: "followUp",
     href: "/relance-intelligente",
-    label: "Relance intelligente",
     isBeta: true,
     matches: (path) => path.startsWith("/relance-intelligente")
   },
-  { href: "/prix", label: "Prix", matches: (path) => path.startsWith("/prix") },
   {
+    key: "pricing",
+    href: "/prix",
+    matches: (path) => path.startsWith("/prix")
+  },
+  {
+    key: "security",
     href: "/securite-rgpd",
-    label: "Sécurité & RGPD",
     matches: (path) => path.startsWith("/securite-rgpd")
   },
-  { href: "/blog", label: "Ressources", matches: (path) => path.startsWith("/blog") },
-  { href: "/#demo", label: "Demander une démo", matches: () => false }
+  {
+    key: "blog",
+    href: "/blog",
+    matches: (path) => path.startsWith("/blog")
+  },
+  {
+    key: "demo",
+    href: locale === "en" ? "/en#demo" : "/#demo",
+    matches: () => false
+  }
 ];
 
-if (demoMode) {
-  links.push({
-    href: `${consoleUrl}/login?demo=1`,
-    label: "Lancer la démo",
-    matches: () => false
-  });
-}
+const links: NavLink[] = baseDefinitions
+  .map((definition) => ({
+    ...definition,
+    label: navCopy.links[definition.key] ?? definition.key
+  }))
+  .concat(
+    demoMode
+      ? [
+          {
+            key: "launchDemo",
+            href: `${consoleUrl}/login?demo=1`,
+            label: navCopy.links.launchDemo,
+            matches: () => false
+          }
+        ]
+      : []
+  );
 
 const isActive = (link: NavLink) => {
   if (!currentPath) return false;
   return link.matches(currentPath);
 };
+
+const alternateLocale = getAlternateLocale(locale);
+const languageToggleHref = buildLocalizedPath(currentPath || "/", alternateLocale);
 ---
 <header class="pointer-events-none sticky top-4 z-[var(--z-nav)] flex justify-center px-4 lg:top-6">
   <div class="pointer-events-auto w-full max-w-6xl">
@@ -61,14 +109,14 @@ const isActive = (link: NavLink) => {
       data-nav-shell
       class="glass relative flex w-full items-center justify-between gap-4 rounded-2xl px-4 py-2 text-sm shadow-soft transition-colors duration-200 data-[scrolled='true']:bg-white/5 data-[scrolled='true']:backdrop-blur-md md:px-6 md:py-3"
     >
-      <div class="absolute inset-0 -z-10 animate-gradient-slow bg-[radial-gradient(120%_120%_at_0%_0%,rgba(56,189,248,0.18),transparent),radial-gradient(120%_140%_at_100%_50%,rgba(167,139,250,0.24),transparent)]"></div>
-      <a href="/" class="group flex items-center gap-3" aria-label="Pipelane logo">
-        <span class="sr-only">Pipelane</span>
+      <div class="absolute inset-0 -z-10 bg-[radial-gradient(120%_120%_at_0%_0%,rgba(56,189,248,0.18),transparent),radial-gradient(120%_140%_at_100%_50%,rgba(167,139,250,0.24),transparent)]"></div>
+      <a href={locale === "en" ? "/en" : "/"} class="group flex items-center gap-3" aria-label={navCopy.logoLabel}>
+        <span class="sr-only">{navCopy.logoLabel}</span>
         <svg
           class="w-[180px] max-w-full md:w-[220px]"
           width="220"
           height="56"
-          viewBox="0 0 680 140"
+          viewBox="0 0 320 140"
           xmlns="http://www.w3.org/2000/svg"
           role="img"
           aria-hidden="true"
@@ -79,7 +127,6 @@ const isActive = (link: NavLink) => {
               <stop offset="100%" stop-color="#7CE4D9" />
             </linearGradient>
           </defs>
-          <rect width="680" height="140" rx="16" fill="#0D0F12" />
           <g transform="translate(20,28)">
             <path d="M10 40 C60 10, 90 70, 140 40 S220 10, 260 40" stroke="url(#plFlowNav)" stroke-width="6" fill="none" stroke-linecap="round" />
             <circle cx="60" cy="25" r="5" fill="#28C0B0" />
@@ -87,17 +134,13 @@ const isActive = (link: NavLink) => {
             <circle cx="220" cy="25" r="5" fill="#28C0B0" />
             <path d="M260 40 l14 -8 v16 z" fill="#7CE4D9" />
           </g>
-          <g transform="translate(320,85)">
-            <text x="0" y="0" fill="#E8FCF8" font-family="'Space Grotesk', Inter, system-ui, sans-serif" font-weight="700" font-size="44">Pipelane</text>
-            <text x="0" y="26" fill="#6B7280" font-family="Inter, system-ui, sans-serif" font-weight="600" font-size="16" letter-spacing="1.4">QUALIFY • RELAUNCH • BOOK</text>
-          </g>
         </svg>
       </a>
       <button
         type="button"
         class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-line/40 bg-surface/70 on-surface transition hover:text-primary md:hidden"
         data-nav-toggle
-        aria-label="Ouvrir la navigation"
+        aria-label={navCopy.openMenu}
         aria-expanded="false"
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
@@ -126,7 +169,11 @@ const isActive = (link: NavLink) => {
                 data-active={isActive(link) ? "true" : "false"}
               >
                 <span class="relative">{link.label}</span>
-                {link.isBeta && <NeonBadge class="!text-[9px]">BÊTA</NeonBadge>}
+                {link.isBeta && (
+                  <span class="rounded-full border border-primary/40 bg-primary/12 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.32em] text-primary/90">
+                    {navCopy.beta}
+                  </span>
+                )}
                 <span
                   class="pointer-events-none absolute inset-x-2 bottom-1 h-px origin-center scale-x-0 bg-current transition-transform duration-200 ease-out group-hover:scale-x-100 group-data-[active='true']:scale-x-100"
                 ></span>
@@ -135,7 +182,13 @@ const isActive = (link: NavLink) => {
           ))}
           </ul>
         </div>
-        <ThemeToggle />
+        <a
+          href={languageToggleHref}
+          class="inline-flex h-11 items-center rounded-2xl border border-line/25 bg-surface/60 px-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-primary transition hover:text-primary/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+          aria-label={`${navCopy.language.label}: ${navCopy.language.switchTo}`}
+        >
+          {navCopy.language.switchTo}
+        </a>
       </div>
     </nav>
   </div>
@@ -151,14 +204,23 @@ const isActive = (link: NavLink) => {
               aria-current={isActive(link) ? "page" : undefined}
             >
               <span>{link.label}</span>
-              {link.isBeta && <NeonBadge class="!text-[10px]">BÊTA</NeonBadge>}
+              {link.isBeta && (
+                <span class="rounded-full border border-primary/35 bg-primary/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.32em] text-primary/90">
+                  {navCopy.beta}
+                </span>
+              )}
             </a>
           </li>
         ))}
       </ul>
-      <div class="mt-6 flex items-center justify-between border-t border-line/20 pt-6">
-      <p class="text-xs uppercase tracking-[0.3em] text-textMuted">Apparence</p>
-        <ThemeToggle />
+      <div class="mt-6 flex justify-end border-t border-line/20 pt-6">
+        <a
+          href={languageToggleHref}
+          class="inline-flex h-10 items-center justify-center rounded-2xl border border-line/30 px-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-primary transition hover:text-primary/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+          aria-label={`${navCopy.language.label}: ${navCopy.language.switchTo}`}
+        >
+          {navCopy.language.switchTo}
+        </a>
       </div>
     </div>
   </div>

@@ -1,11 +1,24 @@
 ---
+import type { DemoFormDictionary } from "@utils/i18n";
+import { DEFAULT_LOCALE, getTranslations } from "@utils/i18n";
+
 interface Props {
   idPrefix: string;
   compact?: boolean;
   submitLabel?: string;
+  copy?: DemoFormDictionary;
 }
 
-const { idPrefix, compact = false, submitLabel = "Demander une démo" } = Astro.props as Props;
+const defaultCopy = getTranslations(DEFAULT_LOCALE).forms.demo;
+
+const {
+  idPrefix,
+  compact = false,
+  submitLabel,
+  copy = defaultCopy
+} = Astro.props as Props;
+
+const resolvedSubmitLabel = submitLabel ?? copy.submit;
 
 const inputClasses = "w-full rounded-2xl border border-line/35 bg-surfaceOverlay px-4 py-3 text-base on-surface-strong outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/40";
 const selectClasses = `${inputClasses} appearance-none`;
@@ -19,57 +32,60 @@ const footerClasses = compact ? "flex flex-col gap-3 sm:col-span-2 sm:flex-row s
   action="/api/demo-request"
   class={containerClasses}
   novalidate
+  data-status-sending={copy.status.sending}
+  data-status-success={copy.status.success}
+  data-status-error={copy.status.error}
+  data-status-generic-error={copy.status.genericError}
 >
   <div class="grid gap-2">
-    <label class="text-sm font-medium on-surface" for={`${idPrefix}-name`}>Nom</label>
+    <label class="text-sm font-medium on-surface" for={`${idPrefix}-name`}>{copy.labels.name}</label>
     <input
       id={`${idPrefix}-name`}
       name="name"
       type="text"
       required
-      placeholder="Votre nom"
+      placeholder={copy.placeholders.name}
       class={inputClasses}
     />
   </div>
   <div class="grid gap-2">
-    <label class="text-sm font-medium on-surface" for={`${idPrefix}-email`}>Email</label>
+    <label class="text-sm font-medium on-surface" for={`${idPrefix}-email`}>{copy.labels.email}</label>
     <input
       id={`${idPrefix}-email`}
       name="email"
       type="email"
       required
-      placeholder="vous@entreprise.com"
+      placeholder={copy.placeholders.email}
       class={inputClasses}
     />
   </div>
   <div class="grid gap-2">
-    <label class="text-sm font-medium on-surface" for={`${idPrefix}-company`}>Entreprise</label>
+    <label class="text-sm font-medium on-surface" for={`${idPrefix}-company`}>{copy.labels.company}</label>
     <input
       id={`${idPrefix}-company`}
       name="company"
       type="text"
       required
-      placeholder="Pipelane"
+      placeholder={copy.placeholders.company}
       class={inputClasses}
     />
   </div>
   <div class="grid gap-2">
-    <label class="text-sm font-medium on-surface" for={`${idPrefix}-volume`}>Volume mensuel</label>
+    <label class="text-sm font-medium on-surface" for={`${idPrefix}-volume`}>{copy.labels.volume}</label>
     <select id={`${idPrefix}-volume`} name="volume" required class={selectClasses}>
-      <option value="">Sélectionnez</option>
-      <option value="-5k">Moins de 5 000</option>
-      <option value="5k-25k">5 000 - 25 000</option>
-      <option value="25k-100k">25 000 - 100 000</option>
-      <option value="100k+">Plus de 100 000</option>
+      <option value="">{copy.volume.placeholder}</option>
+      {copy.volume.options.map((option) => (
+        <option value={option.value}>{option.label}</option>
+      ))}
     </select>
   </div>
   <div class={`grid gap-2 ${notesClasses}`}>
-    <label class="text-sm font-medium on-surface" for={`${idPrefix}-notes`}>Message</label>
+    <label class="text-sm font-medium on-surface" for={`${idPrefix}-notes`}>{copy.labels.message}</label>
     <textarea
       id={`${idPrefix}-notes`}
       name="notes"
       rows={compact ? 3 : 4}
-      placeholder="Partagez un peu de contexte"
+      placeholder={copy.placeholders.message}
       class={inputClasses}
     ></textarea>
   </div>
@@ -85,10 +101,10 @@ const footerClasses = compact ? "flex flex-col gap-3 sm:col-span-2 sm:flex-row s
       data-demo-submit
       data-analytics="demo_submit"
     >
-      {submitLabel}
+      {resolvedSubmitLabel}
     </button>
     <p data-demo-status class="text-sm text-textMuted"></p>
-    <div class="text-xs uppercase tracking-[0.3em] text-textMuted">Réponse sous 24 h · Zéro spam</div>
+    <div class="text-xs uppercase tracking-[0.3em] text-textMuted">{copy.disclaimer}</div>
   </div>
 </form>
 <script is:inline>
@@ -111,6 +127,10 @@ const footerClasses = compact ? "flex flex-col gap-3 sm:col-span-2 sm:flex-row s
       const status = form.querySelector('[data-demo-status]');
       const submit = form.querySelector('[data-demo-submit]');
       fillUtm(form);
+      const sendingText = form.dataset.statusSending || 'Envoi…';
+      const successText = form.dataset.statusSuccess || 'Merci, on revient vers vous sous 24 h.';
+      const errorText = form.dataset.statusError || "Impossible d’envoyer le formulaire.";
+      const genericErrorText = form.dataset.statusGenericError || errorText;
 
       form.addEventListener('submit', async (event) => {
         event.preventDefault();
@@ -118,7 +138,7 @@ const footerClasses = compact ? "flex flex-col gap-3 sm:col-span-2 sm:flex-row s
         submit?.setAttribute('disabled', 'true');
         submit?.classList.add('opacity-70', 'cursor-wait');
         if (status) {
-          status.textContent = 'Envoi…';
+          status.textContent = sendingText;
           status.classList.remove('text-primary', 'text-red-400');
           status.classList.add('text-textMuted');
         }
@@ -130,7 +150,7 @@ const footerClasses = compact ? "flex flex-col gap-3 sm:col-span-2 sm:flex-row s
           const payload = await response.json().catch(() => ({}));
           if (response.ok) {
             if (status) {
-              status.textContent = 'Merci, on revient vers vous sous 24 h.';
+              status.textContent = successText;
               status.classList.remove('text-textMuted');
               status.classList.add('text-primary');
             }
@@ -145,14 +165,14 @@ const footerClasses = compact ? "flex flex-col gap-3 sm:col-span-2 sm:flex-row s
             });
           } else {
             if (status) {
-              status.textContent = payload?.error ?? 'Impossible d’envoyer le formulaire.';
+              status.textContent = payload?.error ?? errorText;
               status.classList.remove('text-textMuted');
               status.classList.add('text-red-400');
             }
           }
         } catch (error) {
           if (status) {
-            status.textContent = "Impossible d’envoyer le formulaire.";
+            status.textContent = genericErrorText;
             status.classList.remove('text-textMuted');
             status.classList.add('text-red-400');
           }

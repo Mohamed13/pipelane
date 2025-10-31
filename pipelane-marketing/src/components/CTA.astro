@@ -1,6 +1,7 @@
 ---
 import DemoForm from "./DemoForm.astro";
 import NeonBadge from "./NeonBadge.astro";
+import type { DemoFormDictionary } from "@utils/i18n";
 
 type CTAAction = {
   label: string;
@@ -23,6 +24,8 @@ interface LegacyProps {
   primaryHref?: string;
   secondaryLabel?: string;
   secondaryHref?: string;
+  formCopy?: DemoFormDictionary;
+  demoLabel?: string;
 }
 
 const {
@@ -38,7 +41,9 @@ const {
   primaryLabel,
   primaryHref,
   secondaryLabel,
-  secondaryHref
+  secondaryHref,
+  formCopy,
+  demoLabel
 } = Astro.props as LegacyProps;
 
 const resolvedPrimary: CTAAction = primary ?? {
@@ -103,7 +108,7 @@ const consoleUrl = (import.meta.env.PUBLIC_CONSOLE_URL ?? "http://localhost:4200
               data-analytics="cta_click"
               data-location={id ? `${id}-demo` : "cta-demo"}
             >
-              Lancer la démo
+              {demoLabel ?? "Lancer la démo"}
             </a>
           )}
           {resolvedSecondary && (
@@ -122,7 +127,11 @@ const consoleUrl = (import.meta.env.PUBLIC_CONSOLE_URL ?? "http://localhost:4200
       </div>
       {shouldRenderForm && (
         <div class="relative z-10 mt-10 lg:mt-0">
-          <DemoForm idPrefix={`${id ?? "cta"}-form`} submitLabel={resolvedPrimary.label} />
+          <DemoForm
+            idPrefix={`${id ?? "cta"}-form`}
+            submitLabel={resolvedPrimary.label}
+            copy={formCopy}
+          />
         </div>
       )}
       <div class="absolute inset-0 -z-10 scrim">

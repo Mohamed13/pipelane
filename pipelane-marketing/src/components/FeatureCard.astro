@@ -30,7 +30,7 @@ const {
 const hasVisual = Astro.slots.has("visual") || Boolean(image);
 ---
 <article
-  class="reveal glass rounded-3xl border border-line/35 p-8 transition-transform duration-300 hover:-translate-y-1 hover:border-primary/60"
+  class="reveal glass rounded-3xl border border-line/35 p-5 md:p-6 transition-transform duration-300 hover:-translate-y-1 hover:border-primary/60"
   style={`transition-delay: ${index * 70}ms;`}
 >
   <div class={`flex flex-col gap-6 ${hasVisual ? "lg:flex-row lg:items-center" : ""}`}>
@@ -47,14 +47,16 @@ const hasVisual = Astro.slots.has("visual") || Boolean(image);
       </div>
       <div class="space-y-3">
         <h3 class="text-2xl font-semibold tracking-tight on-surface-strong">{title}</h3>
-        {description && <p class="text-base leading-relaxed on-surface">{description}</p>}
+        {description && (
+          <p class="text-base leading-relaxed on-surface line-clamp-3">{description}</p>
+        )}
       </div>
       {bullets.length > 0 && (
         <ul class="space-y-2 text-sm leading-relaxed on-surface">
           {bullets.map((bullet) => (
-            <li class="flex items-start gap-2" >
+            <li class="flex items-start gap-2">
               <span class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-primary/80"></span>
-              <span>{bullet}</span>
+              <span class="line-clamp-3">{bullet}</span>
             </li>
           ))}
         </ul>

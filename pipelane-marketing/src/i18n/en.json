@@ -1,0 +1,250 @@
+{
+  "meta": {
+    "title": "Pipelane — Find clients • Prospect • Follow up • Book",
+    "description": "Describe your target. Pipelane does the rest: lead hunting, useful messages (Email/WhatsApp/SMS), smart follow-ups, and 2-slot booking.",
+    "canonical": "https://www.pipelane.app",
+    "ogTitle": "Pipelane",
+    "ogDescription": "Find • Prospect • Follow up • Book"
+  },
+  "navigation": {
+    "logoLabel": "Pipelane",
+    "openMenu": "Open navigation",
+    "appearance": "Appearance",
+    "beta": "BETA",
+    "links": {
+      "product": "Product",
+      "prospection": "AI Prospecting",
+      "followUp": "Smart Follow-ups",
+      "pricing": "Pricing",
+      "security": "Security & GDPR",
+      "blog": "Resources",
+      "demo": "Request a demo",
+      "launchDemo": "Launch demo"
+    },
+    "language": { "label": "Language", "switchTo": "FR" }
+  },
+  "footer": {
+    "sections": [
+      {
+        "title": "Product",
+        "links": [
+          { "href": "/", "label": "Product" },
+          { "href": "/prospection-ia", "label": "AI Prospecting" },
+          { "href": "/relance-intelligente", "label": "Smart Follow-ups" },
+          { "href": "/prix", "label": "Pricing" }
+        ]
+      },
+      {
+        "title": "Trust",
+        "links": [
+          { "href": "/securite-rgpd", "label": "Security & GDPR" },
+          { "href": "https://status.pipelane.app", "label": "Status", "external": true },
+          { "href": "https://docs.pipelane.app", "label": "Docs", "external": true }
+        ]
+      },
+      {
+        "title": "About",
+        "links": [
+          { "href": "/blog", "label": "Resources" },
+          { "href": "mailto:contact@pipelane.app", "label": "Contact", "external": true },
+          { "href": "/mentions-legales", "label": "Legal & Privacy" }
+        ]
+      }
+    ],
+    "brand": "Pipelane",
+    "rights": "© {year} Pipelane. All rights reserved.",
+    "tagline": "Fill your pipeline without writing a single email."
+  },
+  "home": {
+    "hero": {
+      "badge": "From search to meeting, in one platform",
+      "headline": "Your assistant to find clients and fill your calendar",
+      "description": "Tell us who you target (industry, area). Pipelane finds leads, sends useful messages, follows up at the right time, and offers 2 time slots. You only handle interesting conversations.",
+      "chips": ["More replies", "No missed follow-ups", "Everything in one place"],
+      "primaryCta": "Request a demo",
+      "secondaryCta": "See how it works",
+      "panels": {
+        "leadHunter": {
+          "label": "Find leads",
+          "score": "Score 0–100",
+          "entries": [
+            { "title": "Maison Nova · 94", "subtitle": "Paris · Slow on mobile", "tag": "Why this lead?" },
+            { "title": "Bistro Lumen · 88", "subtitle": "Lyon · No online booking", "tag": "High score" }
+          ],
+          "badge": "Why this lead?"
+        },
+        "cadence": {
+          "label": "Start prospecting",
+          "headline": "Email → WhatsApp → SMS",
+          "meta": "Staggered sending • Best-time delivery • Simple A/B"
+        },
+        "followUp": {
+          "label": "Smart follow-ups",
+          "headline": "“Hi Camille, here’s a case similar to yours — shall I send it?”",
+          "status": "Last message read • No reply in 3 days",
+          "imageAlt": "Pipelane operator console with live tracking"
+        }
+      }
+    },
+    "leadHunter": {
+      "badge": "Step 1 — Lead Hunter",
+      "title": "Find qualified leads in 60 seconds",
+      "description": "Enter a sector and an area — or write in plain language. Pipelane aggregates sources, enriches (site/email/social), gives a 0–100 score and explains “Why this lead?”.",
+      "bullets": [
+        "Simple criteria (industry, area, reviews, site, social)",
+        "Scored list + clear reasons",
+        "1-click: create list → create cadence"
+      ],
+      "card": {
+        "title": "Why this lead?",
+        "badge": "Score 0–100",
+        "bullets": ["No online booking", "Slow on mobile", "Active Instagram"],
+        "icon": "target",
+        "imageAlt": "Map and scored lead list",
+        "imageAspectRatio": "4 / 3"
+      },
+      "ctaLabel": "See the prospecting agent"
+    },
+    "cadences": {
+      "badge": "Step 2 — Cadences",
+      "title": "Prospect without friction: Email, WhatsApp and SMS",
+      "description": "Short messages (≤ 120 words). Staggered sending, best-time delivery, and a simple A/B for subject or intro.",
+      "columns": [
+        {
+          "channel": "Email",
+          "icon": "mail",
+          "bullets": [
+            "Staggered sending (no bursts)",
+            "Send at the best times",
+            "Simple A/B (subject/intro)"
+          ],
+          "imageAlt": "Email orchestration in Pipelane"
+        },
+        {
+          "channel": "WhatsApp",
+          "icon": "smartphone",
+          "bullets": [
+            "Paced sending (no spam)",
+            "24-hour rule handled (template if needed)",
+            "Approved, personalized templates"
+          ],
+          "imageAlt": "WhatsApp connectors and auto enrichment"
+        },
+        {
+          "channel": "SMS",
+          "icon": "sms",
+          "bullets": [
+            "Measured sending",
+            "No night-time sends by default",
+            "Easy opt-out (STOP)"
+          ],
+          "imageAlt": "SMS reminders and confirmations"
+        }
+      ],
+      "compliance": "Compliance: Email (unsubscribe), SMS (STOP), WhatsApp 24h (approved templates outside the window)."
+    },
+    "qualification": {
+      "badge": "Step 3 — Qualification & Booking",
+      "title": "Qualify in 3–5 questions, book in 2 clicks",
+      "description": "When a lead replies, Pipelane asks 3–5 questions, estimates intent and offers 2 time slots (or a link). The meeting is confirmed and added to your calendar/CRM.",
+      "bullets": ["Intent 0–100", "2-slot offer", "Auto add to calendar/CRM"],
+      "cardTitle": "2-slot offer",
+      "slots": [
+        { "label": "Tue 10:00–10:30", "action": "Confirm" },
+        { "label": "Wed 15:30–16:00", "action": "Confirm" }
+      ],
+      "note": "Automatic calendar & CRM sync"
+    },
+    "relaunch": {
+      "badge": "Step 4 — Follow-up",
+      "title": "Follow-ups that don’t annoy",
+      "message": "“Hi Camille, you wanted to automate follow-ups. Here’s a similar case — shall I send it?”",
+      "status": "Last message read • No reply in 3 days",
+      "reasonsTitle": "Why this suggestion?",
+      "reasons": ["Message age", "Top local time", "Value angle for this sector"],
+      "notice": "Opt-out/STOP respected and WhatsApp 24-hour rule (approved templates outside the window).",
+      "imageAlt": "Pipelane follow-up suggestions"
+    },
+    "timeline": {
+      "badge": "The journey, clearly",
+      "title": "From search to meeting, in 4 steps",
+      "subtitle": "Find → Prospect → Follow up → Book",
+      "steps": [
+        { "title": "Find", "description": "AI Lead Hunter → scored list", "icon": "search" },
+        { "title": "Prospect", "description": "Email/WA/SMS cadence", "icon": "send" },
+        { "title": "Follow up", "description": "Right moment + angle + short message", "icon": "bolt" },
+        { "title": "Book", "description": "2 slots → confirmation → CRM", "icon": "calendar" }
+      ]
+    },
+    "stats": {
+      "badge": "Proof & context",
+      "title": "See your results at a glance",
+      "items": [
+        {
+          "label": "Fast reply to new messages",
+          "value": "Very quick",
+          "hint": "Seconds, not hours",
+          "note": "The faster you reply, the higher the qualification. Explained simply in-app.",
+          "tooltip": "Fast replies keep attention; delays reduce interest."
+        },
+        {
+          "label": "Replies received",
+          "value": "Going up",
+          "hint": "Thanks to best-time sending and A/B",
+          "note": "Pipelane staggers sending and tests the hook (subject/intro).",
+          "tooltip": "Right timing + clear hook = more replies."
+        },
+        {
+          "label": "Meetings",
+          "value": "Easier",
+          "hint": "2 slots + reminders",
+          "note": "Less back-and-forth: we confirm and add to the calendar.",
+          "tooltip": "Two clear choices → more acceptance and attendance."
+        }
+      ],
+      "ctaLabel": "Security & GDPR"
+    },
+    "cta": {
+      "badge": "All-in-one platform",
+      "title": "Try it without reinventing your workflow.",
+      "description": "We help you start with 20 demo leads, 3 messages and 2 slots.",
+      "primaryLabel": "Request a demo",
+      "secondaryLabel": "Watch a 3-minute demo",
+      "demoLabel": "Launch demo"
+    }
+  },
+  "forms": {
+    "demo": {
+      "labels": {
+        "name": "Name",
+        "email": "Email",
+        "company": "Company",
+        "volume": "Monthly volume",
+        "message": "Message"
+      },
+      "placeholders": {
+        "name": "Your name",
+        "email": "you@company.com",
+        "company": "Pipelane",
+        "message": "Describe your need in 1–2 sentences"
+      },
+      "volume": {
+        "placeholder": "Select",
+        "options": [
+          { "value": "-5k", "label": "Under 5,000" },
+          { "value": "5k-25k", "label": "5,000 – 25,000" },
+          { "value": "25k-100k", "label": "25,000 – 100,000" },
+          { "value": "100k+", "label": "100,000+" }
+        ]
+      },
+      "submit": "Request a demo",
+      "status": {
+        "sending": "Sending…",
+        "success": "Thanks! We’ll get back to you within 24h.",
+        "error": "We couldn’t send the form.",
+        "genericError": "We couldn’t send the form."
+      },
+      "disclaimer": "Reply within 24h · No spam"
+    }
+  }
+}

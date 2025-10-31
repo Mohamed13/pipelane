@@ -3,9 +3,9 @@ import BaseLayout from "@layouts/Base.astro";
 import Navbar from "@components/Navbar.astro";
 import Footer from "@components/Footer.astro";
 import HomePage from "@components/pages/HomePage.astro";
-import { DEFAULT_LOCALE, getTranslations } from "@utils/i18n";
+import { getTranslations } from "@utils/i18n";
 
-const locale = DEFAULT_LOCALE;
+const locale = "en";
 const dictionary = getTranslations(locale);
 const currentPath = Astro.url.pathname;
 
@@ -32,26 +32,26 @@ const faqSchema = {
   mainEntity: [
     {
       "@type": "Question",
-      name: "Comment fonctionne le flux Lead Hunter → Booking ?",
+      name: "How does the Lead Hunter → Booking flow work?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "L’agent repère vos prospects, crée la cadence multi-canale, relance intelligemment et propose 2 créneaux. Vous n’intervenez que pour les réponses chaudes."
+        text: "The agent sources your prospects, launches the multichannel cadence, follows up intelligently and offers two time slots. You only handle hot replies."
       }
     },
     {
       "@type": "Question",
-      name: "Quid de la conformité (email, SMS, WhatsApp) ?",
+      name: "What about compliance (email, SMS, WhatsApp)?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Caps journaliers, STOP SMS, lien de désinscription email et règles WhatsApp 24h/CTA HSM sont appliqués automatiquement."
+        text: "Daily caps, SMS STOP, email unsubscribe links and the WhatsApp 24h/HSM policy are enforced automatically."
       }
     },
     {
       "@type": "Question",
-      name: "Aurai-je besoin d’autres outils pour commencer ?",
+      name: "Do I need other tools to get started?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Non. Pipelane gère sourcing, cadences, relances et booking. Des ports optionnels existent si vous devez pousser vers votre CRM."
+        text: "No. Pipelane handles sourcing, cadences, follow-ups and booking. Optional ports exist if you need to push data to your CRM."
       }
     }
   ]
