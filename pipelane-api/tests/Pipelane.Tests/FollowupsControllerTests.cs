@@ -142,6 +142,60 @@ public class FollowupsControllerTests
     }
 
     [Fact]
+    public async Task Preview_accepts_segment_json_with_arrays()
+    {
+        var options = new DbContextOptionsBuilder<FakeDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+        await using var db = new FakeDbContext(options);
+
+        var tenantId = Guid.NewGuid();
+
+        db.Contacts.Add(new Contact
+        {
+            Id = Guid.NewGuid(),
+            TenantId = tenantId,
+            Lang = "fr",
+            Email = "vip@example.com",
+            TagsJson = JsonSerializer.Serialize(new[] { "VIP", "Newsletter" }),
+            CreatedAt = DateTime.UtcNow.AddDays(-30),
+            UpdatedAt = DateTime.UtcNow.AddDays(-1)
+        });
+        db.Contacts.Add(new Contact
+        {
+            Id = Guid.NewGuid(),
+            TenantId = tenantId,
+            Lang = "en",
+            Email = "other@example.com",
+            TagsJson = JsonSerializer.Serialize(new[] { "Prospect" }),
+            CreatedAt = DateTime.UtcNow.AddDays(-20),
+            UpdatedAt = DateTime.UtcNow.AddDays(-5)
+        });
+        await db.SaveChangesAsync();
+
+        var controller = new FollowupsController(
+            db,
+            new StubOutboxService(),
+            new StubProposalStore(),
+            new StubTenantProvider(tenantId),
+            new StubAiService(),
+            Options.Create(new MessagingLimitsOptions()),
+            NullLogger<FollowupsController>.Instance);
+
+        var segment = JsonSerializer.Serialize(new
+        {
+            lang = "fr",
+            tags = new[] { "VIP", "Trial" },
+            consentOnly = true
+        });
+
+        var response = await controller.Preview(new FollowupPreviewRequest { SegmentJson = segment }, CancellationToken.None);
+
+        var ok = response.Result.Should().BeOfType<OkObjectResult>().Which;
+        ok.Value.Should().BeEquivalentTo(new { count = 1 });
+    }
+
+    [Fact]
     public async Task ValidateFollowup_Enqueues_Outbox_Message_With_Proposal_Data()
     {
         var options = new DbContextOptionsBuilder<FakeDbContext>()

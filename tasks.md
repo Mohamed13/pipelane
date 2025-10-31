@@ -1,172 +1,170 @@
-Tu travailles dans pipelane-front (Angular 20 standalone + Angular Material + ng-apexcharts).
-Objectif: 
-1) Refondre la page **Connexion** (UX moderne, agréable, dark futuriste).
-2) Ajouter/moderniser la **barre de recherche globale** (palette de commande Ctrl+K) avec historique, filtres et navigation rapide.
-3) **Réparer le switch FR/EN** (i18n) et uniformiser les traductions (persistante, instantanée).
+Tu travailles dans un monorepo :
+- pipelane-api  (.NET 8, Clean Architecture)
+- pipelane-front (Angular 20 + Angular Material)
+- pipelane-marketing (Astro + Tailwind)
 
-RÈGLES GÉNÉRALES
-- Commits atomiques, messages explicites. 
-- Ne casse pas les contrats d’API. Null-safety systématique.
-- Respecte le design system (tokens, .glass, contrastes AA). 
-- Accessibilité: focus visible, roles ARIA, labels, `prefers-reduced-motion`.
-- Tests Jest à chaque gros bloc, puis `/compact`.
+OBJECTIF
+- Revue et corrections globales : ajouter les TESTS manquants (unit/int/e2e), supprimer le code mort, fiabiliser l’implémentation, sécuriser les parcours, automatiser les vérifications (CI).
+- Exigence recette : **tout fonctionne**, perf/a11y correctes, basiques sécurité validées.
 
-========================================================
-SECTION A — Design & Tokens (bases communes)
-========================================================
-Fichiers: src/theme/_tokens.scss, src/styles.scss
+RÈGLES
+- Commits atomiques (“feat/fix/chore/test/docs”), message clair.
+- Pas de modification de contrats d’API ; si breaking, créer un flag temporaire ou compat rétro.
+- Ajoute des scripts “smoke” reproductibles.
+- S’appuyer sur les guides de tests officiels : Angular Testing (components/services), .NET xUnit, Astro + Playwright/Pa11y. (Réfs à suivre.)
 
-Tâches:
-1) Vérifie/ajoute utilitaires:
-   .container-narrow { max-width: 520px; margin-inline:auto; padding-inline: clamp(16px,4vw,32px); }
-   .glass { background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); backdrop-filter: blur(10px); border-radius:16px; }
-   .btn-primary { min-height:44px; padding:0 18px; border-radius:12px; }
-   .on-surface { color: rgba(230,234,242,.92); }
-   .on-surface-strong { color:#fff; }
-   .muted { color: rgba(230,234,242,.64); }
+================================================================
+SECTION A — INVENTAIRE & CODE MORT (front + marketing + api)
+================================================================
+1) Détecte code mort / imports non utilisés :
+   - Front : `depcheck`, `ts-prune`, `eslint --report-unused-disable-directives`.
+   - Marketing : `depcheck`, revue manuelle des composants non référencés.
+   - API : warnings analyzers .NET, fichiers/projs non référencés.
+2) Supprime/retire tout code/asset mort. Évite la régression (tests à venir).
+Commit: `chore(repo): purge code mort (depcheck/ts-prune/analyzers)`
 
-2) Typo clamp:
-   h1{ font-size: clamp(24px,3.2vw,32px); line-height:1.15; letter-spacing:-0.012em }
-   h2{ font-size: clamp(20px,2.6vw,26px); line-height:1.2 }
+/compact
 
-Build → OK, /compact.
+================================================================
+SECTION B — TESTS · pipelane-front (Angular 20)
+================================================================
+1) **Unit tests** (Jasmine/Karma ou Jest adapter) — cf. Angular testing guide :
+   - Components clés : HunterPage, CampaignBuilder, ConversationThread, Analytics.
+   - Services : ApiService (headers, erreurs), Rule/Policy services, TourService.
+   - Pipes/Directives utilisés.
+   (Angular docs: https://angular.dev/guide/testing) 
+2) **Harness & TestBed** pour interagir avec Material proprement (inputs, table, stepper).
+3) **Integration / shallow** :
+   - Hunter flow minimal (search → table binds), Campaign preview (segment JSON) avec stub API.
+4) **E2E léger** (Cypress/Playwright au choix) :
+   - smoke: login (si présent) → Hunter → “Magic Pick” → créer liste → créer cadence.
+   - analytics: changement de période → maj graphiques.
+   - conversation: preview relance → valider/snooze.
+Critères d’acceptation :
+   - `npm run ui:test` vert; scénarios E2E “smoke” passent localement.
+Commits:
+   - `test(front): units components/services + harness`
+   - `test(front): e2e smoke flows (hunter/campaign/analytics)`
 
-========================================================
-SECTION B — Page de Connexion (UI + UX + erreurs lisibles)
-========================================================
-Fichiers: src/app/features/auth/login-page.component.{ts,html,scss} (standalone), src/app/core/auth.service.ts
+(Refs : Angular testing components/scenarios) :contentReference[oaicite:1]{index=1}
+/compact
 
-Tâches:
-1) Nouveau composant `LoginPageComponent` (standalone, OnPush), route `/login`:
-   - Layout centré verticale (min-height:100vh) : 
-     gauche (desktop): image ou gradient sobre; droite: card `.glass container-narrow`.
-     mobile: stack (card en premier).
-   - Card contenu:
-     • Logo/nom produit en haut.
-     • Titre h1: “Connexion”.
-     • Form Reactive: email, mot de passe, Remember me (MatCheckbox), Accès FR/EN (voir Section D).
-     • Icone “voir/masquer” mot de passe.
-     • Lien “Mot de passe oublié ?” (placeholder route /forgot).
-     • Bouton Se connecter (disabled tant que form invalide).
-     • Petit séparateur “ou”.
-     • Boutons SSO placeholder (Google/Microsoft) `mat-stroked-button` (désactivés si pas configurés).
-     • Bas de carte: “Pas de compte ? Créer un compte” (route /signup si existe, sinon disabled).
-   - État d’erreur:
-     • Afficher `mat-error` sous les champs (email invalide, mdp requis).
-     • Si API renvoie 401/403: bannière `mat-card` rouge clair (AA) : “Identifiants invalides”.
-     • Si 5xx: bannière orange: “Service indisponible, réessayez.”
+================================================================
+SECTION C — TESTS · pipelane-api (.NET 8)
+================================================================
+1) **Unit** (xUnit) — logiques pures :
+   - Rule engine/Followups (planif créneaux, angle).
+   - AnalyticsService (agrégations).
+   - Mappers/DTOs (null-safety, fallback).
+   (Best practices xUnit + .NET testing) :contentReference[oaicite:2]{index=2}
+2) **Intégration** :
+   - Controller /api/followups/preview (GET/POST) → 200/400 ; /api/lists → 200 [] ; /api/demo/run si DEMO_MODE.
+   - EF Core : tests en mémoire **ou** Testcontainers selon infra (facultatif).
+3) **Contract smoke** :
+   - S’assurer que /health et /health/metrics renvoient OK avec infos provider DB.
+Critères :
+   - `dotnet test` vert ; scénarios preview/lists passent.
+Commits:
+   - `test(api): xUnit units (rules/analytics/mappers)`
+   - `test(api): integration controllers (preview/lists/health)`
 
-2) Auth flow:
-   - `AuthService.login(email, password, remember)` → POST /api/auth/login (existant).
-   - Si succès: stocker token + claims; si `remember` → localStorage, sinon sessionStorage.
-   - Redirect: vers la page d’origine (query `redirect=`) ou `/analytics`.
+(Refs : .NET xUnit getting started & best practices) :contentReference[oaicite:3]{index=3}
+/compact
 
-3) Sécurité & feedback:
-   - Désactiver bouton pendant la requête, `mat-progress-spinner` en suffixe.
-   - Guard `AuthGuard` redirige vers `/login?redirect=<url>` si non authentifié.
+================================================================
+SECTION D — TESTS · pipelane-marketing (Astro)
+================================================================
+1) **E2E Playwright** (Astro docs) :
+   - home rendering, nav links, CTA visibles, LCP asset présent.
+2) **A11y automatisée** :
+   - Pa11y CI (ou axe) sur pages clés : /, /prospection-ia, /relance-intelligente, /prix, /securite-rgpd.
+3) **Lighthouse CI** (GitHub Action) :
+   - Vérifier perf/accessibility/best-practices/SEO avec budgets min (exigence recette).
+Critères :
+   - `npm run test:a11y` OK ; Lighthouse CI ≥ 95 sur mobile.
+Commits:
+   - `test(marketing): playwright smoke`
+   - `chore(a11y): pa11y-ci config`
+   - `chore(perf): lighthouse-ci action`
 
-4) Tests Jest:
-   - Affichage erreurs de validation.
-   - Appel login et redirection.
-   - Bannière 401 bien affichée.
+(Refs : Astro testing & Pa11y CI; Lighthouse CI / GitHub Action) :contentReference[oaicite:4]{index=4}
+/compact
 
-Commit: `feat(auth): new LoginPage modern UI/UX with proper validation & error banners`  
-/compact.
+================================================================
+SECTION E — PERF · Core Web Vitals & Budgets
+================================================================
+1) Budgets **Lighthouse CI** (web.dev) :
+   - LCP image unique (hero) eager ; autres lazy.
+   - Poids JS/CSS max par page (définir budgets réalistes).
+2) Mesure Web Vitals en prod (web-vitals lib) — envoi console/logs basiques.
+3) Réductions rapides :
+   - Angular : OnPush là où sûr, `source-map-explorer` pour gros bundles, suppression d’icônes non utilisées (tree-shake).
+   - Astro : réserver ratios (CLS), éviter filtres lourds sur LCP.
+Critères :
+   - Budgets respectés en CI ; rapport LHCI stocké.
+Commits:
+   - `chore(perf): LHCI budgets + web-vitals ping`
+   - `chore(front): bundle check + tree-shake icons`
+(Refs : Core Web Vitals guidance & improvements) :contentReference[oaicite:5]{index=5}
+/compact
 
-========================================================
-SECTION C — Barre de recherche globale (Ctrl+K Command Palette)
-========================================================
-Fichiers: src/app/core/search/command-palette.component.{ts,html,scss}, src/app/core/search/search.service.ts, header/shell
+================================================================
+SECTION F — A11y · checks rapides
+================================================================
+1) Pa11y/axe sur pages clés ; contrastes AA ; focus visibles ; labels formulaires ; alt text non décoratifs.
+2) Astro : vérifier via “Accessible Astro” checklist.
+Commits:
+   - `fix(a11y): labels/focus/contrast`
+   - `test(a11y): pa11y-ci sitemap`
+(Refs : Accessible Astro) :contentReference[oaicite:6]{index=6}
+/compact
 
-Tâches:
-1) `SearchService`:
-   - `search(term: string, filters?:{type?: 'prospect'|'conversation'|'campaign'|'list'})`
-     → interroger endpoints existants (ou stub) et renvoyer observable `CommandItem[]`:
-       { id, label, type, subtitle?, route?, icon? }
-   - `recent$`: BehaviorSubject<string[]> (derniers 10 termes).
-   - Debounce 200ms, cancel en vol, null-safe.
+================================================================
+SECTION G — SÉCURITÉ · ASVS/Top 10 (basiques)
+================================================================
+1) **Headers** côté edge/platform (Vercel/Netlify/Render) :
+   - HSTS, X-Content-Type-Options, Referrer-Policy, CORS strict (domains front).
+2) **Form & API** :
+   - Validation côté serveur (null/longueur/types).
+   - Désactivation de tout endpoint debug/DEMO en prod.
+3) **Secrets** :
+   - Envs uniquement (Render/Netlify/Vercel), jamais en repo ; rotation clé JWT.
+4) **Check-lists OWASP** :
+   - S’inspirer de **ASVS** pour vérif technique, et Top 10 pour sensibilisation.
+Commits:
+   - `chore(security): headers + env checks + demo off`
+   - `docs(security): ASVS/Top10 checklist appliquée`
+(Refs : OWASP ASVS & OWASP Top 10) :contentReference[oaicite:7]{index=7}
+/compact
 
-2) `CommandPaletteComponent` (standalone, OnPush):
-   - `MatDialog` pleine largeur max 720px, `.glass`, `role="dialog"`, focus input auto.
-   - Champ input (Ctrl+K pour ouvrir, ESC pour fermer) avec placeholder: “Rechercher (prospects, conversations, campagnes…)”.
-   - Résultats en liste virtuelle; items groupés par type (Prospects / Conversations / Campagnes / Listes).
-   - Affichage:
-     • label fort, subtitle (muted), icône par type.
-     • navigation clavier ↑/↓, Enter pour ouvrir `route`, Tab pour changer de filtre (chips).
-   - Historique: si `term=''` → montrer “Recherches récentes”.
-   - Pas de résultat: empty state utile + suggestions.
+================================================================
+SECTION H — CI · Qualité · Hooks
+================================================================
+1) **GitHub Actions** :
+   - API: `dotnet build/test`
+   - Front: `npm ci && npm run ui:check && npm run ui:test`
+   - Marketing: `npm run build && npm run test:a11y && lhci autorun`
+2) **Qualité** :
+   - ESLint + Prettier (front/marketing) ; .editorconfig repo.
+   - .NET analyzers, nullable enabled ; warnings as errors pour projets critiques.
+3) **Pre-commit hooks** (Husky) : lint-staged TS/SCSS/MD.
+Commits:
+   - `ci: gh-actions (api/front/marketing + lhci + pa11y)`
+   - `chore(quality): eslint+prettier+analyzers + hooks`
+(Refs : Lighthouse CI GH Action, Angular testing guide) :contentReference[oaicite:8]{index=8}
+/compact
 
-3) Intégration shell:
-   - Icône loupe dans la top bar; `(click)` et `Ctrl+K` ouvrent le dialog.
-   - **Important**: ignorer raccourcis si focus dans input/textarea (guard).
-
-4) Tests Jest:
-   - Debounce & cancel.
-   - Navigation clavier items.
-   - Persistance récents (localStorage).
-
-Commit: `feat(search): global command palette (Ctrl+K) with recent, filters, keyboard nav`  
-/compact.
-
-========================================================
-SECTION D — i18n FR/EN : switch instantané + persistance
-========================================================
-Fichiers: src/app/core/i18n/language.service.ts, assets/i18n/{fr.json,en.json}, app.config, header
-
-Tâches:
-1) Implémenter un `LanguageService`:
-   - Utiliser **ngx-translate** (si déjà présent) ou Angular i18n alternatif.
-   - `current$` BehaviorSubject<'fr'|'en'>; persister `lang` dans localStorage (`pipelane_lang`).
-   - `set(lang)` → charger les fichiers et appliquer instantanément.
-
-2) Switch FR/EN (header):
-   - Bouton `MatMenu` avec FR/EN; coche sur langue active; `(click)` → `LanguageService.set`.
-   - Mettre à jour `dir='ltr'` (les deux langues sont LTR).
-   - Pas de hard refresh.
-
-3) Couverture:
-   - Ajoute/complète `fr.json` / `en.json` pour les clés:
-     `login.title`, `login.email`, `login.password`, `login.remember`, `login.submit`, `login.forgot`, 
-     `search.placeholder`, `search.recent`, `search.noResults`, 
-     `errors.network`, `errors.invalidCredentials`, etc.
-   - Pages clés: login, header, search, errors.
-   - Fallback par défaut FR.
-
-4) Fix du bug “ne fonctionne pas”:
-   - Vérifier que les pipes/Directives utilisent translate instantané (`| translate`) et que modules chargent `TranslateModule`.
-   - Si le shell ne réagit pas: `cdr.markForCheck()` après `set(lang)`.
-
-5) Tests Jest:
-   - Switch FR→EN met à jour un label sans reload.
-   - Persistance: reload app → conserve la langue choisie.
-
-Commit: `fix(i18n): working FR/EN instant switch with persistence; translations added`  
-/compact.
-
-========================================================
-SECTION E — Accessibilité, focus, micro-interactions
-========================================================
-Tâches:
-1) Focus ring (global) sur tous les boutons/lien/inputs: outline 2px #75F0FF/60 sur `:focus-visible`.
-2) Login: associer `for` aux labels, `aria-invalid` quand erreur, `aria-live="polite"` pour bannière d’erreur.
-3) Command Palette: `role="listbox"`, `role="option"`, `aria-activedescendant` mis à jour; ESC ferme; annonces concises.
-
-Tests: a11y lints si présent.  
-Commit: `chore(a11y): focus ring + aria improvements for login & search`  
-/compact.
-
-========================================================
-SECTION F — QA & Tests finaux
-========================================================
-Tâches:
-1) `npm run build && npm run ui:test`
-2) Scénarios manuels:
-   - Connexion réussie/échouée; Remember me; spinner; redirection post-login.
-   - Ctrl+K: ouvrir/fermer; taper, naviguer au clavier; ouvrir un résultat; voir historiques.
-   - FR/EN: basculer sans reload; persister au reload.
-3) Light perf: vérifier que la palette se charge lazy (dialog).
-
-Commit final: 
-`feat(front): polished Login, global Search (Ctrl+K), working FR/EN switch — modern, accessible, and fast`
-
+================================================================
+SECTION I — SMOKE SCRIPTS & RÉCAP
+================================================================
+1) Ajoute `/scripts` :
+   - `smoke-api.sh` : /health, /analytics/overview, preview GET/POST (retour 200/400 attendu).
+   - `smoke-front.sh` : ouvre app, vérifie absence d’erreurs console majeures (grep).
+   - `smoke-marketing.sh` : build + pa11y + lhci local.
+2) Génère un **RÉCAP FINAL** (dans la sortie CI) :
+   - Nombre de tests ajoutés par module ; scénarios e2e passants.
+   - LHCI scores & budgets ; a11y violations=0 ; en-têtes de sécurité actifs.
+   - Liste des fichiers supprimés (code mort).
+Commit final:
+   - `chore(scripts): smoke + recap final`
 /compact

@@ -103,46 +103,67 @@ public sealed class HunterService : IHunterService
         // Seed lookup with existing prospects
         if (candidates.Count > 0)
         {
-            var emails = candidates
+            var emailSet = candidates
                 .Select(c => NormalizeKey(c.Prospect.Email))
-                .Where(k => k != null)
-                .Select(k => k!)
-                .Distinct()
-                .ToList();
+                .Where(static key => key != null)
+                .Select(static key => key!)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            var fuzzyKeys = candidates
-                .Where(c => string.IsNullOrWhiteSpace(c.Prospect.Email))
+            var fuzzySet = candidates
+                .Where(static c => string.IsNullOrWhiteSpace(c.Prospect.Email))
                 .Select(c => NormalizeCompanyCity(c.Prospect.Company, c.Prospect.City))
-                .Where(k => k != null)
-                .Select(k => k!)
-                .Distinct()
-                .ToList();
+                .Where(static key => key != null)
+                .Select(static key => key!)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            if (emails.Count > 0 || fuzzyKeys.Count > 0)
+            var existing = new List<Prospect>();
+
+            if (emailSet.Count > 0)
             {
-                var existing = await _db.Prospects
+                var emailMatches = await _db.Prospects
                     .AsNoTracking()
-                    .Where(p =>
-                        (p.Email != null && emails.Contains(p.Email.ToLower())) ||
-                        fuzzyKeys.Contains(NormalizeCompanyCity(p.Company, p.City)!))
+                    .Where(p => p.TenantId == tenantId && p.Email != null && emailSet.Contains(p.Email!.Trim().ToLower()))
                     .ToListAsync(ct);
 
-                foreach (var prospect in existing)
-                {
-                    if (!string.IsNullOrWhiteSpace(prospect.Email))
-                    {
-                        var key = NormalizeKey(prospect.Email);
-                        if (key != null && !normalizedEmail.ContainsKey(key))
-                        {
-                            normalizedEmail[key] = prospect;
-                        }
-                    }
+                existing.AddRange(emailMatches);
+            }
 
-                    var fuzzy = NormalizeCompanyCity(prospect.Company, prospect.City);
-                    if (fuzzy != null && !normalizedCompanyCity.ContainsKey(fuzzy))
+            if (fuzzySet.Count > 0)
+            {
+                var fuzzyMatches = await _db.Prospects
+                    .AsNoTracking()
+                    .Where(p => p.TenantId == tenantId && p.Company != null)
+                    .Select(p => new
                     {
-                        normalizedCompanyCity[fuzzy] = prospect;
+                        Prospect = p,
+                        Key = p.Company!.Trim().ToLower() + "|" + (p.City ?? string.Empty).Trim().ToLower()
+                    })
+                    .Where(x => fuzzySet.Contains(x.Key))
+                    .Select(x => x.Prospect)
+                    .ToListAsync(ct);
+
+                existing.AddRange(fuzzyMatches);
+            }
+
+            foreach (var prospect in existing
+                         .GroupBy(static p => p.Id)
+                         .Select(static group => group.First()))
+            {
+                if (!string.IsNullOrWhiteSpace(prospect.Email))
+                {
+                    var key = NormalizeKey(prospect.Email);
+                    if (key != null && !normalizedEmail.ContainsKey(key))
+                    {
+                        normalizedEmail[key] = prospect;
                     }
+                }
+
+                var fuzzy = NormalizeCompanyCity(prospect.Company, prospect.City);
+                if (fuzzy != null && !normalizedCompanyCity.ContainsKey(fuzzy))
+                {
+                    normalizedCompanyCity[fuzzy] = prospect;
                 }
             }
         }
@@ -366,13 +387,14 @@ public sealed class HunterService : IHunterService
         var lists = await _db.ProspectLists
             .AsNoTracking()
             .Where(l => l.TenantId == tenantId)
+            .OrderByDescending(l => l.UpdatedAtUtc)
+            .ThenByDescending(l => l.CreatedAtUtc)
             .Select(l => new ProspectListSummary(
                 l.Id,
                 l.Name,
                 l.Items.Count,
                 l.CreatedAtUtc,
                 l.UpdatedAtUtc))
-            .OrderByDescending(l => l.UpdatedAtUtc)
             .ToListAsync(ct);
 
         return lists;

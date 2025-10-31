@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -109,28 +110,39 @@ public sealed class FollowupsController : ControllerBase
 
         if (!string.IsNullOrWhiteSpace(effectiveRequest.SegmentJson))
         {
-            Dictionary<string, string>? segment;
             try
             {
-                segment = JsonSerializer.Deserialize<Dictionary<string, string>>(effectiveRequest.SegmentJson, _jsonOptions);
+                using var segmentDoc = JsonDocument.Parse(effectiveRequest.SegmentJson);
+                var root = segmentDoc.RootElement;
+
+                if (root.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
+                {
+                    // no-op: treat null/undefined as empty filter
+                }
+                else if (root.ValueKind != JsonValueKind.Object)
+                {
+                    activity?.SetStatus(ActivityStatusCode.Error, "invalid_segment_json_shape");
+                    return BadRequest("SegmentJson must be a JSON object");
+                }
+                else
+                {
+                    var lang = TryGetString(root, "lang");
+                    if (!string.IsNullOrWhiteSpace(lang))
+                    {
+                        query = query.Where(c => c.Lang == lang);
+                    }
+
+                    var tags = ExtractTags(root);
+                    if (tags.Length > 0)
+                    {
+                        query = ApplyTagFilter(query, tags);
+                    }
+                }
             }
             catch (JsonException)
             {
                 activity?.SetStatus(ActivityStatusCode.Error, "invalid_segment_json");
                 return BadRequest("SegmentJson is not valid JSON");
-            }
-
-            if (segment is not null)
-            {
-                if (segment.TryGetValue("lang", out var lang) && !string.IsNullOrWhiteSpace(lang))
-                {
-                    query = query.Where(c => c.Lang == lang);
-                }
-
-                if (segment.TryGetValue("tag", out var tag) && !string.IsNullOrWhiteSpace(tag))
-                {
-                    query = query.Where(c => c.TagsJson != null && c.TagsJson.Contains(tag));
-                }
             }
         }
 
@@ -518,4 +530,99 @@ public sealed class FollowupsController : ControllerBase
         Detail = "conversationId required",
         Status = StatusCodes.Status400BadRequest
     };
+
+    private static string? TryGetString(JsonElement root, string propertyName)
+    {
+        if (!root.TryGetProperty(propertyName, out var property))
+        {
+            return null;
+        }
+
+        return property.ValueKind == JsonValueKind.String
+            ? property.GetString()
+            : null;
+    }
+
+    private static string[] ExtractTags(JsonElement root)
+    {
+        var tags = new List<string>();
+
+        if (root.TryGetProperty("tag", out var tagElement) && tagElement.ValueKind == JsonValueKind.String)
+        {
+            var value = tagElement.GetString();
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                tags.Add(value);
+            }
+        }
+
+        if (root.TryGetProperty("tags", out var tagsElement))
+        {
+            switch (tagsElement.ValueKind)
+            {
+                case JsonValueKind.String:
+                    var single = tagsElement.GetString();
+                    if (!string.IsNullOrWhiteSpace(single))
+                    {
+                        tags.Add(single);
+                    }
+                    break;
+                case JsonValueKind.Array:
+                    foreach (var item in tagsElement.EnumerateArray())
+                    {
+                        if (item.ValueKind == JsonValueKind.String)
+                        {
+                            var arrayValue = item.GetString();
+                            if (!string.IsNullOrWhiteSpace(arrayValue))
+                            {
+                                tags.Add(arrayValue);
+                            }
+                        }
+                    }
+                    break;
+            }
+        }
+
+        return tags
+            .Select(tag => tag.Trim())
+            .Where(tag => !string.IsNullOrEmpty(tag))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
+    private static IQueryable<Contact> ApplyTagFilter(IQueryable<Contact> source, IReadOnlyList<string> tags)
+    {
+        if (tags.Count == 0)
+        {
+            return source;
+        }
+
+        var parameter = Expression.Parameter(typeof(Contact), "contact");
+        var tagsJsonProperty = Expression.Property(parameter, nameof(Contact.TagsJson));
+        var nullConstant = Expression.Constant(null, typeof(string));
+        var containsMethod = typeof(string).GetMethod(nameof(string.Contains), new[] { typeof(string) })!;
+        Expression? body = null;
+
+        foreach (var tag in tags)
+        {
+            if (string.IsNullOrWhiteSpace(tag))
+            {
+                continue;
+            }
+
+            var tagConstant = Expression.Constant(tag, typeof(string));
+            var notNull = Expression.NotEqual(tagsJsonProperty, nullConstant);
+            var containsCall = Expression.Call(tagsJsonProperty, containsMethod, tagConstant);
+            var predicate = Expression.AndAlso(notNull, containsCall);
+            body = body is null ? predicate : Expression.OrElse(body, predicate);
+        }
+
+        if (body is null)
+        {
+            return source;
+        }
+
+        var lambda = Expression.Lambda<Func<Contact, bool>>(body, parameter);
+        return source.Where(lambda);
+    }
 }

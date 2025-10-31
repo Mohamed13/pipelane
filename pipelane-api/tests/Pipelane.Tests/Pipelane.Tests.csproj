@@ -4,8 +4,8 @@
     <IsPackable>false</IsPackable>
     <Nullable>enable</Nullable>
     <CollectCoverage>true</CollectCoverage>
-    <CoverletOutputFormat>cobertura,lcov</CoverletOutputFormat>
-    <CoverletOutput>$(MSBuildProjectDirectory)/../coverage/</CoverletOutput>
+    <CoverletOutputFormat>cobertura,json</CoverletOutputFormat>
+    <CoverletOutput>../coverage/</CoverletOutput>
     <Threshold>15</Threshold>
     <ThresholdType>line</ThresholdType>
     <ThresholdStat>Total</ThresholdStat>
@@ -29,4 +29,3 @@
     <ProjectReference Include="../../src/Pipelane.Api/Pipelane.Api.csproj" />
   </ItemGroup>
 </Project>
-
