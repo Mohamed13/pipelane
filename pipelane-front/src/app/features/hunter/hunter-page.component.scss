@@ -15,6 +15,9 @@
 }
 
 .hunter__grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 360px) minmax(0, 1fr);
+  gap: clamp(12px, 2vw, 24px);
   align-items: start;
 }
 
@@ -24,6 +27,17 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+}
+
+.hunter__results {
+  gap: clamp(16px, 2.5vw, 32px);
+}
+
+.hunter-map {
+  width: 100%;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  min-height: clamp(220px, 32vh, 360px);
 }
 
 .hunter-criteria__header {
@@ -105,6 +119,26 @@
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
+
+  button[mat-raised-button][color='primary'] {
+    background: var(--grad-main);
+    color: var(--md-sys-color-on-primary) !important;
+    border: none;
+    box-shadow: 0 16px 38px rgba(117, 240, 255, 0.28);
+    transition:
+      transform var(--transition-fast),
+      box-shadow var(--transition-medium);
+  }
+
+  button[mat-raised-button][color='primary']:hover:not([disabled]) {
+    transform: translateY(-2px);
+    box-shadow: 0 22px 48px rgba(117, 240, 255, 0.35);
+  }
+
+  button[mat-raised-button][color='primary'][disabled] {
+    opacity: 0.6;
+    box-shadow: none;
+  }
 }
 
 .hunter-form__csv {
@@ -170,6 +204,8 @@
 
 .hunter-map__body app-hunter-map {
   display: block;
+  width: 100%;
+  min-height: clamp(220px, 32vh, 360px);
 }
 
 .hunter-legend {
@@ -274,7 +310,8 @@
 }
 
 .hunter-list__viewport {
-  max-height: 420px;
+  max-height: clamp(240px, 40vh, 560px);
+  overflow-y: auto;
 }
 
 .hunter-list__row {
@@ -558,6 +595,129 @@
 .hunter-heatmap__label {
   font-size: 0.85rem;
   color: rgba(255, 255, 255, 0.6);
+}
+
+html:not(.theme-dark) {
+  .hunter__container {
+    background: var(--bg);
+  }
+
+  .hunter-criteria__personas mat-chip {
+    background: color-mix(in srgb, var(--primary) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--border));
+    color: var(--on-surface);
+  }
+
+  .hunter-criteria__personas mat-chip.mat-mdc-chip-selected {
+    background: color-mix(in srgb, var(--primary) 18%, white 75%);
+    color: var(--primary);
+  }
+
+  .hunter-form__demo {
+    color: var(--muted);
+
+    p {
+      color: var(--muted);
+    }
+  }
+
+  .hunter-form__actions button[mat-raised-button][color='primary'] {
+    box-shadow: 0 12px 30px rgba(37, 99, 235, 0.22);
+  }
+
+  .hunter-form__actions button[mat-raised-button][color='primary']:hover:not([disabled]) {
+    box-shadow: 0 18px 42px rgba(37, 99, 235, 0.28);
+  }
+
+  .hunter-legend {
+    border: 1px solid color-mix(in srgb, var(--primary) 14%, var(--border));
+    background: color-mix(in srgb, var(--primary) 5%, var(--surface));
+    color: var(--muted);
+    backdrop-filter: none;
+  }
+
+  .hunter-map__disabled {
+    border: 1px dashed color-mix(in srgb, var(--primary) 22%, var(--border));
+    background: color-mix(in srgb, var(--primary) 4%, var(--surface));
+    color: var(--muted);
+
+    strong {
+      color: var(--on-surface);
+    }
+
+    p {
+      color: var(--muted);
+    }
+  }
+
+  .hunter-map__doc {
+    color: var(--primary);
+  }
+
+  .hunter__drawer {
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    color: var(--on-surface);
+  }
+
+  .hunter-drawer__subtitle {
+    color: var(--muted);
+  }
+
+  .hunter-drawer__section h4 {
+    color: color-mix(in srgb, var(--primary) 65%, var(--on-surface));
+  }
+
+  .hunter-drawer__info li {
+    color: var(--on-surface);
+
+    a:hover {
+      color: color-mix(in srgb, var(--primary) 45%, var(--on-surface));
+    }
+  }
+
+  .hunter-drawer__reasons,
+  .hunter-drawer__chips .hunter-drawer__empty-chip,
+  .hunter-drawer__empty {
+    color: var(--muted);
+  }
+
+  .hunter-heatmap__fill {
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--secondary) 28%, transparent) 0%,
+      color-mix(in srgb, var(--secondary) 68%, transparent) 100%
+    );
+  }
+
+  .hunter-heatmap__label {
+    color: var(--muted);
+  }
+
+  .hunter-list__columns {
+    color: var(--muted);
+  }
+
+  .hunter-list__row {
+    background: color-mix(in srgb, var(--primary) 4%, transparent);
+    border-color: color-mix(in srgb, var(--primary) 12%, var(--border));
+
+    &:hover {
+      background: color-mix(in srgb, var(--primary) 10%, white 85%);
+      border-color: color-mix(in srgb, var(--primary) 25%, var(--border));
+    }
+  }
+
+  .hunter-list__contact,
+  .hunter-list__why,
+  .hunter-list__loading,
+  .hunter-list__empty {
+    color: var(--muted);
+  }
+
+  .hunter-list__empty mat-icon {
+    color: var(--primary);
+  }
 }
 
 @media (max-width: 1280px) {
