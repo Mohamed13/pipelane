@@ -1,7 +1,8 @@
 @use '@angular/material' as mat;
 
-$primary-palette: mat.$cyan-palette;
-$tertiary-palette: mat.$violet-palette;
+$primary-palette: mat.$blue-palette;
+$secondary-palette: mat.$violet-palette;
+$tertiary-palette: mat.$spring-green-palette;
 
 $base-typography: (
   plain-family: (
@@ -22,10 +23,10 @@ $base-typography: (
   ),
 );
 
-$base-theme: mat.define-theme(
+$light-theme: mat.define-theme(
   (
     color: (
-      theme-type: dark,
+      theme-type: light,
       primary: $primary-palette,
       tertiary: $tertiary-palette,
     ),
@@ -37,12 +38,12 @@ $base-theme: mat.define-theme(
 );
 
 @include mat.core();
-@include mat.all-component-themes($base-theme);
+@include mat.all-component-themes($light-theme);
 
 $compact-density-theme: mat.define-theme(
   (
     color: (
-      theme-type: dark,
+      theme-type: light,
       primary: $primary-palette,
       tertiary: $tertiary-palette,
     ),
@@ -55,17 +56,44 @@ $compact-density-theme: mat.define-theme(
 
 @include mat.table-theme($compact-density-theme);
 @include mat.list-theme($compact-density-theme);
-@include mat.select-theme($compact-density-theme);
 
 :root {
+  --md-sys-color-primary: #2563eb;
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-primary-container: #dbeafe;
+  --md-sys-color-on-primary-container: #0b1f4d;
+  --md-sys-color-secondary: #6366f1;
+  --md-sys-color-on-secondary: #ffffff;
+  --md-sys-color-secondary-container: #e0e7ff;
+  --md-sys-color-on-secondary-container: #1e1b4b;
+  --md-sys-color-tertiary: #16a34a;
+  --md-sys-color-on-tertiary: #ffffff;
+  --md-sys-color-tertiary-container: #d1fadf;
+  --md-sys-color-on-tertiary-container: #064e1a;
+  --md-sys-color-background: #f7fafc;
+  --md-sys-color-surface: #ffffff;
+  --md-sys-color-surface-container: #eef2ff;
+  --md-sys-color-surface-container-high: #e2e8f0;
+  --md-sys-color-surface-container-low: #f1f5ff;
+  --md-sys-color-on-surface: #0f172a;
+  --md-sys-color-on-surface-variant: #475569;
+  --md-sys-color-outline: rgba(37, 99, 235, 0.18);
+  --md-sys-color-outline-variant: rgba(37, 99, 235, 0.12);
+}
+
+@mixin define-dark-material-tokens {
   --md-sys-color-primary: #75f0ff;
   --md-sys-color-on-primary: #02121f;
   --md-sys-color-primary-container: #0c1f28;
   --md-sys-color-on-primary-container: #bff4ff;
   --md-sys-color-secondary: #9b8cff;
   --md-sys-color-on-secondary: #0c0633;
+  --md-sys-color-secondary-container: #22174d;
+  --md-sys-color-on-secondary-container: #e7ddff;
   --md-sys-color-tertiary: #60f7a3;
   --md-sys-color-on-tertiary: #012416;
+  --md-sys-color-tertiary-container: #0a3721;
+  --md-sys-color-on-tertiary-container: #b0fdd4;
   --md-sys-color-background: #0b0f17;
   --md-sys-color-surface: #101726;
   --md-sys-color-surface-container: #141c2c;
@@ -75,6 +103,16 @@ $compact-density-theme: mat.define-theme(
   --md-sys-color-on-surface-variant: #a6b0c3;
   --md-sys-color-outline: rgba(117, 240, 255, 0.26);
   --md-sys-color-outline-variant: rgba(117, 240, 255, 0.18);
+}
+
+html.theme-dark {
+  @include define-dark-material-tokens;
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not(.theme-light) {
+    @include define-dark-material-tokens;
+  }
 }
 
 .mat-mdc-table {
@@ -87,10 +125,4 @@ $compact-density-theme: mat.define-theme(
   --mat-list-list-item-one-line-container-height: 40px;
   --mat-list-list-item-two-line-container-height: 52px;
   --mat-list-list-item-three-line-container-height: 76px;
-}
-
-.mat-mdc-select-panel {
-  --mat-option-list-item-leading-icon-start-space: 8px;
-  --mat-option-list-item-leading-icon-end-space: 8px;
-  --mat-option-list-item-one-line-container-height: 40px;
 }
