@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "depcheck": "depcheck --skip-missing --ignores=@angular-devkit/build-angular,sass,depcheck,ts-prune",
+    "prune": "ts-prune --ignore \"openapi-types.ts\"",
     "prestart": "node tools/inject-env.mjs",
     "start": "ng serve --port 4200",
     "prebuild": "node tools/inject-env.mjs",
@@ -65,7 +67,6 @@
     "openapi-typescript": "^6.7.6",
     "prettier": "^3.3.3",
     "sass": "^1.93.2",
-    "ts-jest": "^29.2.5",
     "ts-prune": "^0.10.3",
     "typescript": "~5.8.3"
   }
