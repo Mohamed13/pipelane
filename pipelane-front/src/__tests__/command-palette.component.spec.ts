@@ -1,12 +1,12 @@
-import { BehaviorSubject, of } from 'rxjs';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-
-import { CommandItem, SearchService } from '../app/core/search/search.service';
-import { LanguageService, LangCode } from '../app/core/i18n/language.service';
-import { CommandPaletteComponent } from '../app/core/search/command-palette.component';
 import { MatDialogRef } from '@angular/material/dialog';
 import { Router } from '@angular/router';
+import { BehaviorSubject, of } from 'rxjs';
+
+import { LanguageService, LangCode } from '../app/core/i18n/language.service';
+import { CommandPaletteComponent } from '../app/core/search/command-palette.component';
+import { CommandItem, SearchService } from '../app/core/search/search.service';
 
 class SearchStub {
   recent$ = new BehaviorSubject<string[]>(['Apollo', 'Sequences']);

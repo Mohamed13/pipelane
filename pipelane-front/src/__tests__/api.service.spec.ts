@@ -1,4 +1,5 @@
 import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -444,5 +445,27 @@ describe('ApiService', () => {
       expect.objectContaining({ duration: 5000 }),
     );
     expect(lists).toEqual([]);
+  });
+
+  it('extractErrorMessage gracefully handles response-like payloads', () => {
+    const responseLike = {
+      bodyUsed: true,
+      clone: () => {
+        throw new Error('body already used');
+      },
+      text: async () => '',
+    };
+
+    const httpError = new HttpErrorResponse({
+      error: responseLike,
+      status: 502,
+      statusText: 'Bad Gateway',
+    });
+
+    const message = (
+      service as unknown as { extractErrorMessage: (err: HttpErrorResponse) => string }
+    ).extractErrorMessage(httpError);
+
+    expect(message).toBe('502 Bad Gateway');
   });
 });

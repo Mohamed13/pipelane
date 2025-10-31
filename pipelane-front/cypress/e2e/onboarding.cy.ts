@@ -1,9 +1,10 @@
 describe('Onboarding channel setup', () => {
   beforeEach(() => {
-    cy.intercept('GET', '**/assets/i18n/**', { statusCode: 200, body: {} });
+    cy.intercept('GET', '**/assets/i18n/**').as('translations');
     cy.intercept('POST', '**/onboarding/channel-settings', { statusCode: 200 }).as('saveSettings');
     cy.intercept('POST', '**/messages/send', { statusCode: 200 }).as('sendMessage');
-    cy.visit('/onboarding');
+    cy.visitApp('/onboarding');
+    cy.wait('@translations');
   });
 
   it('saves channel credentials and sends a test email', () => {

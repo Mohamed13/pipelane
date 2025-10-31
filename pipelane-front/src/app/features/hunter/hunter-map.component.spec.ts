@@ -1,10 +1,20 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { SimpleChange } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import type { FeatureCollection } from 'geojson';
-
-import { MapboxService } from '../../core/mapbox.service';
 import { HunterMapComponent, type HunterResultVm } from './hunter-map.component';
+import { MapboxService } from '../../core/mapbox.service';
+
+type FeatureCollection = {
+  type: 'FeatureCollection';
+  features: Array<{
+    properties?: Record<string, unknown>;
+  }>;
+};
+
+type ProspectStub = {
+  company: string;
+  city?: string | null;
+};
 
 class MapStub {
   private loadHandlers: Array<() => void> = [];
@@ -98,13 +108,15 @@ describe('HunterMapComponent', () => {
       TestBed.createComponent(HunterMapComponent);
     const component = fixture.componentInstance;
 
+    const prospect: ProspectStub = {
+      company: 'Brasserie Demo',
+      city: 'Paris',
+    };
+    const features: Record<string, unknown> = {};
     const item: HunterResultVm = {
       prospectId: '11111111-1111-1111-1111-111111111111',
-      prospect: {
-        company: 'Brasserie Demo',
-        city: 'Paris',
-      },
-      features: {} as any,
+      prospect,
+      features,
       score: 78,
       why: ['Très bien noté', 'Actif sur Instagram'],
       lat: 48.8566,
@@ -141,10 +153,12 @@ describe('HunterMapComponent', () => {
       TestBed.createComponent(HunterMapComponent);
     const component = fixture.componentInstance;
 
+    const firstProspect: ProspectStub = { company: 'Alpha', city: 'Paris' };
+    const firstFeatures: Record<string, unknown> = {};
     const firstItem: HunterResultVm = {
       prospectId: 'aaa',
-      prospect: { company: 'Alpha', city: 'Paris' } as any,
-      features: {} as any,
+      prospect: firstProspect,
+      features: firstFeatures,
       score: 60,
       lat: 48.85,
       lng: 2.35,
@@ -159,10 +173,12 @@ describe('HunterMapComponent', () => {
 
     service.fitTo.mockClear();
 
+    const nextProspect: ProspectStub = { company: 'Beta', city: 'Lyon' };
+    const nextFeatures: Record<string, unknown> = {};
     const nextItem: HunterResultVm = {
       prospectId: 'bbb',
-      prospect: { company: 'Beta', city: 'Lyon' } as any,
-      features: {} as any,
+      prospect: nextProspect,
+      features: nextFeatures,
       score: 82,
       lat: 45.76,
       lng: 4.83,

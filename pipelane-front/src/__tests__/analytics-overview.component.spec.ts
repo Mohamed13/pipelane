@@ -338,9 +338,13 @@ describe('AnalyticsOverviewComponent mapping', () => {
     const fixture = TestBed.createComponent(AnalyticsOverviewComponent);
     const component = fixture.componentInstance;
 
-    expect(
-      component.trackKpi(2, { label: 'Test', value: 0, icon: 'send', tooltip: '' } as any),
-    ).toBe('Test');
+    const kpi: Exclude<Parameters<typeof component.trackKpi>[1], null | undefined> = {
+      label: 'Test',
+      value: 0,
+      icon: 'send',
+      tooltip: '',
+    };
+    expect(component.trackKpi(2, kpi)).toBe('Test');
     expect(component.trackKpi(5, undefined)).toBe(5);
   });
 });

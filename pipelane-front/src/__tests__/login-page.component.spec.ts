@@ -1,14 +1,14 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { convertToParamMap, ActivatedRoute, Router } from '@angular/router';
-import { RouterTestingModule } from '@angular/router/testing';
-import { provideNoopAnimations } from '@angular/platform-browser/animations';
-import { TestBed } from '@angular/core/testing';
-import { of, throwError } from 'rxjs';
 import { signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
+import { RouterTestingModule } from '@angular/router/testing';
+import { of, throwError } from 'rxjs';
 
 import { AuthService } from '../app/core/auth.service';
-import { LoginPageComponent } from '../app/features/auth/login-page.component';
 import { LanguageService, LangCode } from '../app/core/i18n/language.service';
+import { LoginPageComponent } from '../app/features/auth/login-page.component';
 
 class LanguageStub {
   private readonly dict: Record<string, string> = {

@@ -9,13 +9,7 @@
         "project": ["tsconfig.json"],
         "sourceType": "module"
       },
-      "plugins": [
-        "@angular-eslint",
-        "@typescript-eslint",
-        "import",
-        "rxjs",
-        "jsdoc"
-      ],
+      "plugins": ["@angular-eslint", "@typescript-eslint", "import", "rxjs", "jsdoc"],
       "extends": [
         "eslint:recommended",
         "plugin:@typescript-eslint/recommended",
@@ -31,12 +25,7 @@
           {
             "alphabetize": { "order": "asc", "caseInsensitive": true },
             "newlines-between": "always",
-            "groups": [
-              "builtin",
-              "external",
-              "internal",
-              ["parent", "sibling", "index"]
-            ]
+            "groups": ["builtin", "external", "internal", ["parent", "sibling", "index"]]
           }
         ],
         "rxjs/no-ignored-subscription": "warn",

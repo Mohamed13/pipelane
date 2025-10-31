@@ -1,7 +1,6 @@
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltip } from '@angular/material/tooltip';
 import { By } from '@angular/platform-browser';
@@ -65,7 +64,7 @@ describe('AppComponent tooltips', () => {
     }).compileComponents();
   });
 
-  it('exposes tooltip for quick action button', () => {
+  it('does not render legacy quick action buttons', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.componentInstance['breadcrumbs'].set([{ label: 'Analytics', url: '/analytics' }]);
     fixture.detectChanges();
@@ -73,8 +72,7 @@ describe('AppComponent tooltips', () => {
     const quickAction = fixture.debugElement.query(
       By.css('button[data-tour="quick-action-send-test"]'),
     );
-    const tooltip = quickAction.injector.get(MatTooltip);
-    expect(tooltip.message).toBe('Send yourself a test message');
+    expect(quickAction).toBeNull();
   });
 
   it('exposes tooltip for hunter navigation item', () => {

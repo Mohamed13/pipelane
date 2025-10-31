@@ -1,5 +1,5 @@
 const interceptCommon = () => {
-  cy.intercept('GET', '**/assets/i18n/**', { statusCode: 200, body: {} });
+  cy.intercept('GET', '**/assets/i18n/**').as('translations');
   cy.intercept('GET', '**/analytics/delivery**', { fixture: 'analytics.json' }).as('analytics');
   cy.intercept('POST', '**/api/followups/preview', { statusCode: 200, body: { count: 42 } }).as('preview');
   cy.intercept('GET', '**/templates', { fixture: 'templates.json' }).as('templates');
@@ -12,8 +12,11 @@ describe('Guided tour', () => {
   });
 
   it('shows shepherd tour on first visit', () => {
-    cy.visit('/');
+    cy.visitApp('/');
+    cy.wait('@translations');
     cy.wait('@analytics');
+    cy.wait('@templates');
+    cy.wait('@preview');
 
     cy.get('.shepherd-element', { timeout: 6000 }).should('contain.text', 'Connect your channels');
     cy.contains('.shepherd-element button', 'Skip tour').click();
@@ -23,4 +26,3 @@ describe('Guided tour', () => {
     });
   });
 });
-

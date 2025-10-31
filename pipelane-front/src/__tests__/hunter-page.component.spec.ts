@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { TestBed, fakeAsync, flushMicrotasks } from '@angular/core/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { of } from 'rxjs';
 
@@ -47,7 +47,7 @@ describe('HunterPageComponent', () => {
       listSummaries: jest.fn().mockReturnValue(of([])),
       uploadHunterCsv: jest.fn(),
       createList: jest.fn(),
-      addToList: jest.fn(),
+      addToList: jest.fn().mockReturnValue(of({ added: 1, skipped: 0 })),
       createCadenceFromList: jest.fn(),
       seedHunterDemo: jest.fn(),
     } as unknown as jest.Mocked<ApiService>;
@@ -66,10 +66,13 @@ describe('HunterPageComponent', () => {
 
     const fixture = TestBed.createComponent(HunterPageComponent);
     component = fixture.componentInstance;
+    (component as unknown as { snackbar: MatSnackBar })['snackbar'] =
+      snackbarStub as unknown as MatSnackBar;
   });
 
   afterEach(() => {
     jest.clearAllMocks();
+    snackbarStub.open.mockClear();
   });
 
   it('populates results when search succeeds', () => {
@@ -148,4 +151,42 @@ describe('HunterPageComponent', () => {
     expect(mapItems[0]?.lat).toBeUndefined();
     expect(mapItems[0]?.lng).toBeUndefined();
   });
+
+  it('auto-selects the first list when none is selected', () => {
+    const now = new Date().toISOString();
+    api.listSummaries.mockReturnValue(
+      of([
+        { id: 'list-1', name: 'Prospects A', count: 3, createdAtUtc: now, updatedAtUtc: now },
+        { id: 'list-2', name: 'Prospects B', count: 5, createdAtUtc: now, updatedAtUtc: now },
+      ]),
+    );
+
+    component.selectedListId.set(null);
+    component.refreshLists();
+
+    expect(component.selectedListId()).toBe('list-1');
+  });
+
+  it('adds the current selection to the chosen list and clears it afterwards', fakeAsync(() => {
+    const now = new Date().toISOString();
+    api.listSummaries.mockReturnValue(
+      of([{ id: 'list-99', name: 'Sélection', count: 5, createdAtUtc: now, updatedAtUtc: now }]),
+    );
+    api.addToList.mockReturnValue(of({ added: 2, skipped: 0 }));
+    component['selection'].select('p-1', 'p-2');
+    component.selectedListId.set('list-99');
+
+    component.addSelectionTo('list-99');
+    flushMicrotasks();
+
+    expect(api.addToList).toHaveBeenCalledWith('list-99', {
+      prospectIds: ['p-1', 'p-2'],
+    });
+    expect(component.selection.selected.length).toBe(0);
+    expect(snackbarStub.open).toHaveBeenCalledWith(
+      'Prospects ajoutés à la liste.',
+      'Fermer',
+      expect.objectContaining({ duration: 3000 }),
+    );
+  }));
 });

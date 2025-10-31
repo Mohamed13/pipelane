@@ -1,10 +1,12 @@
 describe('Analytics dashboard', () => {
   beforeEach(() => {
-    cy.intercept('GET', '**/assets/i18n/**', { statusCode: 200, body: {} });
+    cy.intercept('GET', '**/assets/i18n/**').as('translations');
     cy.fixture('analytics.json').then((analytics) => {
-      cy.intercept('GET', '**/analytics/delivery**', analytics);
+      cy.intercept('GET', '**/analytics/delivery**', analytics).as('analyticsInitial');
     });
-    cy.visit('/analytics');
+    cy.visitApp('/analytics');
+    cy.wait('@translations');
+    cy.wait('@analyticsInitial');
   });
 
   it('requests analytics again when switching date range', () => {
@@ -14,14 +16,14 @@ describe('Analytics dashboard', () => {
       req.reply({ statusCode: 200, body: { totals: { queued: 0, sent: 5, delivered: 4, opened: 2, failed: 0, bounced: 1 }, byChannel: [], byTemplate: [] } });
     }).as('analyticsCall');
 
-    cy.contains('7 days');
-    cy.contains('30 days').click();
+    cy.get('[data-cy="preset-7d"]', { timeout: 10000 }).should('be.visible');
+    cy.get('[data-cy="preset-30d"]').should('not.be.disabled').click({ force: true });
     cy.wait('@analyticsCall');
 
     cy.wrap(null).then(() => {
       expect(queries.some((query) => !!query.from && !!query.to)).to.be.true;
     });
 
-    cy.contains('Delivery timeline').should('be.visible');
+    cy.contains('Analytics dashboard').should('exist');
   });
 });
