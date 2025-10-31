@@ -1,7 +1,8 @@
 :host {
   display: block;
   min-height: 100vh;
-  background: radial-gradient(circle at top left, rgba(117, 240, 255, 0.12), transparent 45%),
+  background:
+    radial-gradient(circle at top left, rgba(117, 240, 255, 0.12), transparent 45%),
     radial-gradient(circle at top right, rgba(155, 140, 255, 0.1), transparent 55%), var(--color-bg);
   color: var(--color-text);
 }
@@ -198,7 +199,8 @@ button.btn-primary {
   grid-area: visual;
   position: relative;
   overflow: hidden;
-  background: radial-gradient(circle at 20% 20%, rgba(117, 240, 255, 0.18), transparent 55%),
+  background:
+    radial-gradient(circle at 20% 20%, rgba(117, 240, 255, 0.18), transparent 55%),
     radial-gradient(circle at 80% 30%, rgba(96, 247, 163, 0.12), transparent 60%),
     linear-gradient(135deg, rgba(10, 16, 30, 0.95), rgba(35, 48, 89, 0.85));
   background-size: cover;

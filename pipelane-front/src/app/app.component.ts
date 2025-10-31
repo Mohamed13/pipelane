@@ -4,7 +4,6 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
-  ElementRef,
   HostListener,
   ViewChild,
   computed,
@@ -29,14 +28,15 @@ import {
   RouterOutlet,
 } from '@angular/router';
 import { NavigationEnd } from '@angular/router';
-import { filter } from 'rxjs';
+import { EMPTY, catchError, filter, switchMap, take, tap } from 'rxjs';
 
 import { ApiService } from './core/api.service';
 import { environment } from './core/environment';
 import { HelpCenterComponent } from './core/help-center/help-center.component';
 import { LanguageService } from './core/i18n/language.service';
-import { CommandPaletteComponent } from './core/search/command-palette.component';
 import { TranslatePipe } from './core/i18n/translate.pipe';
+import { IconService } from './core/icon.service';
+import { CommandPaletteComponent } from './core/search/command-palette.component';
 import { ThemeService } from './core/theme.service';
 import { TourService } from './core/tour.service';
 import { PipelaneLogoComponent } from './shared/ui/pipelane-logo/pipelane-logo.component';
@@ -93,6 +93,7 @@ const fadeIn = animation([
       <mat-sidenav
         #snav
         class="nav-shell"
+        [class.nav-shell--collapsed]="collapsed() && !isHandset()"
         [mode]="sidenavMode()"
         [opened]="opened()"
         (openedChange)="onOpenedChange($event)"
@@ -237,59 +238,6 @@ const fadeIn = animation([
               <mat-icon aria-hidden="true" *ngIf="!last">chevron_right</mat-icon>
             </ng-container>
           </nav>
-          <div class="quick-actions">
-            <button
-              mat-stroked-button
-              color="primary"
-              (click)="onQuickAction('send-test')"
-              matTooltip="Send yourself a test message"
-              data-tour="quick-action-send-test"
-            >
-              <mat-icon aria-hidden="true">send</mat-icon>
-              <span>Send test</span>
-            </button>
-            <button
-              mat-stroked-button
-              color="accent"
-              (click)="onQuickAction('create-campaign')"
-              matTooltip="Create your next campaign"
-              data-tour="quick-action-create-campaign"
-            >
-              <mat-icon aria-hidden="true">flag</mat-icon>
-              <span>Create campaign</span>
-            </button>
-            <button
-              *ngIf="demoMode"
-              mat-stroked-button
-              color="primary"
-              (click)="triggerDemoRun()"
-              [disabled]="demoRunning()"
-              matTooltip="Inject demo conversations and stats"
-              data-tour="quick-action-demo"
-            >
-              <mat-icon aria-hidden="true">{{ demoRunning() ? 'hourglass_top' : 'bolt' }}</mat-icon>
-              <span>{{ demoRunning() ? 'Running...' : 'Launch demo' }}</span>
-            </button>
-            <button
-              mat-stroked-button
-              color="accent"
-              (click)="onQuickAction('import-contacts')"
-              matTooltip="Import contacts via CSV or API"
-              data-tour="quick-action-import-contacts"
-            >
-              <mat-icon aria-hidden="true">upload</mat-icon>
-              <span>Import contacts</span>
-            </button>
-            <button
-              mat-stroked-button
-              color="warn"
-              (click)="openDocs()"
-              matTooltip="Read product documentation"
-            >
-              <mat-icon aria-hidden="true">menu_book</mat-icon>
-              <span>Docs</span>
-            </button>
-          </div>
         </section>
 
         <main class="content" id="main-content">
@@ -301,54 +249,64 @@ const fadeIn = animation([
   styles: [
     `
       .nav-shell {
-        width: 288px;
-        border-right: 1px solid rgba(117, 240, 255, 0.08);
-        background: rgba(16, 23, 38, 0.92);
+        width: 240px;
+        border-right: 1px solid rgba(117, 240, 255, 0.12);
+        background: color-mix(in srgb, var(--md-sys-color-surface-container-low) 92%, transparent);
         backdrop-filter: blur(18px);
         display: flex;
         flex-direction: column;
+        transition: width 220ms ease;
+      }
+
+      .nav-shell--collapsed {
+        width: 76px;
       }
 
       .rail-head {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: var(--space-4);
+        padding: var(--gap);
       }
 
       .brand {
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        padding-inline: var(--space-2);
+        padding-inline: var(--gap-sm);
       }
 
       .brand app-pipelane-logo,
       .brand .pl-logo {
-        width: clamp(160px, 20vw, 240px);
+        width: clamp(132px, 18vw, 200px);
       }
 
       .nav-rail {
         display: flex;
         flex-direction: column;
-        gap: 0.35rem;
-        padding: 0 var(--space-3);
+        gap: var(--gap-sm);
+        padding: 0 var(--gap);
         overflow-y: auto;
+      }
+
+      .nav-rail--collapsed {
+        align-items: center;
+        padding-inline: var(--gap-sm);
       }
 
       .nav-rail--collapsed .nav-label {
         display: none;
       }
 
-      .nav-rail--collapsed a.mat-mdc-list-item {
+      .nav-rail--collapsed .mat-mdc-list-item {
         justify-content: center;
       }
 
       .nav-rail .mat-mdc-list-item {
-        border-radius: var(--radius-md);
+        border-radius: var(--radius-lg);
         transition:
-          background 220ms ease,
-          transform 220ms ease;
+          background 180ms ease,
+          transform 180ms ease;
       }
 
       .nav-rail .mat-mdc-list-item:hover {
@@ -356,13 +314,14 @@ const fadeIn = animation([
       }
 
       .nav-rail .mat-mdc-list-item.is-active {
-        background: rgba(117, 240, 255, 0.12);
-        border: 1px solid rgba(117, 240, 255, 0.25);
+        background: rgba(117, 240, 255, 0.18);
+        border: 1px solid rgba(117, 240, 255, 0.32);
         transform: translateX(4px);
       }
 
       .nav-icon {
-        margin-right: 1rem;
+        margin-right: var(--gap);
+        font-size: 1.4rem;
       }
 
       .nav-rail--collapsed .nav-icon {
@@ -370,34 +329,49 @@ const fadeIn = animation([
       }
 
       .rail-footer {
-        padding: var(--space-4);
         margin-top: auto;
+        padding: var(--gap);
+        display: flex;
+        flex-direction: column;
+        gap: var(--gap);
       }
 
       .launch-button {
         width: 100%;
         border-radius: var(--radius-pill);
-        border-color: rgba(117, 240, 255, 0.35) !important;
-        backdrop-filter: blur(6px);
+        border-color: rgba(117, 240, 255, 0.28) !important;
+        backdrop-filter: blur(8px);
       }
 
       .launch-button--demo {
         border-color: rgba(96, 247, 163, 0.6) !important;
-        color: #60f7a3;
+        color: var(--md-sys-color-tertiary);
       }
 
       .launch-button--demo[disabled] {
-        opacity: 0.6;
+        opacity: 0.65;
       }
 
-      .toolbar.glass {
-        border-bottom: none;
+      .shell-container {
+        height: 100vh;
+        background:
+          radial-gradient(circle at top, rgba(117, 240, 255, 0.08), transparent 55%),
+          var(--color-bg);
+        color: var(--color-text);
       }
 
-      .quick-actions {
+      .toolbar {
+        position: sticky;
+        top: 0;
+        z-index: 14;
+        min-height: 64px;
         display: flex;
-        gap: var(--space-2);
         align-items: center;
+        gap: var(--gap);
+        padding-inline: clamp(16px, 4vw, 32px);
+        background: color-mix(in srgb, var(--md-sys-color-surface) 88%, transparent);
+        border-bottom: 1px solid rgba(117, 240, 255, 0.14);
+        backdrop-filter: blur(12px);
       }
 
       .route-title {
@@ -406,77 +380,139 @@ const fadeIn = animation([
         gap: 0.25rem;
       }
 
+      .title {
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+
       .demo-mode-chip {
         display: inline-flex;
         align-items: center;
         gap: 0.4rem;
         border-radius: var(--radius-pill);
         padding: 0.35rem 0.75rem;
-        border: 1px solid rgba(117, 240, 255, 0.35);
-        background: rgba(117, 240, 255, 0.12);
-        font-size: 0.7rem;
+        border: 1px solid rgba(96, 247, 163, 0.35);
+        background: rgba(96, 247, 163, 0.12);
+        font-size: 0.75rem;
         text-transform: uppercase;
-        letter-spacing: 0.14em;
-        color: rgba(230, 234, 242, 0.92);
+        letter-spacing: 0.12em;
+        color: var(--md-sys-color-on-surface);
+      }
+
+      .search-trigger {
+        margin-right: var(--gap-sm);
+        color: var(--md-sys-color-on-surface-variant);
+      }
+
+      .search-trigger:hover,
+      .search-trigger:focus-visible {
+        color: var(--md-sys-color-on-surface);
+      }
+
+      .theme-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        border-radius: var(--radius-pill);
+        padding: 0.35rem 0.75rem;
+        border: 1px solid rgba(117, 240, 255, 0.16);
+        cursor: pointer;
+      }
+
+      .skip-link {
+        position: absolute;
+        top: -100px;
+        left: 0;
+        background: var(--md-sys-color-primary);
+        color: var(--md-sys-color-on-primary);
+        padding: 0.75rem 1rem;
+        border-radius: var(--radius-pill);
+        transition: top 0.2s ease;
+        z-index: 999;
+      }
+
+      .skip-link:focus-visible {
+        top: 16px;
       }
 
       .header-band {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        gap: var(--space-4);
-        margin: var(--space-4) var(--space-6) 0;
-        padding: var(--space-3) var(--space-4);
+        gap: var(--gap);
+        margin: var(--gap-lg) clamp(16px, 4vw, 32px) 0;
+        padding: var(--gap) clamp(16px, 4vw, 32px);
         border-radius: var(--radius-lg);
         border: 1px solid rgba(117, 240, 255, 0.12);
+        background: color-mix(in srgb, var(--md-sys-color-surface-container) 90%, transparent);
+      }
+
+      .breadcrumb-trail {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--md-sys-color-on-surface-variant);
+        font-size: 0.9rem;
+        letter-spacing: 0.02em;
       }
 
       .breadcrumb-trail mat-icon {
         font-size: 18px;
-        vertical-align: middle;
         opacity: 0.6;
       }
 
-      .quick-actions button {
-        backdrop-filter: blur(6px);
+      .content {
+        padding: clamp(24px, 5vw, 48px);
+        min-height: calc(100vh - 64px);
+        background:
+          radial-gradient(circle at 20% 10%, rgba(117, 240, 255, 0.12), transparent 45%),
+          radial-gradient(circle at 80% 0%, rgba(155, 140, 255, 0.16), transparent 55%),
+          var(--color-bg);
       }
 
-      .search-trigger {
-        margin-right: var(--space-2);
-        color: rgba(230, 234, 242, 0.78);
-      }
-
-      .search-trigger:hover,
-      .search-trigger:focus-visible {
-        color: #fff;
-      }
-
-      @media (max-width: 1024px) {
-        .quick-actions {
-          flex-wrap: wrap;
-          justify-content: flex-end;
-        }
+      .spacer {
+        flex: 1;
       }
 
       @media (max-width: 960px) {
         .nav-shell {
-          width: 260px;
+          width: 220px;
         }
 
         .header-band {
-          margin: var(--space-4);
+          margin: var(--gap-lg) var(--gap);
+          padding: var(--gap);
+        }
+
+        .toolbar {
+          padding-inline: var(--gap);
         }
       }
 
       @media (max-width: 720px) {
-        .header-band {
-          flex-direction: column;
-          align-items: flex-start;
+        .nav-shell {
+          width: 200px;
         }
 
-        .quick-actions {
-          width: 100%;
-          justify-content: flex-start;
+        .nav-shell--collapsed {
+          width: 76px;
+        }
+
+        .toolbar {
+          gap: var(--gap-sm);
+        }
+
+        .content {
+          padding: var(--gap-lg) var(--gap);
+        }
+      }
+
+      @media (max-width: 540px) {
+        .toolbar {
+          padding-inline: var(--gap);
+        }
+
+        .content {
+          padding: var(--gap-lg) var(--gap);
         }
       }
     `,
@@ -486,6 +522,7 @@ const fadeIn = animation([
 export class AppComponent {
   private readonly language = inject(LanguageService);
   private readonly themeSvc = inject(ThemeService);
+  private readonly _icons = inject(IconService);
   private readonly bp = inject(BreakpointObserver);
   private readonly router = inject(Router);
   private readonly activatedRoute = inject(ActivatedRoute);
@@ -590,15 +627,15 @@ export class AppComponent {
     this.tour.initialize();
   }
 
-  setLang(language: 'en' | 'fr') {
+  setLang(language: 'en' | 'fr'): void {
     this.language.set(language);
   }
 
-  toggleTheme() {
+  toggleTheme(): void {
     this.themeSvc.toggle();
   }
 
-  toggleSidenav() {
+  toggleSidenav(): void {
     if (this.sidenavMode() === 'over') {
       this.sidenav?.toggle();
     } else {
@@ -618,7 +655,7 @@ export class AppComponent {
     }
   }
 
-  onOpenedChange(val: boolean) {
+  onOpenedChange(val: boolean): void {
     this.opened.set(val);
     localStorage.setItem('snav_opened', JSON.stringify(val));
   }
@@ -648,9 +685,8 @@ export class AppComponent {
     this.demoRunning.set(true);
     const _demoRunSubscription = this.api
       .runDemo()
-      .pipe(takeUntilDestroyed())
-      .subscribe({
-        next: (response) => {
+      .pipe(
+        tap((response) => {
           this.demoRunning.set(false);
           const primary = response.messages[0];
           if (primary?.contactId) {
@@ -658,20 +694,25 @@ export class AppComponent {
               queryParams: { demo: 'true' },
             });
           }
+        }),
+        switchMap(() => {
           const ref = this.snackbar.open('Demo launched - analytics refreshed.', 'View analytics', {
             duration: 6000,
           });
-          const _demoActionSubscription = ref
-            .onAction()
-            .pipe(takeUntilDestroyed())
-            .subscribe(() => {
+          return ref.onAction().pipe(
+            take(1),
+            tap(() => {
               this.router.navigate(['/analytics']);
-            });
-        },
-        error: () => {
+            }),
+          );
+        }),
+        catchError(() => {
           this.demoRunning.set(false);
-        },
-      });
+          return EMPTY;
+        }),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
   }
 
   @HostListener('document:keydown', ['$event'])
@@ -708,7 +749,7 @@ export class AppComponent {
       return;
     }
 
-    const setBuffer = (value: string) => {
+    const setBuffer = (value: string): void => {
       this.shortcutBuffer = value;
       if (this.shortcutTimer !== null && typeof window !== 'undefined') {
         window.clearTimeout(this.shortcutTimer);

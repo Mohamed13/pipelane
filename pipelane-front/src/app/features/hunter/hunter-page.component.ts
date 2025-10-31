@@ -5,6 +5,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  OnDestroy,
   ViewChild,
   computed,
   effect,
@@ -27,11 +28,12 @@ import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { finalize } from 'rxjs';
+import { Observable, PartialObserver, Subscription, finalize } from 'rxjs';
 
+import { HunterMapComponent, type HunterResultVm } from './hunter-map.component';
 import { ApiService } from '../../core/api.service';
-import { environment } from '../../core/environment';
 import { MAPBOX_TOKEN } from '../../core/env.generated';
+import { environment } from '../../core/environment';
 import {
   AddToListPayload,
   HunterFilters,
@@ -39,7 +41,8 @@ import {
   HunterSearchCriteria,
   ListSummary,
 } from '../../core/models';
-import { HunterMapComponent, type HunterResultVm } from './hunter-map.component';
+import { SubscriptionStore } from '../../core/subscription-store';
+import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 
 interface HunterFormValue {
   industry: string;
@@ -159,14 +162,24 @@ function titleCase(input: string): string {
     MatSnackBarModule,
     MatDividerModule,
     MatSidenavModule,
+    PageHeaderComponent,
     HunterMapComponent,
   ],
 })
-export class HunterPageComponent {
+export class HunterPageComponent implements OnDestroy {
   private readonly api = inject(ApiService);
   private readonly fb = inject(FormBuilder);
   private readonly snackbar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly subscriptions = new SubscriptionStore();
+
+  private subscribe<T>(
+    source: Observable<T>,
+    observer: PartialObserver<T>,
+    key?: string,
+  ): Subscription {
+    return this.subscriptions.subscribe(source, observer, key);
+  }
 
   readonly personas: PersonaShortcut[] = [
     {
@@ -273,6 +286,25 @@ export class HunterPageComponent {
     });
   });
   readonly mapSelectedId = computed(() => this.activeProspect()?.prospectId ?? null);
+  readonly legendItems = [
+    {
+      icon: 'check_circle',
+      label:
+        'Icône verte = signal présent (site, réservation, réseaux). Icône rouge = opportunité à corriger.',
+    },
+    {
+      icon: 'sell',
+      label: 'Pastilles bleues = raisons principales identifiées par Hunter.',
+    },
+    {
+      icon: 'speed',
+      label: 'Score 0–100 = priorité : plus il est élevé, plus le prospect est chaud.',
+    },
+    {
+      icon: 'auto_awesome',
+      label: 'Magic Pick répartit automatiquement une sélection équilibrée par zones et scores.',
+    },
+  ] as const;
 
   readonly selection = new SelectionModel<string>(true);
   readonly selectionCount = computed(() => this.selection.selected.length);
@@ -285,31 +317,34 @@ export class HunterPageComponent {
     });
 
     this.siteIssuesOnly.set(this.filtersForm.get('siteIssuesOnly')?.value ?? false);
-    this.filtersForm
-      .get('siteIssuesOnly')
-      ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((value) => this.siteIssuesOnly.set(!!value));
-
-    this.filtersForm
-      .get('source')
-      ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((value) => {
-        if (value !== 'csv') {
-          this.uploadedCsvId.set(null);
-          this.csvFileName.set(null);
-        }
+    const siteIssuesControl = this.filtersForm.get('siteIssuesOnly');
+    if (siteIssuesControl) {
+      this.subscribe(siteIssuesControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)), {
+        next: (value) => this.siteIssuesOnly.set(!!value),
       });
+    }
+
+    const sourceControl = this.filtersForm.get('source');
+    if (sourceControl) {
+      this.subscribe(sourceControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)), {
+        next: (value) => {
+          if (value !== 'csv') {
+            this.uploadedCsvId.set(null);
+            this.csvFileName.set(null);
+          }
+        },
+      });
+    }
   }
 
   seedDemo(): void {
     this.loading.set(true);
-    this.api
-      .seedHunterDemo()
-      .pipe(
+    this.subscribe(
+      this.api.seedHunterDemo().pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.loading.set(false)),
-      )
-      .subscribe({
+      ),
+      {
         next: (response) => {
           this.results.set(response.items ?? []);
           this.total.set(response.total);
@@ -326,7 +361,9 @@ export class HunterPageComponent {
           this.snackbar.open('Impossible de charger les prospects de démo.', 'Fermer', {
             duration: 3200,
           }),
-      });
+      },
+      'seed-demo',
+    );
   }
 
   selectPersona(persona: PersonaShortcut): void {
@@ -438,13 +475,12 @@ export class HunterPageComponent {
 
     const criteria = this.buildCriteria(form);
     this.loading.set(true);
-    this.api
-      .hunterSearch(criteria, { dryRun })
-      .pipe(
+    this.subscribe(
+      this.api.hunterSearch(criteria, { dryRun }).pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.loading.set(false)),
-      )
-      .subscribe({
+      ),
+      {
         next: (response) => {
           this.results.set(response.items ?? []);
           this.total.set(response.total);
@@ -463,7 +499,9 @@ export class HunterPageComponent {
             duration: 3000,
           });
         },
-      });
+      },
+      'hunter-search',
+    );
   }
 
   toggleAll(): void {
@@ -518,7 +556,7 @@ export class HunterPageComponent {
     }
   }
 
-  trackRow = (_: number, item: HunterResult) => item.prospectId;
+  trackRow = (_: number, item: HunterResult): string => item.prospectId;
   openProspect(row: HunterResult): void {
     this.activeProspect.set(row);
     if (row.prospectId) {
@@ -614,13 +652,13 @@ export class HunterPageComponent {
     }
 
     this.loading.set(true);
-    this.api
-      .createList({ name: name.trim() })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
+    this.subscribe(
+      this.api.createList({ name: name.trim() }).pipe(takeUntilDestroyed(this.destroyRef)),
+      {
         next: (res) => {
           this.addProspectsToList(res.id, ids, () => {
             this.snackbar.open('Liste créée et prospects ajoutés.', 'Fermer', { duration: 3000 });
+            this.selection.clear();
             this.refreshLists();
             this.selectedListId.set(res.id);
           });
@@ -629,7 +667,9 @@ export class HunterPageComponent {
           this.loading.set(false);
           this.snackbar.open('Impossible de créer la liste.', 'Fermer', { duration: 3000 });
         },
-      });
+      },
+      'create-list',
+    );
   }
 
   addSelectionTo(listId: string): void {
@@ -638,9 +678,11 @@ export class HunterPageComponent {
       this.snackbar.open('Sélectionnez au moins un prospect.', 'Fermer', { duration: 2500 });
       return;
     }
-    this.addProspectsToList(listId, ids, () =>
-      this.snackbar.open('Prospects ajoutés à la liste.', 'Fermer', { duration: 3000 }),
-    );
+    this.addProspectsToList(listId, ids, () => {
+      this.snackbar.open('Prospects ajoutés à la liste.', 'Fermer', { duration: 3000 });
+      this.selection.clear();
+      this.refreshLists();
+    });
   }
 
   addProspectToCurrentList(row: HunterResult): void {
@@ -668,13 +710,12 @@ export class HunterPageComponent {
     }
 
     this.loading.set(true);
-    this.api
-      .createCadenceFromList({ listId })
-      .pipe(
+    this.subscribe(
+      this.api.createCadenceFromList({ listId }).pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.loading.set(false)),
-      )
-      .subscribe({
+      ),
+      {
         next: () => {
           this.snackbar.open('Cadence créée pour la sélection.', 'Fermer', { duration: 3200 });
         },
@@ -682,7 +723,9 @@ export class HunterPageComponent {
           this.snackbar.open('Création de cadence impossible pour le moment.', 'Fermer', {
             duration: 3200,
           }),
-      });
+      },
+      'create-cadence',
+    );
   }
 
   importCsv(event: Event): void {
@@ -692,13 +735,12 @@ export class HunterPageComponent {
       return;
     }
     this.loading.set(true);
-    this.api
-      .uploadHunterCsv(file)
-      .pipe(
+    this.subscribe(
+      this.api.uploadHunterCsv(file).pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.loading.set(false)),
-      )
-      .subscribe({
+      ),
+      {
         next: (res) => {
           this.uploadedCsvId.set(res.csvId);
           this.csvFileName.set(file.name);
@@ -707,7 +749,9 @@ export class HunterPageComponent {
         },
         error: () =>
           this.snackbar.open("Impossible d'importer le fichier CSV.", 'Fermer', { duration: 3200 }),
-      });
+      },
+      'upload-csv',
+    );
 
     input.value = '';
   }
@@ -747,37 +791,45 @@ export class HunterPageComponent {
   }
 
   refreshLists(): void {
-    this.api
-      .listSummaries()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
+    this.subscribe(
+      this.api.listSummaries().pipe(takeUntilDestroyed(this.destroyRef)),
+      {
         next: (lists) => {
           this.lists.set(lists);
           if (lists.every((list) => list.id !== this.selectedListId())) {
             this.selectedListId.set(null);
           }
+          if (!this.selectedListId() && lists.length > 0) {
+            const first = lists[0];
+            if (first) {
+              this.selectedListId.set(first.id);
+            }
+          }
         },
         error: () =>
           this.snackbar.open('Impossible de charger les listes.', 'Fermer', { duration: 2500 }),
-      });
+      },
+      'list-summaries',
+    );
   }
 
   private addProspectsToList(listId: string, prospectIds: string[], onSuccess: () => void): void {
     const payload: AddToListPayload = { prospectIds };
     this.loading.set(true);
-    this.api
-      .addToList(listId, payload)
-      .pipe(
+    this.subscribe(
+      this.api.addToList(listId, payload).pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.loading.set(false)),
-      )
-      .subscribe({
+      ),
+      {
         next: () => onSuccess(),
         error: () =>
           this.snackbar.open("Impossible d'ajouter les prospects à la liste.", 'Fermer', {
             duration: 3000,
           }),
-      });
+      },
+      `add-to-list-${listId}`,
+    );
   }
 
   private scrollToProspect(prospectId: string): void {
@@ -884,5 +936,9 @@ export class HunterPageComponent {
     }
 
     return criteria;
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.clear();
   }
 }

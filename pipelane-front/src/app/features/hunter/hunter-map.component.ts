@@ -20,12 +20,15 @@ import mapboxgl, {
   type MapLayerMouseEvent,
   type MapboxGeoJSONFeature,
 } from 'mapbox-gl';
-import type { FeatureCollection, Point } from 'geojson';
 
+import { MapboxService, toGeoJSON, type HunterFeatureCollection } from '../../core/mapbox.service';
 import type { HunterResult } from '../../core/models';
-import { MapboxService, toGeoJSON } from '../../core/mapbox.service';
 
 const DEFAULT_CENTER: [number, number] = [2.3522, 48.8566];
+type PointGeometry = {
+  type: 'Point';
+  coordinates: [number, number];
+};
 
 export interface HunterResultVm extends HunterResult {
   lat?: number | null;
@@ -44,7 +47,7 @@ export class HunterMapComponent implements AfterViewInit, OnChanges, OnDestroy {
   @Input() items: HunterResultVm[] = [];
   @Input() selectedId?: string | null;
 
-  @Output() select = new EventEmitter<string>();
+  @Output() itemSelect = new EventEmitter<string>();
   @Output() addToList = new EventEmitter<string>();
 
   @ViewChild('mapEl', { static: false }) private mapElement?: ElementRef<HTMLDivElement>;
@@ -112,7 +115,7 @@ export class HunterMapComponent implements AfterViewInit, OnChanges, OnDestroy {
     this.attachData(data);
   }
 
-  private attachData(data: FeatureCollection): void {
+  private attachData(data: HunterFeatureCollection): void {
     if (!this.map) {
       return;
     }
@@ -162,7 +165,7 @@ export class HunterMapComponent implements AfterViewInit, OnChanges, OnDestroy {
           return;
         }
         map.easeTo({
-          center: (feature.geometry as Point).coordinates as [number, number],
+          center: (feature.geometry as PointGeometry).coordinates,
           zoom,
         });
       });
@@ -230,19 +233,19 @@ export class HunterMapComponent implements AfterViewInit, OnChanges, OnDestroy {
       const selectBtn = popupEl.querySelector<HTMLButtonElement>('button[data-action="select"]');
       const addBtn = popupEl.querySelector<HTMLButtonElement>('button[data-action="add"]');
 
-      const handleClick = (event: Event, emitter: EventEmitter<string>) => {
+      const handleClick = (event: Event, emitter: EventEmitter<string>): void => {
         event.preventDefault();
         event.stopPropagation();
         this.zone.run(() => emitter.emit(id));
         this.popup?.remove();
       };
 
-      const stopGesture = (event: Event) => {
+      const stopGesture = (event: Event): void => {
         event.stopPropagation();
       };
 
       if (selectBtn) {
-        selectBtn.addEventListener('click', (event) => handleClick(event, this.select));
+        selectBtn.addEventListener('click', (event) => handleClick(event, this.itemSelect));
         selectBtn.addEventListener('touchstart', stopGesture, { passive: true });
         selectBtn.addEventListener('dblclick', stopGesture);
         requestAnimationFrame(() => selectBtn.focus());

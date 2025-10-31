@@ -7,7 +7,7 @@ import { MAT_SNACK_BAR_DATA, MatSnackBarModule, MatSnackBarRef } from '@angular/
 
 import { ErrorDialogComponent, ErrorDialogData } from '../error-dialog/error-dialog.component';
 
-export interface ErrorToastData {
+interface ErrorToastData {
   context: string;
   detail: string;
 }

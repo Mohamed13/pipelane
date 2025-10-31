@@ -1,5 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnDestroy,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   FormBuilder,
@@ -36,6 +43,8 @@ import {
   ChannelLabels,
   TemplateSummary,
 } from '../../core/models';
+import { SubscriptionStore } from '../../core/subscription-store';
+import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 
 interface ActivityOption {
   label: string;
@@ -64,12 +73,13 @@ interface ActivityOption {
     MatTooltipModule,
     MatProgressSpinnerModule,
     MatButtonToggleModule,
+    PageHeaderComponent,
   ],
   templateUrl: './campaign-builder.component.html',
   styleUrls: ['./campaign-builder.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CampaignBuilderComponent {
+export class CampaignBuilderComponent implements OnDestroy {
   private readonly api = inject(ApiService);
   private readonly fb = inject(FormBuilder);
   private readonly snackbar = inject(MatSnackBar);
@@ -90,6 +100,7 @@ export class CampaignBuilderComponent {
   previewCount = signal<number | null>(null);
   followupPreview = signal<AiSuggestFollowupResponse | null>(null);
   followupLoading = signal(false);
+  private readonly subscriptions = new SubscriptionStore();
 
   readonly form = this.fb.group({
     audience: this.fb.group({
@@ -170,19 +181,22 @@ export class CampaignBuilderComponent {
 
     this.followupPreview.set(null);
     this.followupLoading.set(true);
-    this.api
-      .suggestSmartFollowup(payload)
-      .pipe(takeUntilDestroyed())
-      .subscribe({
-        next: (preview) => {
-          this.followupPreview.set(preview);
-          this.followupLoading.set(false);
-        },
-        error: () => {
-          this.followupPreview.set(null);
-          this.followupLoading.set(false);
-        },
-      });
+    this.subscriptions.set(
+      'followup-preview',
+      this.api
+        .suggestSmartFollowup(payload)
+        .pipe(takeUntilDestroyed())
+        .subscribe({
+          next: (preview) => {
+            this.followupPreview.set(preview);
+            this.followupLoading.set(false);
+          },
+          error: () => {
+            this.followupPreview.set(null);
+            this.followupLoading.set(false);
+          },
+        }),
+    );
   }
 
   private buildFollowupPreviewRequest(): AiSuggestFollowupRequest {
@@ -208,42 +222,52 @@ export class CampaignBuilderComponent {
   }
 
   constructor() {
-    this.api.getTemplates().subscribe({
-      next: (templates) => this.templates.set(templates ?? []),
-    });
+    this.subscriptions.track(
+      this.api.getTemplates().subscribe({
+        next: (templates) => this.templates.set(templates ?? []),
+      }),
+    );
 
-    this.audienceGroup.valueChanges
-      .pipe(debounceTime(120), takeUntilDestroyed())
-      .subscribe(() => this.generateSegmentJson());
+    this.subscriptions.track(
+      this.audienceGroup.valueChanges
+        .pipe(debounceTime(120), takeUntilDestroyed())
+        .subscribe(() => this.generateSegmentJson()),
+    );
 
-    this.messageGroup
-      .get('primaryChannel')
-      ?.valueChanges.pipe(takeUntilDestroyed())
-      .subscribe((primary) => {
-        this.pruneFallback(primary as Channel);
-        if (this.smartFollowupControl.value) {
-          this.loadFollowupPreview(true);
-        }
-      });
+    const primaryControl = this.messageGroup.get('primaryChannel');
+    if (primaryControl) {
+      this.subscriptions.track(
+        primaryControl.valueChanges.pipe(takeUntilDestroyed()).subscribe((primary) => {
+          this.pruneFallback(primary as Channel);
+          if (this.smartFollowupControl.value) {
+            this.loadFollowupPreview(true);
+          }
+        }),
+      );
+    }
 
-    this.messageGroup
-      .get('templateId')
-      ?.valueChanges.pipe(debounceTime(120), takeUntilDestroyed())
-      .subscribe(() => {
-        if (this.smartFollowupControl.value) {
-          this.loadFollowupPreview();
-        }
-      });
+    const templateControl = this.messageGroup.get('templateId');
+    if (templateControl) {
+      this.subscriptions.track(
+        templateControl.valueChanges.pipe(debounceTime(120), takeUntilDestroyed()).subscribe(() => {
+          if (this.smartFollowupControl.value) {
+            this.loadFollowupPreview();
+          }
+        }),
+      );
+    }
 
-    this.smartFollowupControl.valueChanges
-      .pipe(startWith(this.smartFollowupControl.value), takeUntilDestroyed())
-      .subscribe((enabled) => {
-        if (enabled) {
-          this.loadFollowupPreview(true);
-        } else {
-          this.followupPreview.set(null);
-        }
-      });
+    this.subscriptions.track(
+      this.smartFollowupControl.valueChanges
+        .pipe(startWith(this.smartFollowupControl.value), takeUntilDestroyed())
+        .subscribe((enabled) => {
+          if (enabled) {
+            this.loadFollowupPreview(true);
+          } else {
+            this.followupPreview.set(null);
+          }
+        }),
+    );
 
     this.generateSegmentJson();
     const segmentControl = this.audienceGroup.get('segmentJson');
@@ -317,44 +341,47 @@ export class CampaignBuilderComponent {
       return;
     }
     this.creating.set(true);
-    this.api.createCampaign(payload).subscribe({
-      next: (res) => {
-        this.creating.set(false);
-        this.snackbar.open(`Campaign created (ID: ${res.id})`, 'Close', { duration: 4000 });
-        this.form.reset({
-          audience: {
-            tags: [],
-            channels: ['whatsapp'],
-            lastActivity: 30,
-            consentOnly: true,
-            segmentJson: '{}',
-          },
-          message: {
-            name: 'Untitled campaign',
-            templateId: '',
-            primaryChannel: 'whatsapp',
-            fallbackOrder: [],
-            smartFollowupDefault: false,
-          },
-          schedule: {
-            scheduledDate: null,
-            scheduledTime: '09:00',
-            batchSize: null,
-            throttleEnabled: false,
-            throttleRate: 200,
-            respectQuietHours: true,
-            quietHoursStart: '21:00',
-            quietHoursEnd: '08:00',
-          },
-        });
-        this.previewCount.set(null);
-        this.generateSegmentJson();
-      },
-      error: () => {
-        this.creating.set(false);
-        this.snackbar.open('Failed to create campaign', 'Dismiss', { duration: 4000 });
-      },
-    });
+    this.subscriptions.set(
+      'create-campaign',
+      this.api.createCampaign(payload).subscribe({
+        next: (res) => {
+          this.creating.set(false);
+          this.snackbar.open(`Campaign created (ID: ${res.id})`, 'Close', { duration: 4000 });
+          this.form.reset({
+            audience: {
+              tags: [],
+              channels: ['whatsapp'],
+              lastActivity: 30,
+              consentOnly: true,
+              segmentJson: '{}',
+            },
+            message: {
+              name: 'Untitled campaign',
+              templateId: '',
+              primaryChannel: 'whatsapp',
+              fallbackOrder: [],
+              smartFollowupDefault: false,
+            },
+            schedule: {
+              scheduledDate: null,
+              scheduledTime: '09:00',
+              batchSize: null,
+              throttleEnabled: false,
+              throttleRate: 200,
+              respectQuietHours: true,
+              quietHoursStart: '21:00',
+              quietHoursEnd: '08:00',
+            },
+          });
+          this.previewCount.set(null);
+          this.generateSegmentJson();
+        },
+        error: () => {
+          this.creating.set(false);
+          this.snackbar.open('Failed to create campaign', 'Dismiss', { duration: 4000 });
+        },
+      }),
+    );
   }
 
   private generateSegmentJson(): void {
@@ -422,16 +449,23 @@ export class CampaignBuilderComponent {
 
   private updatePreview(segmentJson: string): void {
     this.previewLoading.set(true);
-    this.api.previewFollowups(segmentJson).subscribe({
-      next: (res) => {
-        this.previewLoading.set(false);
-        this.previewCount.set(res?.count ?? 0);
-      },
-      error: () => {
-        this.previewLoading.set(false);
-        this.previewCount.set(null);
-      },
-    });
+    this.subscriptions.set(
+      'preview-followups',
+      this.api.previewFollowups(segmentJson).subscribe({
+        next: (res) => {
+          this.previewLoading.set(false);
+          this.previewCount.set(res?.count ?? 0);
+        },
+        error: () => {
+          this.previewLoading.set(false);
+          this.previewCount.set(null);
+        },
+      }),
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.clear();
   }
 }
 

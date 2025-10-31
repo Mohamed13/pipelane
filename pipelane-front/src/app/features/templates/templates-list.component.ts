@@ -1,5 +1,12 @@
 import { CommonModule, JsonPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, signal, computed } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnDestroy,
+  inject,
+  signal,
+  computed,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
@@ -9,6 +16,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { ApiService } from '../../core/api.service';
 import { TemplateSummary } from '../../core/models';
+import { SubscriptionStore } from '../../core/subscription-store';
 
 @Component({
   standalone: true,
@@ -124,8 +132,9 @@ import { TemplateSummary } from '../../core/models';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TemplatesListComponent {
+export class TemplatesListComponent implements OnDestroy {
   private readonly api = inject(ApiService);
+  private readonly subscriptions = new SubscriptionStore();
 
   private readonly templatesSignal = signal<TemplateSummary[]>([]);
   loading = signal<boolean>(true);
@@ -138,25 +147,37 @@ export class TemplatesListComponent {
 
   refresh(): void {
     this.loading.set(true);
-    this.api.refreshTemplates().subscribe({
-      next: () => this.loadTemplates(false),
-      error: () => {
-        this.loading.set(false);
+    this.subscriptions.subscribe(
+      this.api.refreshTemplates(),
+      {
+        next: () => this.loadTemplates(false),
+        error: () => {
+          this.loading.set(false);
+        },
       },
-    });
+      'refresh-templates',
+    );
   }
 
   private loadTemplates(showSpinner = true): void {
     if (showSpinner) this.loading.set(true);
-    this.api.getTemplates().subscribe({
-      next: (templates) => {
-        this.templatesSignal.set(templates ?? []);
-        this.loading.set(false);
+    this.subscriptions.subscribe(
+      this.api.getTemplates(),
+      {
+        next: (templates) => {
+          this.templatesSignal.set(templates ?? []);
+          this.loading.set(false);
+        },
+        error: () => {
+          this.templatesSignal.set([]);
+          this.loading.set(false);
+        },
       },
-      error: () => {
-        this.templatesSignal.set([]);
-        this.loading.set(false);
-      },
-    });
+      'load-templates',
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.clear();
   }
 }

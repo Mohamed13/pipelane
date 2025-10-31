@@ -3,6 +3,7 @@ import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
+  OnDestroy,
   ViewChild,
   computed,
   effect,
@@ -37,9 +38,11 @@ import {
   TopMessageItem,
   TopMessagesResponse,
 } from '../../core/models';
+import { SubscriptionStore } from '../../core/subscription-store';
 import { ThemeService } from '../../core/theme.service';
 import { ChartCardComponent, ChartCardConfig } from '../../shared/ui/chart-card.component';
 import { KpiCardComponent, KpiSparklineConfig } from '../../shared/ui/kpi-card.component';
+import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { RevealOnScrollDirective } from '../../shared/ui/reveal-on-scroll.directive';
 
 type RangePreset = 'today' | '7d' | '30d' | 'custom';
@@ -129,19 +132,22 @@ const RANGE_PRESETS: { key: RangePreset; label: string; tooltip: string }[] = [
     MatSortModule,
     KpiCardComponent,
     ChartCardComponent,
+    PageHeaderComponent,
     RevealOnScrollDirective,
   ],
   templateUrl: './analytics-overview.component.html',
   styleUrls: ['./analytics-overview.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AnalyticsOverviewComponent implements AfterViewInit {
+export class AnalyticsOverviewComponent implements AfterViewInit, OnDestroy {
   private readonly api = inject(ApiService);
   private readonly themeSvc = inject(ThemeService);
   readonly dateRange = new FormGroup({
     start: new FormControl<Date | null>(null),
     end: new FormControl<Date | null>(null),
   });
+
+  private readonly subscriptions = new SubscriptionStore();
 
   readonly rangePreset = signal<RangePreset>('7d');
   readonly selectedRange = signal<DateRange | null>(null);
@@ -526,18 +532,22 @@ export class AnalyticsOverviewComponent implements AfterViewInit {
       this.palette.set(buildPalette());
     });
 
-    this.dateRange.valueChanges.pipe(debounceTime(120), takeUntilDestroyed()).subscribe((value) => {
-      if (!value) {
-        return;
-      }
-      const { start, end } = value;
-      if (start && end) {
-        this.rangePreset.set('custom');
-        const ordered = orderRange(start, end);
-        this.selectedRange.set(ordered);
-        this.loadRange(ordered);
-      }
-    });
+    this.subscriptions.track(
+      this.dateRange.valueChanges
+        .pipe(debounceTime(120), takeUntilDestroyed())
+        .subscribe((value) => {
+          if (!value) {
+            return;
+          }
+          const { start, end } = value;
+          if (start && end) {
+            this.rangePreset.set('custom');
+            const ordered = orderRange(start, end);
+            this.selectedRange.set(ordered);
+            this.loadRange(ordered);
+          }
+        }),
+    );
 
     this.loadRange(computePresetRange('7d'));
   }
@@ -595,27 +605,30 @@ export class AnalyticsOverviewComponent implements AfterViewInit {
     }
 
     this.exporting.set(true);
-    this.api
-      .downloadReportSummaryPdf(fromIso, toIsoValue)
-      .pipe(
-        takeUntilDestroyed(),
-        finalize(() => this.exporting.set(false)),
-      )
-      .subscribe({
-        next: (blob) => {
-          const fromSlug = normalized.start.toISOString().slice(0, 10);
-          const toSlug = normalized.end.toISOString().slice(0, 10);
-          const url = URL.createObjectURL(blob);
-          const anchor = document.createElement('a');
-          anchor.href = url;
-          anchor.download = `pipelane-summary-${fromSlug}-${toSlug}.pdf`;
-          anchor.click();
-          URL.revokeObjectURL(url);
-        },
-        error: () => {
-          // handled by handleError snackbar
-        },
-      });
+    this.subscriptions.set(
+      'download-summary',
+      this.api
+        .downloadReportSummaryPdf(fromIso, toIsoValue)
+        .pipe(
+          takeUntilDestroyed(),
+          finalize(() => this.exporting.set(false)),
+        )
+        .subscribe({
+          next: (blob) => {
+            const fromSlug = normalized.start.toISOString().slice(0, 10);
+            const toSlug = normalized.end.toISOString().slice(0, 10);
+            const url = URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.href = url;
+            anchor.download = `pipelane-summary-${fromSlug}-${toSlug}.pdf`;
+            anchor.click();
+            URL.revokeObjectURL(url);
+          },
+          error: () => {
+            // handled by handleError snackbar
+          },
+        }),
+    );
   }
 
   private loadRange(range: DateRange): void {
@@ -637,40 +650,47 @@ export class AnalyticsOverviewComponent implements AfterViewInit {
     const previousStartIso = toIso(startOfDay(previousRange.start));
     const previousEndIso = toIso(endOfDay(previousRange.end));
 
-    forkJoin({
-      current: this.api.getDeliveryAnalytics(currentStartIso, currentEndIso),
-      previous: this.api.getDeliveryAnalytics(previousStartIso, previousEndIso),
-      summary: this.api.getReportSummary(currentStartIso, currentEndIso),
-      previousSummary: this.api.getReportSummary(previousStartIso, previousEndIso),
-      topMessages: this.api.getTopMessages(currentStartIso, currentEndIso),
-    })
-      .pipe(
-        catchError((error: unknown) => {
-          this.error.set('Unable to load analytics right now. Please retry in a minute.');
-          console.error('Analytics load failed', error);
-          return of(null);
-        }),
-      )
-      .subscribe((result) => {
-        if (!result) {
-          this.analytics.set(null);
-          this.previousAnalytics.set(null);
-          this.summary.set(null);
-          this.previousSummary.set(null);
-          this.timeline.set([]);
-          this.topMessages.set(null);
+    this.subscriptions.set(
+      'load-range',
+      forkJoin({
+        current: this.api.getDeliveryAnalytics(currentStartIso, currentEndIso),
+        previous: this.api.getDeliveryAnalytics(previousStartIso, previousEndIso),
+        summary: this.api.getReportSummary(currentStartIso, currentEndIso),
+        previousSummary: this.api.getReportSummary(previousStartIso, previousEndIso),
+        topMessages: this.api.getTopMessages(currentStartIso, currentEndIso),
+      })
+        .pipe(
+          catchError((error: unknown) => {
+            this.error.set('Unable to load analytics right now. Please retry in a minute.');
+            console.error('Analytics load failed', error);
+            return of(null);
+          }),
+        )
+        .subscribe((result) => {
+          if (!result) {
+            this.analytics.set(null);
+            this.previousAnalytics.set(null);
+            this.summary.set(null);
+            this.previousSummary.set(null);
+            this.timeline.set([]);
+            this.topMessages.set(null);
+            this.loading.set(false);
+            return;
+          }
+          this.analytics.set(result.current);
+          this.previousAnalytics.set(result.previous);
+          this.summary.set(result.summary);
+          this.previousSummary.set(result.previousSummary);
+          this.timeline.set(this.mapTimeline(result.current.timeline ?? []));
+          this.topMessages.set(this.normalizeTopMessages(result.topMessages));
+          this.selectedRange.set(range);
           this.loading.set(false);
-          return;
-        }
-        this.analytics.set(result.current);
-        this.previousAnalytics.set(result.previous);
-        this.summary.set(result.summary);
-        this.previousSummary.set(result.previousSummary);
-        this.timeline.set(this.mapTimeline(result.current.timeline ?? []));
-        this.topMessages.set(this.normalizeTopMessages(result.topMessages));
-        this.selectedRange.set(range);
-        this.loading.set(false);
-      });
+        }),
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.clear();
   }
 
   private mapTimeline(points: DeliveryTimelinePoint[]): TimelinePoint[] {
@@ -699,7 +719,7 @@ export class AnalyticsOverviewComponent implements AfterViewInit {
     if (!top) {
       return null;
     }
-    const sanitize = (source: TopMessageItem[] | null | undefined) =>
+    const sanitize = (source: TopMessageItem[] | null | undefined): TopMessageItem[] =>
       (source ?? []).map(ensureLabel).filter(isValidTopMessage);
     return {
       ...top,

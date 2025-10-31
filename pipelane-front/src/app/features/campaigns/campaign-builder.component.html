@@ -1,487 +1,517 @@
-<mat-card class="builder-card glass" data-tour="campaign-builder">
-  <header class="builder-header">
-    <div>
-      <h2>Campaign Builder</h2>
-      <p class="muted">
-        Transform your segment into a multi-channel activation with clear throttling and review.
-      </p>
-    </div>
-    <div class="builder-meta">
-      <span class="meta-pill">
-        <mat-icon>people</mat-icon>
-        Segment score
-      </span>
-      <span class="meta-pill">
-        <mat-icon>schema</mat-icon>
-        Guided flow
-      </span>
-    </div>
-  </header>
+<div class="page">
+  <div class="container-page">
+    <app-page-header
+      title="Campaign Builder"
+      subtitle="Transform your segment into a multi-channel activation with throttling, AI follow-ups and launch controls."
+    >
+      <div page-actions class="builder-header__actions">
+        <span class="meta-pill">
+          <mat-icon>people</mat-icon>
+          Segment score
+        </span>
+        <span class="meta-pill">
+          <mat-icon>schema</mat-icon>
+          Guided flow
+        </span>
+      </div>
+    </app-page-header>
 
-  <mat-horizontal-stepper
-    [linear]="true"
-    [formGroup]="form"
-    labelPosition="bottom"
-    class="builder-stepper"
-  >
-    <mat-step [stepControl]="audienceGroup" formGroupName="audience">
-      <ng-template matStepLabel>Audience</ng-template>
-      <div class="step-grid">
-        <section class="panel glass">
-          <header>
-            <h3>Segment builder</h3>
-            <p class="muted">
-              Select tags, channels and recency filters. We will auto-generate the JSON segment.
-            </p>
-          </header>
+    <mat-card class="builder-card glass" data-tour="campaign-builder">
+      <mat-horizontal-stepper
+        [linear]="true"
+        [formGroup]="form"
+        labelPosition="bottom"
+        class="builder-stepper"
+      >
+        <mat-step [stepControl]="audienceGroup" formGroupName="audience">
+          <ng-template matStepLabel>Audience</ng-template>
+          <div class="step-grid">
+            <section class="panel glass">
+              <header>
+                <h3>Segment builder</h3>
+                <p class="muted">
+                  Select tags, channels and recency filters. We will auto-generate the JSON segment.
+                </p>
+              </header>
 
-          <div class="panel-section">
-            <h4>Tags</h4>
-            <div class="chip-row">
-              <mat-chip
-                *ngFor="let tag of tagLibrary"
-                (click)="toggleTag(tag)"
-                [selected]="tagSelected(tag)"
-                [matTooltip]="tagSelected(tag) ? 'Remove tag from segment' : 'Add tag to segment'"
-                selectable
-              >
-                <mat-icon *ngIf="tagSelected(tag)">check_circle</mat-icon>
-                {{ tag }}
-              </mat-chip>
-            </div>
+              <div class="panel-section">
+                <h4>Tags</h4>
+                <div class="chip-row">
+                  <mat-chip
+                    *ngFor="let tag of tagLibrary"
+                    (click)="toggleTag(tag)"
+                    [selected]="tagSelected(tag)"
+                    [matTooltip]="
+                      tagSelected(tag) ? 'Remove tag from segment' : 'Add tag to segment'
+                    "
+                    selectable
+                  >
+                    <mat-icon *ngIf="tagSelected(tag)">check_circle</mat-icon>
+                    {{ tag }}
+                  </mat-chip>
+                </div>
+              </div>
+
+              <div class="panel-section">
+                <h4>Preferred channels</h4>
+                <div class="chip-row">
+                  <mat-chip
+                    *ngFor="let channel of channels"
+                    (click)="toggleChannel(channel)"
+                    [selected]="channelSelected(channel)"
+                    [matTooltip]="channelSelected(channel) ? 'Remove channel' : 'Include channel'"
+                    selectable
+                  >
+                    <mat-icon>
+                      {{ channel === 'whatsapp' ? 'chat' : channel === 'email' ? 'mail' : 'sms' }}
+                    </mat-icon>
+                    {{ ChannelLabels[channel] }}
+                  </mat-chip>
+                </div>
+              </div>
+
+              <div class="panel-section">
+                <h4>Last activity</h4>
+                <mat-button-toggle-group
+                  [value]="audienceGroup.get('lastActivity')?.value"
+                  (change)="setLastActivity($event.value)"
+                  aria-label="Last activity filters"
+                >
+                  <mat-button-toggle *ngFor="let option of activityOptions" [value]="option.value">
+                    {{ option.label }}
+                  </mat-button-toggle>
+                </mat-button-toggle-group>
+              </div>
+
+              <div class="panel-section option-row">
+                <mat-slide-toggle
+                  color="primary"
+                  [checked]="audienceGroup.get('consentOnly')?.value"
+                  (change)="toggleConsentOnly($event.checked)"
+                  matTooltip="Only send to contacts with active consent"
+                >
+                  Respect consent-only contacts
+                </mat-slide-toggle>
+              </div>
+            </section>
+
+            <section class="panel glass panel--summary">
+              <header>
+                <h3>Segment preview</h3>
+                <p class="muted">Keep an eye on the generated JSON and the estimated reach.</p>
+              </header>
+              <div class="segment-preview">
+                <pre>{{ audienceGroup.get('segmentJson')?.value }}</pre>
+              </div>
+              <div class="preview-meta">
+                <ng-container *ngIf="previewLoading(); else previewCountBlock">
+                  <mat-progress-spinner diameter="32" mode="indeterminate"></mat-progress-spinner>
+                  <span class="muted">Refreshing preview…</span>
+                </ng-container>
+                <ng-template #previewCountBlock>
+                  <div class="preview-pill" matTooltip="Estimated contacts matching this segment">
+                    <mat-icon>groups</mat-icon>
+                    {{ previewCount() === null ? '—' : previewCount() }}
+                    <span>recipients</span>
+                  </div>
+                </ng-template>
+              </div>
+            </section>
           </div>
 
-          <div class="panel-section">
-            <h4>Preferred channels</h4>
-            <div class="chip-row">
-              <mat-chip
-                *ngFor="let channel of channels"
-                (click)="toggleChannel(channel)"
-                [selected]="channelSelected(channel)"
-                [matTooltip]="channelSelected(channel) ? 'Remove channel' : 'Include channel'"
-                selectable
-              >
-                <mat-icon>
-                  {{ channel === 'whatsapp' ? 'chat' : channel === 'email' ? 'mail' : 'sms' }}
-                </mat-icon>
-                {{ ChannelLabels[channel] }}
-              </mat-chip>
-            </div>
-          </div>
-
-          <div class="panel-section">
-            <h4>Last activity</h4>
-            <mat-button-toggle-group
-              [value]="audienceGroup.get('lastActivity')?.value"
-              (change)="setLastActivity($event.value)"
-              aria-label="Last activity filters"
+          <div class="step-actions">
+            <button
+              mat-raised-button
+              color="primary"
+              matStepperNext
+              [disabled]="audienceGroup.invalid"
             >
-              <mat-button-toggle *ngFor="let option of activityOptions" [value]="option.value">
-                {{ option.label }}
-              </mat-button-toggle>
-            </mat-button-toggle-group>
+              Next · Message
+              <mat-icon>arrow_forward</mat-icon>
+            </button>
+          </div>
+        </mat-step>
+
+        <mat-step [stepControl]="messageGroup" formGroupName="message">
+          <ng-template matStepLabel>Message</ng-template>
+          <div class="step-grid">
+            <section class="panel glass">
+              <header>
+                <h3>Message design</h3>
+                <p class="muted">
+                  Pick a template, primary channel, and set intelligent fallback routing.
+                </p>
+              </header>
+
+              <div class="field-grid">
+                <mat-form-field appearance="outline">
+                  <mat-label>Campaign name</mat-label>
+                  <input matInput formControlName="name" placeholder="Spring nurture flow" />
+                  <mat-error *ngIf="messageGroup.get('name')?.invalid"
+                    >Minimum 3 characters</mat-error
+                  >
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Primary channel</mat-label>
+                  <mat-select formControlName="primaryChannel">
+                    <mat-option *ngFor="let channel of channels" [value]="channel">
+                      {{ ChannelLabels[channel] }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Fallback channels</mat-label>
+                  <mat-select
+                    formControlName="fallbackOrder"
+                    multiple
+                    (selectionChange)="onFallbackSelectionChange($event.value)"
+                  >
+                    <mat-option *ngFor="let channel of fallbackOptions()" [value]="channel">
+                      {{ ChannelLabels[channel] }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Template</mat-label>
+                  <mat-select formControlName="templateId">
+                    <mat-option *ngFor="let template of templates()" [value]="template.id">
+                      {{ template.name }} · {{ template.channel | titlecase }} ·
+                      {{ template.lang | uppercase }}
+                    </mat-option>
+                  </mat-select>
+                  <mat-error *ngIf="messageGroup.get('templateId')?.invalid"
+                    >Pick a template</mat-error
+                  >
+                </mat-form-field>
+              </div>
+            </section>
+
+            <section class="panel glass panel--summary">
+              <header>
+                <h3>Template preview</h3>
+                <p class="muted">
+                  Contextual information about the selected template appears here.
+                </p>
+              </header>
+
+              <ng-container *ngIf="selectedTemplate(); else noTemplateSelected">
+                <div class="template-summary">
+                  <div>
+                    <span class="summary-label">Name</span>
+                    <p class="summary-value">{{ selectedTemplate()?.name }}</p>
+                  </div>
+                  <div>
+                    <span class="summary-label">Channel</span>
+                    <p class="summary-value">{{ selectedTemplate()?.channel | titlecase }}</p>
+                  </div>
+                  <div>
+                    <span class="summary-label">Language</span>
+                    <p class="summary-value">{{ selectedTemplate()?.lang | uppercase }}</p>
+                  </div>
+                </div>
+                <p class="muted">
+                  Template updated {{ selectedTemplate()?.updatedAtUtc | date: 'mediumDate' }} ·
+                  Active:
+                  {{ selectedTemplate()?.isActive ? 'Yes' : 'No' }}
+                </p>
+              </ng-container>
+
+              <ng-template #noTemplateSelected>
+                <div class="empty-preview">
+                  <mat-icon>draft</mat-icon>
+                  <p class="muted">Select a template to view metadata.</p>
+                </div>
+              </ng-template>
+            </section>
           </div>
 
-          <div class="panel-section option-row">
+          <div class="option-row">
             <mat-slide-toggle
               color="primary"
-              [checked]="audienceGroup.get('consentOnly')?.value"
-              (change)="toggleConsentOnly($event.checked)"
-              matTooltip="Only send to contacts with active consent"
+              formControlName="smartFollowupDefault"
+              matTooltip="Active la relance intelligente par défaut pour les conversations issues de cette campagne."
             >
-              Respect consent-only contacts
+              Relance intelligente par défaut
             </mat-slide-toggle>
           </div>
-        </section>
 
-        <section class="panel glass panel--summary">
-          <header>
-            <h3>Segment preview</h3>
-            <p class="muted">Keep an eye on the generated JSON and the estimated reach.</p>
-          </header>
-          <div class="segment-preview">
-            <pre>{{ audienceGroup.get('segmentJson')?.value }}</pre>
-          </div>
-          <div class="preview-meta">
-            <ng-container *ngIf="previewLoading(); else previewCountBlock">
-              <mat-progress-spinner diameter="32" mode="indeterminate"></mat-progress-spinner>
-              <span class="muted">Refreshing preview…</span>
-            </ng-container>
-            <ng-template #previewCountBlock>
-              <div class="preview-pill" matTooltip="Estimated contacts matching this segment">
-                <mat-icon>groups</mat-icon>
-                {{ previewCount() === null ? '—' : previewCount() }}
-                <span>recipients</span>
-              </div>
-            </ng-template>
-          </div>
-        </section>
-      </div>
-
-      <div class="step-actions">
-        <button mat-raised-button color="primary" matStepperNext [disabled]="audienceGroup.invalid">
-          Next · Message
-          <mat-icon>arrow_forward</mat-icon>
-        </button>
-      </div>
-    </mat-step>
-
-    <mat-step [stepControl]="messageGroup" formGroupName="message">
-      <ng-template matStepLabel>Message</ng-template>
-      <div class="step-grid">
-        <section class="panel glass">
-          <header>
-            <h3>Message design</h3>
-            <p class="muted">
-              Pick a template, primary channel, and set intelligent fallback routing.
-            </p>
-          </header>
-
-          <div class="field-grid">
-            <mat-form-field appearance="outline">
-              <mat-label>Campaign name</mat-label>
-              <input matInput formControlName="name" placeholder="Spring nurture flow" />
-              <mat-error *ngIf="messageGroup.get('name')?.invalid">Minimum 3 characters</mat-error>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Primary channel</mat-label>
-              <mat-select formControlName="primaryChannel">
-                <mat-option *ngFor="let channel of channels" [value]="channel">
-                  {{ ChannelLabels[channel] }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Fallback channels</mat-label>
-              <mat-select
-                formControlName="fallbackOrder"
-                multiple
-                (selectionChange)="onFallbackSelectionChange($event.value)"
+          <section
+            class="smart-followup-preview glass"
+            *ngIf="messageGroup.get('smartFollowupDefault')?.value"
+          >
+            <header class="smart-followup-preview__header">
+              <h3>Relance intelligente · aperçu</h3>
+              <span class="muted">Lecture seule</span>
+            </header>
+            <div
+              class="smart-followup-preview__content"
+              *ngIf="followupLoading(); else followupReady"
+            >
+              <mat-progress-spinner diameter="28" mode="indeterminate"></mat-progress-spinner>
+              <span class="muted">Calcul de la prochaine relance…</span>
+            </div>
+            <ng-template #followupReady>
+              <div
+                class="smart-followup-preview__content"
+                *ngIf="followupPreview() as preview; else followupEmpty"
               >
-                <mat-option *ngFor="let channel of fallbackOptions()" [value]="channel">
-                  {{ ChannelLabels[channel] }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Template</mat-label>
-              <mat-select formControlName="templateId">
-                <mat-option *ngFor="let template of templates()" [value]="template.id">
-                  {{ template.name }} · {{ template.channel | titlecase }} ·
-                  {{ template.lang | uppercase }}
-                </mat-option>
-              </mat-select>
-              <mat-error *ngIf="messageGroup.get('templateId')?.invalid">Pick a template</mat-error>
-            </mat-form-field>
-          </div>
-        </section>
-
-        <section class="panel glass panel--summary">
-          <header>
-            <h3>Template preview</h3>
-            <p class="muted">Contextual information about the selected template appears here.</p>
-          </header>
-
-          <ng-container *ngIf="selectedTemplate(); else noTemplateSelected">
-            <div class="template-summary">
-              <div>
-                <span class="summary-label">Name</span>
-                <p class="summary-value">{{ selectedTemplate()?.name }}</p>
+                <div class="smart-followup-preview__meta">
+                  <mat-chip color="primary" selected>{{ preview.angle }}</mat-chip>
+                  <span>
+                    {{ preview.scheduledAtIso | date: 'fullDate' }} ·
+                    {{ preview.scheduledAtIso | date: 'shortTime' }}
+                  </span>
+                </div>
+                <p class="smart-followup-preview__text">
+                  {{ preview.previewText }}
+                </p>
               </div>
-              <div>
-                <span class="summary-label">Channel</span>
-                <p class="summary-value">{{ selectedTemplate()?.channel | titlecase }}</p>
-              </div>
-              <div>
-                <span class="summary-label">Language</span>
-                <p class="summary-value">{{ selectedTemplate()?.lang | uppercase }}</p>
-              </div>
-            </div>
-            <p class="muted">
-              Template updated {{ selectedTemplate()?.updatedAtUtc | date: 'mediumDate' }} · Active:
-              {{ selectedTemplate()?.isActive ? 'Yes' : 'No' }}
-            </p>
-          </ng-container>
+              <ng-template #followupEmpty>
+                <div class="smart-followup-preview__content">
+                  <span class="muted">Aucune suggestion disponible pour l'instant.</span>
+                </div>
+              </ng-template>
+            </ng-template>
+          </section>
 
-          <ng-template #noTemplateSelected>
-            <div class="empty-preview">
-              <mat-icon>draft</mat-icon>
-              <p class="muted">Select a template to view metadata.</p>
-            </div>
-          </ng-template>
-        </section>
-      </div>
-
-      <div class="option-row">
-        <mat-slide-toggle
-          color="primary"
-          formControlName="smartFollowupDefault"
-          matTooltip="Active la relance intelligente par défaut pour les conversations issues de cette campagne."
-        >
-          Relance intelligente par défaut
-        </mat-slide-toggle>
-      </div>
-
-      <section
-        class="smart-followup-preview glass"
-        *ngIf="messageGroup.get('smartFollowupDefault')?.value"
-      >
-        <header class="smart-followup-preview__header">
-          <h3>Relance intelligente · aperçu</h3>
-          <span class="muted">Lecture seule</span>
-        </header>
-        <div class="smart-followup-preview__content" *ngIf="followupLoading(); else followupReady">
-          <mat-progress-spinner diameter="28" mode="indeterminate"></mat-progress-spinner>
-          <span class="muted">Calcul de la prochaine relance…</span>
-        </div>
-        <ng-template #followupReady>
-          <div
-            class="smart-followup-preview__content"
-            *ngIf="followupPreview() as preview; else followupEmpty"
-          >
-            <div class="smart-followup-preview__meta">
-              <mat-chip color="primary" selected>{{ preview.angle }}</mat-chip>
-              <span>
-                {{ preview.scheduledAtIso | date: 'fullDate' }} ·
-                {{ preview.scheduledAtIso | date: 'shortTime' }}
-              </span>
-            </div>
-            <p class="smart-followup-preview__text">
-              {{ preview.previewText }}
-            </p>
-          </div>
-          <ng-template #followupEmpty>
-            <div class="smart-followup-preview__content">
-              <span class="muted">Aucune suggestion disponible pour l'instant.</span>
-            </div>
-          </ng-template>
-        </ng-template>
-      </section>
-
-      <div class="step-actions">
-        <button mat-stroked-button matStepperPrevious>
-          <mat-icon>arrow_back</mat-icon>
-          Back
-        </button>
-        <button mat-raised-button color="primary" matStepperNext [disabled]="messageGroup.invalid">
-          Next · Schedule
-          <mat-icon>arrow_forward</mat-icon>
-        </button>
-      </div>
-    </mat-step>
-
-    <mat-step [stepControl]="scheduleGroup" formGroupName="schedule">
-      <ng-template matStepLabel>Schedule &amp; throttle</ng-template>
-      <div class="step-grid">
-        <section class="panel glass">
-          <header>
-            <h3>Scheduling</h3>
-            <p class="muted">
-              Control when and how fast messages should be delivered to your audience.
-            </p>
-          </header>
-
-          <div class="field-grid field-grid--schedule">
-            <mat-form-field appearance="outline">
-              <mat-label>Schedule date (UTC)</mat-label>
-              <input matInput [matDatepicker]="datePicker" formControlName="scheduledDate" />
-              <mat-datepicker-toggle matSuffix [for]="datePicker"></mat-datepicker-toggle>
-              <mat-datepicker #datePicker></mat-datepicker>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Schedule time (UTC)</mat-label>
-              <input matInput type="time" formControlName="scheduledTime" />
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Batch size</mat-label>
-              <input
-                matInput
-                type="number"
-                formControlName="batchSize"
-                min="1"
-                placeholder="Optional"
-              />
-              <mat-hint>Leave empty for full send</mat-hint>
-            </mat-form-field>
-          </div>
-
-          <mat-divider></mat-divider>
-
-          <div class="option-row">
-            <mat-slide-toggle formControlName="throttleEnabled" color="accent">
-              Throttle delivery rate
-            </mat-slide-toggle>
-            <mat-form-field
-              appearance="outline"
-              *ngIf="scheduleGroup.get('throttleEnabled')?.value"
+          <div class="step-actions">
+            <button mat-stroked-button matStepperPrevious>
+              <mat-icon>arrow_back</mat-icon>
+              Back
+            </button>
+            <button
+              mat-raised-button
+              color="primary"
+              matStepperNext
+              [disabled]="messageGroup.invalid"
             >
-              <mat-label>Messages per minute</mat-label>
-              <input matInput type="number" formControlName="throttleRate" min="10" />
-            </mat-form-field>
+              Next · Schedule
+              <mat-icon>arrow_forward</mat-icon>
+            </button>
           </div>
+        </mat-step>
 
-          <div class="option-row">
-            <mat-slide-toggle formControlName="respectQuietHours" color="accent">
-              Respect quiet hours
-            </mat-slide-toggle>
-            <div class="quiet-hours" *ngIf="scheduleGroup.get('respectQuietHours')?.value">
-              <mat-form-field appearance="outline">
-                <mat-label>Start</mat-label>
-                <input matInput type="time" formControlName="quietHoursStart" />
-              </mat-form-field>
-              <mat-form-field appearance="outline">
-                <mat-label>End</mat-label>
-                <input matInput type="time" formControlName="quietHoursEnd" />
-              </mat-form-field>
-            </div>
-          </div>
-        </section>
+        <mat-step [stepControl]="scheduleGroup" formGroupName="schedule">
+          <ng-template matStepLabel>Schedule &amp; throttle</ng-template>
+          <div class="step-grid">
+            <section class="panel glass">
+              <header>
+                <h3>Scheduling</h3>
+                <p class="muted">
+                  Control when and how fast messages should be delivered to your audience.
+                </p>
+              </header>
 
-        <section class="panel glass panel--summary">
-          <header>
-            <h3>Schedule summary</h3>
-            <p class="muted">Quick overview before the final review.</p>
-          </header>
-          <ul class="summary-list">
-            <li>
-              <span>Planned send</span>
-              <strong>
-                <ng-container
-                  *ngIf="scheduleGroup.get('scheduledDate')?.value as date; else sendNow"
+              <div class="field-grid field-grid--schedule">
+                <mat-form-field appearance="outline">
+                  <mat-label>Schedule date (UTC)</mat-label>
+                  <input matInput [matDatepicker]="datePicker" formControlName="scheduledDate" />
+                  <mat-datepicker-toggle matSuffix [for]="datePicker"></mat-datepicker-toggle>
+                  <mat-datepicker #datePicker></mat-datepicker>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Schedule time (UTC)</mat-label>
+                  <input matInput type="time" formControlName="scheduledTime" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Batch size</mat-label>
+                  <input
+                    matInput
+                    type="number"
+                    formControlName="batchSize"
+                    min="1"
+                    placeholder="Optional"
+                  />
+                  <mat-hint>Leave empty for full send</mat-hint>
+                </mat-form-field>
+              </div>
+
+              <mat-divider></mat-divider>
+
+              <div class="option-row">
+                <mat-slide-toggle formControlName="throttleEnabled" color="accent">
+                  Throttle delivery rate
+                </mat-slide-toggle>
+                <mat-form-field
+                  appearance="outline"
+                  *ngIf="scheduleGroup.get('throttleEnabled')?.value"
                 >
-                  {{ date | date: 'mediumDate' }}
-                  · {{ scheduleGroup.get('scheduledTime')?.value || '09:00' }}
-                </ng-container>
-              </strong>
-            </li>
-            <ng-template #sendNow>
-              <strong>Send immediately</strong>
-            </ng-template>
-            <li>
-              <span>Throttle</span>
-              <strong>
-                <ng-container
-                  *ngIf="scheduleGroup.get('throttleEnabled')?.value; else throttleNone"
-                >
-                  {{ scheduleGroup.get('throttleRate')?.value }} msg/min
-                </ng-container>
-              </strong>
-            </li>
-            <ng-template #throttleNone>
-              <strong>No throttling</strong>
-            </ng-template>
-            <li>
-              <span>Quiet hours</span>
-              <strong>
-                <ng-container *ngIf="scheduleGroup.get('respectQuietHours')?.value; else quietOff">
-                  {{ scheduleGroup.get('quietHoursStart')?.value }} —
-                  {{ scheduleGroup.get('quietHoursEnd')?.value }} UTC
-                </ng-container>
-              </strong>
-            </li>
-            <ng-template #quietOff>
-              <strong>Disabled</strong>
-            </ng-template>
-          </ul>
-        </section>
-      </div>
+                  <mat-label>Messages per minute</mat-label>
+                  <input matInput type="number" formControlName="throttleRate" min="10" />
+                </mat-form-field>
+              </div>
 
-      <div class="step-actions">
-        <button mat-stroked-button matStepperPrevious>
-          <mat-icon>arrow_back</mat-icon>
-          Back
-        </button>
-        <button mat-raised-button color="primary" matStepperNext [disabled]="scheduleGroup.invalid">
-          Review &amp; launch
-          <mat-icon>arrow_forward</mat-icon>
-        </button>
-      </div>
-    </mat-step>
+              <div class="option-row">
+                <mat-slide-toggle formControlName="respectQuietHours" color="accent">
+                  Respect quiet hours
+                </mat-slide-toggle>
+                <div class="quiet-hours" *ngIf="scheduleGroup.get('respectQuietHours')?.value">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Start</mat-label>
+                    <input matInput type="time" formControlName="quietHoursStart" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>End</mat-label>
+                    <input matInput type="time" formControlName="quietHoursEnd" />
+                  </mat-form-field>
+                </div>
+              </div>
+            </section>
 
-    <mat-step>
-      <ng-template matStepLabel>Review</ng-template>
-      <section class="panel glass review-panel">
-        <header>
-          <h3>Review &amp; launch</h3>
-          <p class="muted">Double-check the configuration before launching your campaign.</p>
-        </header>
+            <section class="panel glass panel--summary">
+              <header>
+                <h3>Schedule summary</h3>
+                <p class="muted">Quick overview before the final review.</p>
+              </header>
+              <ul class="summary-list">
+                <li>
+                  <span>Planned send</span>
+                  <strong>
+                    <ng-container
+                      *ngIf="scheduleGroup.get('scheduledDate')?.value as date; else sendNow"
+                    >
+                      {{ date | date: 'mediumDate' }}
+                      · {{ scheduleGroup.get('scheduledTime')?.value || '09:00' }}
+                    </ng-container>
+                  </strong>
+                </li>
+                <ng-template #sendNow>
+                  <strong>Send immediately</strong>
+                </ng-template>
+                <li>
+                  <span>Throttle</span>
+                  <strong>
+                    <ng-container
+                      *ngIf="scheduleGroup.get('throttleEnabled')?.value; else throttleNone"
+                    >
+                      {{ scheduleGroup.get('throttleRate')?.value }} msg/min
+                    </ng-container>
+                  </strong>
+                </li>
+                <ng-template #throttleNone>
+                  <strong>No throttling</strong>
+                </ng-template>
+                <li>
+                  <span>Quiet hours</span>
+                  <strong>
+                    <ng-container
+                      *ngIf="scheduleGroup.get('respectQuietHours')?.value; else quietOff"
+                    >
+                      {{ scheduleGroup.get('quietHoursStart')?.value }} —
+                      {{ scheduleGroup.get('quietHoursEnd')?.value }} UTC
+                    </ng-container>
+                  </strong>
+                </li>
+                <ng-template #quietOff>
+                  <strong>Disabled</strong>
+                </ng-template>
+              </ul>
+            </section>
+          </div>
 
-        <div class="review-grid">
-          <div class="review-card">
-            <h4>Audience</h4>
-            <p class="muted">{{ audienceGroup.get('tags')?.value?.length || 0 }} tags</p>
-            <p class="muted">
-              Channels:
-              {{ audienceGroup.get('channels')?.value || [] | json }}
-            </p>
+          <div class="step-actions">
+            <button mat-stroked-button matStepperPrevious>
+              <mat-icon>arrow_back</mat-icon>
+              Back
+            </button>
+            <button
+              mat-raised-button
+              color="primary"
+              matStepperNext
+              [disabled]="scheduleGroup.invalid"
+            >
+              Review &amp; launch
+              <mat-icon>arrow_forward</mat-icon>
+            </button>
           </div>
-          <div class="review-card">
-            <h4>Message</h4>
-            <p>{{ messageGroup.get('name')?.value }}</p>
-            <p class="muted">Primary · {{ ChannelLabels[primaryChannelSelection()] }}</p>
-            <p class="muted">
-              Fallbacks:
-              {{
-                (messageGroup.get('fallbackOrder')?.value || []).length
-                  ? messageGroup.get('fallbackOrder')?.value || []
-                  : 'None'
-              }}
-            </p>
-            <p class="muted">
-              Relance intelligente :
-              {{ messageGroup.get('smartFollowupDefault')?.value ? 'ON' : 'OFF' }}
-            </p>
-          </div>
-          <div class="review-card">
-            <h4>Schedule</h4>
-            <p class="muted">
-              {{
-                scheduleGroup.get('scheduledDate')?.value
-                  ? (scheduleGroup.get('scheduledDate')?.value | date: 'mediumDate')
-                  : 'Send immediately'
-              }}
-            </p>
-            <p class="muted">
-              Rate:
-              {{
-                scheduleGroup.get('throttleEnabled')?.value
-                  ? scheduleGroup.get('throttleRate')?.value + ' msg/min'
-                  : 'Full speed'
-              }}
-            </p>
-          </div>
-          <div class="review-card recipients-card">
-            <h4>Recipients</h4>
-            <div class="recipient-pill" [ngClass]="{ warn: previewCount() === 0 }">
-              <mat-icon>groups</mat-icon>
-              {{ previewCount() === null ? '—' : previewCount() }}
-              <span>people targeted</span>
+        </mat-step>
+
+        <mat-step>
+          <ng-template matStepLabel>Review</ng-template>
+          <section class="panel glass review-panel">
+            <header>
+              <h3>Review &amp; launch</h3>
+              <p class="muted">Double-check the configuration before launching your campaign.</p>
+            </header>
+
+            <div class="review-grid">
+              <div class="review-card">
+                <h4>Audience</h4>
+                <p class="muted">{{ audienceGroup.get('tags')?.value?.length || 0 }} tags</p>
+                <p class="muted">
+                  Channels:
+                  {{ audienceGroup.get('channels')?.value || [] | json }}
+                </p>
+              </div>
+              <div class="review-card">
+                <h4>Message</h4>
+                <p>{{ messageGroup.get('name')?.value }}</p>
+                <p class="muted">Primary · {{ ChannelLabels[primaryChannelSelection()] }}</p>
+                <p class="muted">
+                  Fallbacks:
+                  {{
+                    (messageGroup.get('fallbackOrder')?.value || []).length
+                      ? messageGroup.get('fallbackOrder')?.value || []
+                      : 'None'
+                  }}
+                </p>
+                <p class="muted">
+                  Relance intelligente :
+                  {{ messageGroup.get('smartFollowupDefault')?.value ? 'ON' : 'OFF' }}
+                </p>
+              </div>
+              <div class="review-card">
+                <h4>Schedule</h4>
+                <p class="muted">
+                  {{
+                    scheduleGroup.get('scheduledDate')?.value
+                      ? (scheduleGroup.get('scheduledDate')?.value | date: 'mediumDate')
+                      : 'Send immediately'
+                  }}
+                </p>
+                <p class="muted">
+                  Rate:
+                  {{
+                    scheduleGroup.get('throttleEnabled')?.value
+                      ? scheduleGroup.get('throttleRate')?.value + ' msg/min'
+                      : 'Full speed'
+                  }}
+                </p>
+              </div>
+              <div class="review-card recipients-card">
+                <h4>Recipients</h4>
+                <div class="recipient-pill" [ngClass]="{ warn: previewCount() === 0 }">
+                  <mat-icon>groups</mat-icon>
+                  {{ previewCount() === null ? '—' : previewCount() }}
+                  <span>people targeted</span>
+                </div>
+                <p class="muted">Counts are generated from the segment preview above.</p>
+              </div>
             </div>
-            <p class="muted">Counts are generated from the segment preview above.</p>
-          </div>
-        </div>
 
-        <div class="review-actions">
-          <button mat-stroked-button matStepperPrevious>
-            <mat-icon>arrow_back</mat-icon>
-            Back
-          </button>
-          <button
-            mat-raised-button
-            color="primary"
-            (click)="createCampaign()"
-            [disabled]="creating()"
-          >
-            <mat-icon>{{ creating() ? 'hourglass_top' : 'rocket_launch' }}</mat-icon>
-            {{ creating() ? 'Creating…' : 'Launch campaign' }}
-          </button>
-        </div>
-      </section>
-    </mat-step>
-  </mat-horizontal-stepper>
-</mat-card>
+            <div class="review-actions">
+              <button mat-stroked-button matStepperPrevious>
+                <mat-icon>arrow_back</mat-icon>
+                Back
+              </button>
+              <button
+                mat-raised-button
+                color="primary"
+                (click)="createCampaign()"
+                [disabled]="creating()"
+              >
+                <mat-icon>{{ creating() ? 'hourglass_top' : 'rocket_launch' }}</mat-icon>
+                {{ creating() ? 'Creating…' : 'Launch campaign' }}
+              </button>
+            </div>
+          </section>
+        </mat-step>
+      </mat-horizontal-stepper>
+    </mat-card>
+  </div>
+</div>

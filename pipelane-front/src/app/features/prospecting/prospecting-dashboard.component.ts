@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -24,6 +24,7 @@ import {
   ProspectingCampaign,
   ProspectingSequence,
 } from '../../core/models';
+import { SubscriptionStore } from '../../core/subscription-store';
 
 @Component({
   selector: 'pl-prospecting-dashboard',
@@ -41,9 +42,10 @@ import {
   templateUrl: './prospecting-dashboard.component.html',
   styleUrls: ['./prospecting-dashboard.component.scss'],
 })
-export class ProspectingDashboardComponent implements OnInit {
+export class ProspectingDashboardComponent implements OnInit, OnDestroy {
   private readonly api = inject(ApiService);
   private readonly snackbar = inject(MatSnackBar);
+  private readonly subscriptions = new SubscriptionStore();
 
   readonly loading = signal(false);
   readonly analytics = signal<ProspectingAnalyticsResponse | null>(null);
@@ -79,25 +81,28 @@ export class ProspectingDashboardComponent implements OnInit {
 
   private load(): void {
     this.loading.set(true);
-    forkJoin({
-      analytics: this.api.getProspectingAnalytics(),
-      campaigns: this.api.getProspectingCampaigns(),
-      sequences: this.api.getProspectingSequences(),
-    })
-      .pipe(finalize(() => this.loading.set(false)))
-      .subscribe({
-        next: ({ analytics, campaigns, sequences }) => {
-          this.analytics.set(analytics);
-          this.campaigns.set(campaigns);
-          this.sequences.set(sequences);
-          this.updateChart(analytics);
-        },
-        error: () => {
-          this.snackbar?.open('Unable to load prospecting analytics', 'Dismiss', {
-            duration: 6000,
-          });
-        },
-      });
+    this.subscriptions.set(
+      'load-dashboard',
+      forkJoin({
+        analytics: this.api.getProspectingAnalytics(),
+        campaigns: this.api.getProspectingCampaigns(),
+        sequences: this.api.getProspectingSequences(),
+      })
+        .pipe(finalize(() => this.loading.set(false)))
+        .subscribe({
+          next: ({ analytics, campaigns, sequences }) => {
+            this.analytics.set(analytics);
+            this.campaigns.set(campaigns);
+            this.sequences.set(sequences);
+            this.updateChart(analytics);
+          },
+          error: () => {
+            this.snackbar?.open('Unable to load prospecting analytics', 'Dismiss', {
+              duration: 6000,
+            });
+          },
+        }),
+    );
   }
 
   private updateChart(analytics: ProspectingAnalyticsResponse): void {
@@ -116,5 +121,9 @@ export class ProspectingDashboardComponent implements OnInit {
         data: series.map((point) => ({ x: point.date, y: point.replies })),
       },
     ];
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.clear();
   }
 }

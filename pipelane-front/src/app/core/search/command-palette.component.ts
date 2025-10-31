@@ -1,3 +1,5 @@
+import { CdkVirtualScrollViewport, ScrollingModule } from '@angular/cdk/scrolling';
+import { CommonModule } from '@angular/common';
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
@@ -10,21 +12,19 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { TranslatePipe } from '../i18n/translate.pipe';
-import { MatDividerModule } from '@angular/material/divider';
 import { Router } from '@angular/router';
-import { CdkVirtualScrollViewport, ScrollingModule } from '@angular/cdk/scrolling';
-import { catchError, combineLatest, finalize, map, of, startWith, switchMap } from 'rxjs';
-import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { Subscription, catchError, combineLatest, finalize, of, startWith, switchMap } from 'rxjs';
 
 import { CommandItem, CommandType, SearchFilters, SearchService } from './search.service';
+import { TranslatePipe } from '../i18n/translate.pipe';
 
 type PaletteRow =
   | { kind: 'header'; label: string; type: CommandType }
@@ -54,6 +54,7 @@ export class CommandPaletteComponent implements AfterViewInit {
   private readonly search = inject(SearchService);
   private readonly router = inject(Router);
   private readonly dialogRef = inject(MatDialogRef<CommandPaletteComponent>);
+  private readonly searchSubscription: Subscription;
 
   @ViewChild('queryInput') private queryInput?: ElementRef<HTMLInputElement>;
   @ViewChild(CdkVirtualScrollViewport) private viewport?: CdkVirtualScrollViewport;
@@ -107,7 +108,7 @@ export class CommandPaletteComponent implements AfterViewInit {
     const term$ = this.queryControl.valueChanges.pipe(startWith(this.queryControl.getRawValue()));
     const filter$ = toObservable(this.filter);
 
-    combineLatest([term$, filter$])
+    this.searchSubscription = combineLatest([term$, filter$])
       .pipe(
         switchMap(([term, filter]) => {
           const trimmed = term.trim();

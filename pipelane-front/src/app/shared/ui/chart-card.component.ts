@@ -15,7 +15,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { ApexAxisChartSeries, ApexOptions, ApexNonAxisChartSeries } from 'ng-apexcharts';
 
-export interface ChartCardEmptyState {
+interface ChartCardEmptyState {
   title: string;
   message?: string;
   ctaLabel?: string;
@@ -65,41 +65,45 @@ export interface ChartCardConfig {
       </div>
 
       <div class="chart-card__body" [style.min-height.px]="computedHeight()">
-        <ng-container *ngIf="!config?.loading && !isEmpty(); else loading">
-          <div *ngIf="config; else emptyTpl" class="chart-card__inner">
-            <apx-chart
-              class="chart"
-              [series]="config?.series"
-              [chart]="config?.options?.chart"
-              [xaxis]="config?.options?.xaxis"
-              [yaxis]="config?.options?.yaxis"
-              [dataLabels]="config?.options?.dataLabels"
-              [stroke]="config?.options?.stroke"
-              [tooltip]="config?.options?.tooltip"
-              [legend]="config?.options?.legend"
-              [fill]="config?.options?.fill"
-              [grid]="config?.options?.grid"
-              [plotOptions]="config?.options?.plotOptions"
-              [colors]="config?.options?.colors"
-              [labels]="config?.options?.labels"
-              [responsive]="config?.options?.responsive"
-              [theme]="config?.options?.theme"
-              [markers]="config?.options?.markers"
-              [states]="config?.options?.states"
-              [noData]="config?.options?.noData"
-              [annotations]="config?.options?.annotations"
-              [title]="config?.options?.title"
-              [subtitle]="config?.options?.subtitle"
-              [width]="config?.options?.chart?.width"
-              [height]="config?.height ?? computedHeight()"
-            ></apx-chart>
-          </div>
-        </ng-container>
-        <ng-template #loading>
+        <ng-container *ngIf="config?.loading; else resolved">
           <div class="chart-card__placeholder glass" aria-busy="true">
             <mat-spinner diameter="48"></mat-spinner>
             <p>Fetching insights…</p>
           </div>
+        </ng-container>
+        <ng-template #resolved>
+          <ng-container *ngIf="config as cfg; else emptyTpl">
+            <ng-container *ngIf="!isEmpty(); else emptyTpl">
+              <div class="chart-card__inner">
+                <apx-chart
+                  class="chart"
+                  [series]="cfg.series"
+                  [chart]="cfg.options?.chart"
+                  [xaxis]="cfg.options?.xaxis"
+                  [yaxis]="cfg.options?.yaxis"
+                  [dataLabels]="cfg.options?.dataLabels"
+                  [stroke]="cfg.options?.stroke"
+                  [tooltip]="cfg.options?.tooltip"
+                  [legend]="cfg.options?.legend"
+                  [fill]="cfg.options?.fill"
+                  [grid]="cfg.options?.grid"
+                  [plotOptions]="cfg.options?.plotOptions"
+                  [colors]="cfg.options?.colors"
+                  [labels]="cfg.options?.labels"
+                  [responsive]="cfg.options?.responsive"
+                  [theme]="cfg.options?.theme"
+                  [markers]="cfg.options?.markers"
+                  [states]="cfg.options?.states"
+                  [noData]="cfg.options?.noData"
+                  [annotations]="cfg.options?.annotations"
+                  [title]="cfg.options?.title"
+                  [subtitle]="cfg.options?.subtitle"
+                  [width]="cfg.options?.chart?.width"
+                  [height]="cfg.height ?? computedHeight()"
+                ></apx-chart>
+              </div>
+            </ng-container>
+          </ng-container>
         </ng-template>
       </div>
 

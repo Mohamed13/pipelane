@@ -1,0 +1,70 @@
+:root {
+  --font-family-base: 'Inter', 'Outfit', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+}
+
+body {
+  font-family: var(--font-family-base);
+  font-size: clamp(14px, 1.2vw, 16px);
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+  color: var(--md-sys-color-on-surface);
+  background: var(--md-sys-color-background);
+}
+
+h1,
+.display-xl {
+  font-size: clamp(32px, 4.2vw, 44px);
+  line-height: 1.15;
+  font-weight: 600;
+  letter-spacing: -0.018em;
+}
+
+h2,
+.display-lg {
+  font-size: clamp(24px, 3.2vw, 34px);
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.014em;
+}
+
+h3,
+.display-md {
+  font-size: clamp(20px, 2.6vw, 28px);
+  line-height: 1.25;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+p,
+.body {
+  font-size: clamp(14px, 1.2vw, 16px);
+  line-height: 1.5;
+}
+
+label,
+.label {
+  font-size: clamp(13px, 1vw, 14px);
+  line-height: 1.4;
+  letter-spacing: 0.04em;
+  font-weight: var(--font-weight-medium);
+}
+
+.text-muted {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.on-surface-strong {
+  color: var(--md-sys-color-on-surface);
+  font-weight: var(--font-weight-semibold);
+}
+
+.eyebrow {
+  font-size: clamp(11px, 0.9vw, 12px);
+  text-transform: uppercase;
+  letter-spacing: 0.28em;
+  font-weight: var(--font-weight-medium);
+  color: var(--md-sys-color-on-surface-variant);
+}

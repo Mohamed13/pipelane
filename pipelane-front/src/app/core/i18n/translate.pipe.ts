@@ -1,5 +1,6 @@
 import { ChangeDetectorRef, DestroyRef, Pipe, PipeTransform } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import type { Subscription } from 'rxjs';
 
 import { LanguageService } from './language.service';
 
@@ -11,19 +12,23 @@ import { LanguageService } from './language.service';
 export class TranslatePipe implements PipeTransform {
   private latest = '';
   private lastKey = '';
+  private readonly _dictionarySubscription: Subscription;
 
   constructor(
     private readonly language: LanguageService,
     private readonly cdr: ChangeDetectorRef,
     destroyRef: DestroyRef,
   ) {
-    this.language.dictionary$.pipe(takeUntilDestroyed(destroyRef)).subscribe(() => {
-      if (!this.lastKey) {
-        return;
-      }
-      this.latest = this.language.translate(this.lastKey);
-      this.cdr.markForCheck();
-    });
+    // keep subscription reference to satisfy rxjs lint rule
+    this._dictionarySubscription = this.language.dictionary$
+      .pipe(takeUntilDestroyed(destroyRef))
+      .subscribe(() => {
+        if (!this.lastKey) {
+          return;
+        }
+        this.latest = this.language.translate(this.lastKey);
+        this.cdr.markForCheck();
+      });
   }
 
   transform(key: string | null | undefined): string {

@@ -1,10 +1,8 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { finalize } from 'rxjs';
+import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -13,10 +11,12 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { LanguageService, LangCode } from '../../core/i18n/language.service';
-import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { finalize } from 'rxjs';
 
 import { AuthService } from '../../core/auth.service';
+import { LanguageService, LangCode } from '../../core/i18n/language.service';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { PipelaneLogoComponent } from '../../shared/ui/pipelane-logo/pipelane-logo.component';
 
 type LoginErrorState = 'invalid' | 'server' | null;
@@ -78,7 +78,7 @@ export class LoginPageComponent {
     }
     const { email, password, remember } = this.form.getRawValue();
     this.loading.set(true);
-    this.auth
+    const _loginSubscription = this.auth
       .login(email, password, remember)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -89,8 +89,9 @@ export class LoginPageComponent {
           const redirect = this.sanitiseRedirect(this.route.snapshot.queryParamMap.get('redirect'));
           this.router.navigateByUrl(redirect ?? '/analytics');
         },
-        error: (err: HttpErrorResponse) => {
-          if (err.status === 401 || err.status === 403) {
+        error: (err: unknown) => {
+          const httpError = err instanceof HttpErrorResponse ? err : null;
+          if (httpError?.status === 401 || httpError?.status === 403) {
             this.error.set('invalid');
             return;
           }
@@ -99,11 +100,11 @@ export class LoginPageComponent {
       });
   }
 
-  get email() {
+  get email(): FormControl<string> {
     return this.form.controls.email;
   }
 
-  get password() {
+  get password(): FormControl<string> {
     return this.form.controls.password;
   }
 

@@ -1,0 +1,96 @@
+@use '@angular/material' as mat;
+
+$primary-palette: mat.$cyan-palette;
+$tertiary-palette: mat.$violet-palette;
+
+$base-typography: (
+  plain-family: (
+    'Inter',
+    'Outfit',
+    'Segoe UI',
+    system-ui,
+    -apple-system,
+    sans-serif,
+  ),
+  brand-family: (
+    'Outfit',
+    'Inter',
+    'Segoe UI',
+    system-ui,
+    -apple-system,
+    sans-serif,
+  ),
+);
+
+$base-theme: mat.define-theme(
+  (
+    color: (
+      theme-type: dark,
+      primary: $primary-palette,
+      tertiary: $tertiary-palette,
+    ),
+    typography: $base-typography,
+    density: (
+      scale: -1,
+    ),
+  )
+);
+
+@include mat.core();
+@include mat.all-component-themes($base-theme);
+
+$compact-density-theme: mat.define-theme(
+  (
+    color: (
+      theme-type: dark,
+      primary: $primary-palette,
+      tertiary: $tertiary-palette,
+    ),
+    typography: $base-typography,
+    density: (
+      scale: -2,
+    ),
+  )
+);
+
+@include mat.table-theme($compact-density-theme);
+@include mat.list-theme($compact-density-theme);
+@include mat.select-theme($compact-density-theme);
+
+:root {
+  --md-sys-color-primary: #75f0ff;
+  --md-sys-color-on-primary: #02121f;
+  --md-sys-color-primary-container: #0c1f28;
+  --md-sys-color-on-primary-container: #bff4ff;
+  --md-sys-color-secondary: #9b8cff;
+  --md-sys-color-on-secondary: #0c0633;
+  --md-sys-color-tertiary: #60f7a3;
+  --md-sys-color-on-tertiary: #012416;
+  --md-sys-color-background: #0b0f17;
+  --md-sys-color-surface: #101726;
+  --md-sys-color-surface-container: #141c2c;
+  --md-sys-color-surface-container-high: #162033;
+  --md-sys-color-surface-container-low: #0d1421;
+  --md-sys-color-on-surface: #e6eaf2;
+  --md-sys-color-on-surface-variant: #a6b0c3;
+  --md-sys-color-outline: rgba(117, 240, 255, 0.26);
+  --md-sys-color-outline-variant: rgba(117, 240, 255, 0.18);
+}
+
+.mat-mdc-table {
+  --mat-table-header-container-height: 40px;
+  --mat-table-row-item-container-height: 40px;
+  --mat-table-footer-container-height: 36px;
+}
+
+.mat-mdc-list-base {
+  --mat-list-list-item-one-line-container-height: 40px;
+  --mat-list-list-item-two-line-container-height: 52px;
+  --mat-list-list-item-three-line-container-height: 76px;
+}
+
+.mat-mdc-select-panel {
+  --mat-option-list-item-leading-icon-start-space: 8px;
+  --mat-option-list-item-leading-icon-end-space: 8px;
+  --mat-option-list-item-one-line-container-height: 40px;
+}

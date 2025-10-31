@@ -1,23 +1,21 @@
 .inbox {
-  max-width: 860px;
+  max-width: 960px;
   margin: 0 auto;
-  padding: 24px;
+  padding: var(--gap-lg);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--gap);
 }
 
-header {
+.inbox-filter-toggle {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: var(--gap-sm);
 }
 
 .buttons {
   display: flex;
-  gap: 8px;
+  gap: var(--gap-sm);
 }
 
 .loading,
@@ -25,8 +23,8 @@ header {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 48px;
-  color: rgba(0, 0, 0, 0.54);
+  padding: var(--gap-xl);
+  color: var(--md-sys-color-on-surface-variant);
 }
 
 .loading .spin {
@@ -47,6 +45,10 @@ mat-icon.unsubscribe {
 
 mat-icon.notInterested {
   color: #ff9800;
+}
+
+.empty p {
+  margin: 0;
 }
 
 @keyframes spin {

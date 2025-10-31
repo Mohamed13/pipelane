@@ -129,26 +129,40 @@ export class ApiService {
   }
 
   private extractErrorMessage(error: HttpErrorResponse): string {
-    if (error.error) {
-      if (typeof error.error === 'string') {
-        return error.error;
+    const payload = error.error;
+
+    if (payload) {
+      if (typeof payload === 'string') {
+        return payload;
       }
-      if (typeof error.error === 'object') {
+
+      if (isResponseLike(payload)) {
+        const statusFragment =
+          error.status && error.statusText
+            ? `${error.status} ${error.statusText}`
+            : error.statusText;
+        return statusFragment?.trim() || error.message || 'Unexpected error';
+      }
+
+      if (typeof payload === 'object') {
+        const record = payload as Record<string, unknown>;
         const candidate =
-          error.error.detail ?? error.error.message ?? error.error.error ?? error.error.title;
-        if (candidate) {
+          record['detail'] ?? record['message'] ?? record['error'] ?? record['title'];
+        if (typeof candidate === 'string' && candidate.trim().length > 0) {
           return candidate;
         }
         try {
-          return JSON.stringify(error.error);
+          return JSON.stringify(payload);
         } catch {
-          // ignore
+          // ignore JSON serialization issues
         }
       }
     }
+
     if (error.status && error.statusText) {
       return `${error.status} ${error.statusText}`;
     }
+
     return error.message || 'Unexpected error';
   }
 
@@ -273,7 +287,7 @@ export class ApiService {
       })
       .pipe(
         map((res) => {
-          const normalize = (source: TopMessageItem[] | null | undefined) =>
+          const normalize = (source: TopMessageItem[] | null | undefined): TopMessageItem[] =>
             (source ?? []).map((item) => ({
               ...item,
               label: item.label?.trim() || '(sans libellé)',
@@ -615,7 +629,7 @@ export class ApiService {
 
     const params = new HttpParams().set('conversationId', conversationId);
     const headers = this.headers(tenantId);
-    const fallback = () =>
+    const fallback = (): Observable<FollowupConversationPreviewResponse> =>
       this.http
         .post<FollowupConversationPreviewResponse>(
           `${this.base}/api/followups/preview`,
@@ -630,7 +644,10 @@ export class ApiService {
         headers,
       })
       .pipe(
-        catchError((error: HttpErrorResponse) => {
+        catchError((error: unknown) => {
+          if (!(error instanceof HttpErrorResponse)) {
+            return throwError(() => error);
+          }
           if (error.status === 400) {
             this.warnOnce('followups-preview-missing-id', error);
             this.openInfo('Sélectionnez une conversation pour prévisualiser la relance.');
@@ -714,7 +731,10 @@ export class ApiService {
               }))
             : [],
         ),
-        catchError((error: HttpErrorResponse) => {
+        catchError((error: unknown) => {
+          if (!(error instanceof HttpErrorResponse)) {
+            return throwError(() => error);
+          }
           if (error.status === 400) {
             this.warnOnce('lists-tenant-missing', error);
             this.openInfo('Sélectionnez un espace de travail / reconnectez-vous.');
@@ -787,4 +807,20 @@ export class ApiService {
       .post<DemoRunResponse>(`${this.base}/api/demo/run`, {}, { headers: this.headers(tenantId) })
       .pipe(catchError(this.handleError('Launch demo')));
   }
+}
+
+function isResponseLike(value: unknown): value is {
+  bodyUsed: boolean;
+  clone: () => unknown;
+  text: () => Promise<string>;
+} {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  const candidate = value as Record<string, unknown>;
+  return (
+    typeof candidate['bodyUsed'] === 'boolean' &&
+    typeof candidate['clone'] === 'function' &&
+    typeof candidate['text'] === 'function'
+  );
 }

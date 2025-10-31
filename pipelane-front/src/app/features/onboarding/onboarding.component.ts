@@ -1,5 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnDestroy,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -12,6 +19,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { ApiService } from '../../core/api.service';
 import { Channel, ChannelLabels, ChannelSettingsPayload } from '../../core/models';
+import { SubscriptionStore } from '../../core/subscription-store';
 
 type ChannelStatus = 'connected' | 'pending';
 
@@ -34,10 +42,11 @@ type ChannelStatus = 'connected' | 'pending';
   styleUrls: ['./onboarding.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class OnboardingComponent {
+export class OnboardingComponent implements OnDestroy {
   private readonly api = inject(ApiService);
   private readonly fb = inject(FormBuilder);
   private readonly snackbar = inject(MatSnackBar);
+  private readonly subscriptions = new SubscriptionStore();
 
   readonly ChannelLabels = ChannelLabels;
   saving = signal(false);
@@ -89,18 +98,24 @@ export class OnboardingComponent {
     };
 
     this.saving.set(true);
-    this.api.saveChannelSettings(payload).subscribe({
-      next: () => {
-        this.saving.set(false);
-        this.snackbar.open(`${ChannelLabels[channel]} settings saved`, 'Close', { duration: 3000 });
+    this.subscriptions.subscribe(
+      this.api.saveChannelSettings(payload),
+      {
+        next: () => {
+          this.saving.set(false);
+          this.snackbar.open(`${ChannelLabels[channel]} settings saved`, 'Close', {
+            duration: 3000,
+          });
+        },
+        error: () => {
+          this.saving.set(false);
+          this.snackbar.open(`Failed to save ${ChannelLabels[channel]} settings`, 'Dismiss', {
+            duration: 4000,
+          });
+        },
       },
-      error: () => {
-        this.saving.set(false);
-        this.snackbar.open(`Failed to save ${ChannelLabels[channel]} settings`, 'Dismiss', {
-          duration: 4000,
-        });
-      },
-    });
+      `save-${channel}`,
+    );
   }
 
   sendQuickTest(channel: Channel): void {
@@ -143,14 +158,14 @@ export class OnboardingComponent {
     }
 
     this.testingEmail.set(true);
-    this.api
-      .sendMessage({
+    this.subscriptions.subscribe(
+      this.api.sendMessage({
         contactId: contactId.trim(),
         channel: 'email',
         type: 'text',
         text: (message ?? 'This is a test email from Pipelane.').trim(),
-      })
-      .subscribe({
+      }),
+      {
         next: () => {
           this.testingEmail.set(false);
           this.snackbar.open('Test email sent', 'Close', { duration: 4000 });
@@ -159,7 +174,9 @@ export class OnboardingComponent {
           this.testingEmail.set(false);
           this.snackbar.open('Unable to send test email', 'Dismiss', { duration: 4000 });
         },
-      });
+      },
+      'send-test-email',
+    );
   }
 
   private getForm(channel: Channel): FormGroup {
@@ -188,5 +205,9 @@ export class OnboardingComponent {
         acc[key] = (val as string).trim();
         return acc;
       }, {});
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.clear();
   }
 }

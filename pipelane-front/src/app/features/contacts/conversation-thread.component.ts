@@ -4,6 +4,7 @@ import {
   Component,
   DestroyRef,
   ElementRef,
+  OnDestroy,
   ViewChild,
   computed,
   effect,
@@ -42,6 +43,7 @@ import {
   FollowupProposalPreview,
 } from '../../core/models';
 import { PolicyService } from '../../core/policy.service';
+import { SubscriptionStore } from '../../core/subscription-store';
 
 type ComposerMode = 'text' | 'template';
 type QuickActionKey = 'send-test' | 'import-contacts' | 'open-onboarding';
@@ -102,13 +104,14 @@ interface PendingMessageTracking {
   styleUrls: ['./conversation-thread.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ConversationThreadComponent {
+export class ConversationThreadComponent implements OnDestroy {
   private readonly api = inject(ApiService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly policy = inject(PolicyService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly snackbar = inject(MatSnackBar);
+  private readonly subscriptions = new SubscriptionStore();
 
   @ViewChild('textComposer') private textComposer?: ElementRef<HTMLTextAreaElement>;
   @ViewChild('templateComposer') private templateComposer?: ElementRef<
@@ -194,16 +197,20 @@ export class ConversationThreadComponent {
       return;
     }
     this.aiGenerating.set(true);
-    this.api.generateAiMessage(payload).subscribe({
-      next: (response) => {
-        this.aiGenerating.set(false);
-        this.aiMessagePreview.set(response);
+    this.subscriptions.subscribe(
+      this.api.generateAiMessage(payload),
+      {
+        next: (response) => {
+          this.aiGenerating.set(false);
+          this.aiMessagePreview.set(response);
+        },
+        error: () => {
+          this.aiGenerating.set(false);
+          this.aiMessagePreview.set(null);
+        },
       },
-      error: () => {
-        this.aiGenerating.set(false);
-        this.aiMessagePreview.set(null);
-      },
-    });
+      'ai-generate',
+    );
   }
 
   onClassifyReply(): void {
@@ -216,9 +223,9 @@ export class ConversationThreadComponent {
     }
     const text = this.renderPayload(latestInbound);
     this.classifying.set(true);
-    this.api
-      .classifyAiReply({ text, language: this.primaryChannel() === 'email' ? 'fr' : 'en' })
-      .subscribe({
+    this.subscriptions.subscribe(
+      this.api.classifyAiReply({ text, language: this.primaryChannel() === 'email' ? 'fr' : 'en' }),
+      {
         next: (res) => {
           this.classification.set(res);
           this.classifying.set(false);
@@ -226,7 +233,9 @@ export class ConversationThreadComponent {
         error: () => {
           this.classifying.set(false);
         },
-      });
+      },
+      'classify-reply',
+    );
   }
 
   onToggleSmartFollowup(checked: boolean): void {
@@ -246,10 +255,11 @@ export class ConversationThreadComponent {
       return;
     }
     this.followupLoading.set(true);
-    this.api
-      .validateFollowup({ conversationId, proposalId: preview.proposalId })
-      .pipe(takeUntilDestroyed())
-      .subscribe({
+    this.subscriptions.subscribe(
+      this.api
+        .validateFollowup({ conversationId, proposalId: preview.proposalId })
+        .pipe(takeUntilDestroyed()),
+      {
         next: () => {
           this.followupLoading.set(false);
           this.smartFollowupEnabled.set(false);
@@ -261,7 +271,9 @@ export class ConversationThreadComponent {
         error: () => {
           this.followupLoading.set(false);
         },
-      });
+      },
+      'validate-followup',
+    );
   }
 
   onModifyFollowup(): void {
@@ -420,15 +432,19 @@ export class ConversationThreadComponent {
       { allowSignalWrites: true },
     );
 
-    this.textControl.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
-      if (this.composerMode() !== 'text') {
-        this.composerMode.set('text');
-      }
-    });
+    this.subscriptions.track(
+      this.textControl.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
+        if (this.composerMode() !== 'text') {
+          this.composerMode.set('text');
+        }
+      }),
+    );
 
-    this.pitchControl.valueChanges
-      .pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef))
-      .subscribe((value) => this.savePitch(value));
+    this.subscriptions.track(
+      this.pitchControl.valueChanges
+        .pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef))
+        .subscribe((value) => this.savePitch(value)),
+    );
   }
 
   onComposerModeChange(mode: ComposerMode): void {
@@ -476,21 +492,23 @@ export class ConversationThreadComponent {
       return;
     }
     const tracking = this.beginMessageSend();
-    this.api
-      .sendMessage({
+    this.subscriptions.subscribe(
+      this.api.sendMessage({
         contactId: this.contactId,
         channel: 'whatsapp',
         type: 'text',
         text: this.textControl.value.trim(),
-      })
-      .subscribe({
+      }),
+      {
         next: (result) => {
           this.applySendResult(tracking, result);
           this.textControl.reset('');
           this.fetchConversation();
         },
         error: () => this.stopPolling(),
-      });
+      },
+      'send-text',
+    );
   }
 
   sendTemplate(): void {
@@ -502,21 +520,23 @@ export class ConversationThreadComponent {
       return;
     }
     const tracking = this.beginMessageSend();
-    this.api
-      .sendMessage({
+    this.subscriptions.subscribe(
+      this.api.sendMessage({
         contactId: this.contactId,
         channel: 'whatsapp',
         type: 'template',
         templateName: this.templateControl.value.trim(),
-      })
-      .subscribe({
+      }),
+      {
         next: (result) => {
           this.applySendResult(tracking, result);
           this.templateControl.reset('');
           this.fetchConversation();
         },
         error: () => this.stopPolling(),
-      });
+      },
+      'send-template',
+    );
   }
 
   insertTemplateVariable(variable: string): void {
@@ -627,49 +647,53 @@ export class ConversationThreadComponent {
       this.conversation.set({ conversationId: undefined, messages: [] });
       return;
     }
-    this.api.getConversation(this.contactId).subscribe({
-      next: (response) => {
-        const messages = response.messages ?? [];
-        this.conversation.set({
-          conversationId: response.conversationId,
-          messages,
-        });
+    this.subscriptions.subscribe(
+      this.api.getConversation(this.contactId),
+      {
+        next: (response) => {
+          const messages = response.messages ?? [];
+          this.conversation.set({
+            conversationId: response.conversationId,
+            messages,
+          });
 
-        const trackedMessage = this.findTrackedOutbound(messages);
-        if (this.pendingAutoPoll) {
-          if (trackedMessage) {
-            this.pendingAutoPoll = false;
-            if (this.isTerminal(trackedMessage.status)) {
-              this.stopPolling();
+          const trackedMessage = this.findTrackedOutbound(messages);
+          if (this.pendingAutoPoll) {
+            if (trackedMessage) {
+              this.pendingAutoPoll = false;
+              if (this.isTerminal(trackedMessage.status)) {
+                this.stopPolling();
+              } else {
+                this.startPolling(trackedMessage.id);
+              }
             } else {
-              this.startPolling(trackedMessage.id);
+              this.schedulePendingFetch();
             }
-          } else {
+          } else if (this.awaitingTerminal && !trackedMessage) {
             this.schedulePendingFetch();
           }
-        } else if (this.awaitingTerminal && !trackedMessage) {
-          this.schedulePendingFetch();
-        }
 
-        if (this.pollingMessageId) {
-          const tracked = messages.find((m) => m.id === this.pollingMessageId);
-          if (tracked && this.isTerminal(tracked.status)) {
-            this.stopPolling();
+          if (this.pollingMessageId) {
+            const tracked = messages.find((m) => m.id === this.pollingMessageId);
+            if (tracked && this.isTerminal(tracked.status)) {
+              this.stopPolling();
+            }
           }
-        }
 
-        if (!this.awaitingTerminal && !options.skipSendingReset) {
-          this.sending.set(false);
-        }
+          if (!this.awaitingTerminal && !options.skipSendingReset) {
+            this.sending.set(false);
+          }
+        },
+        error: () => {
+          if (!options.skipSendingReset) {
+            this.sending.set(false);
+          }
+          this.stopPolling();
+          this.conversation.set({ conversationId: undefined, messages: [] });
+        },
       },
-      error: () => {
-        if (!options.skipSendingReset) {
-          this.sending.set(false);
-        }
-        this.stopPolling();
-        this.conversation.set({ conversationId: undefined, messages: [] });
-      },
-    });
+      'fetch-conversation',
+    );
   }
 
   private startPolling(messageId: string): void {
@@ -822,10 +846,9 @@ export class ConversationThreadComponent {
       return;
     }
     this.followupLoading.set(true);
-    this.api
-      .getFollowupConversationPreview(conversationId)
-      .pipe(takeUntilDestroyed())
-      .subscribe({
+    this.subscriptions.subscribe(
+      this.api.getFollowupConversationPreview(conversationId).pipe(takeUntilDestroyed()),
+      {
         next: (res) => {
           this.followupLoading.set(false);
           this.followupHistorySnippet.set(res.historySnippet ?? '');
@@ -834,7 +857,9 @@ export class ConversationThreadComponent {
         error: () => {
           this.followupLoading.set(false);
         },
-      });
+      },
+      'followup-preview',
+    );
   }
 
   private buildHistorySnippet(limit = 4): string {
@@ -937,5 +962,9 @@ export class ConversationThreadComponent {
       default:
         return 'chat';
     }
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.clear();
   }
 }

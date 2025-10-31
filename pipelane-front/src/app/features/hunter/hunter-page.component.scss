@@ -4,15 +4,17 @@
 
 .hunter__container {
   height: 100%;
-  min-height: calc(100vh - 128px);
+  min-height: 620px;
   background: transparent;
 }
 
+.hunter-header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap);
+}
+
 .hunter__grid {
-  display: grid;
-  grid-template-columns: minmax(320px, 360px) minmax(0, 1fr);
-  gap: 1.5rem;
-  padding: 1.5rem;
   align-items: start;
 }
 
@@ -30,16 +32,15 @@
   gap: 1rem;
   align-items: flex-start;
 
-  h2 {
+  h3 {
     margin: 0;
-    font-size: 1.45rem;
+    font-size: 1.1rem;
     font-weight: 600;
   }
 
   p {
-    margin: 0.35rem 0 0;
+    margin: 0.4rem 0 0;
     font-size: 0.95rem;
-    color: rgba(255, 255, 255, 0.65);
   }
 }
 
@@ -169,6 +170,37 @@
 
 .hunter-map__body app-hunter-map {
   display: block;
+}
+
+.hunter-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1.25rem;
+  margin: 0.75rem 0 1.25rem;
+  padding: 0.85rem 1.1rem;
+  border-radius: 16px;
+  border: 1px solid rgba(118, 197, 255, 0.18);
+  background: rgba(8, 16, 30, 0.65);
+  color: rgba(230, 234, 242, 0.8);
+  font-size: 0.82rem;
+
+  @supports (backdrop-filter: blur(8px)) {
+    backdrop-filter: blur(8px);
+  }
+}
+
+.hunter-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 220px;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: rgba(118, 197, 255, 0.9);
+  }
 }
 
 .hunter-map__disabled {

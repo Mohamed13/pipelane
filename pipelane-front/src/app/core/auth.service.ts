@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { tap } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 
 import { environment } from './environment';
 
@@ -22,13 +22,18 @@ export class AuthService {
     return typeof tid === 'string' ? tid : null;
   });
 
-  login(email: string, password: string, remember = false, tenantId?: string) {
+  login(
+    email: string,
+    password: string,
+    remember = false,
+    tenantId?: string,
+  ): Observable<LoginResponse> {
     return this.http
       .post<LoginResponse>(`${environment.API_BASE_URL}/auth/login`, { email, password, tenantId })
       .pipe(tap((res) => this.persistToken(res.token, remember)));
   }
 
-  logout(redirectTo?: string | null) {
+  logout(redirectTo?: string | null): void {
     const target = redirectTo ?? this.router.url;
     this.clearToken();
     if (target && !target.startsWith('/login')) {
@@ -38,7 +43,7 @@ export class AuthService {
     }
   }
 
-  private persistToken(token: string, remember: boolean) {
+  private persistToken(token: string, remember: boolean): void {
     this.token.set(token);
     this.claimsSignal.set(this.decodeClaims(token));
     try {
@@ -55,7 +60,7 @@ export class AuthService {
     storage?.setItem(this.storageKey, token);
   }
 
-  private clearToken() {
+  private clearToken(): void {
     this.token.set(null);
     this.claimsSignal.set(null);
     try {

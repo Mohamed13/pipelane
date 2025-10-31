@@ -1,9 +1,30 @@
 import { Injectable } from '@angular/core';
 import mapboxgl, { type GeoJSONSource, type Map as MapboxMap } from 'mapbox-gl';
-import type { Feature, FeatureCollection } from 'geojson';
 
 import { MAPBOX_TOKEN } from './env.generated';
 import type { HunterResult } from './models';
+
+type HunterFeatureProperties = {
+  id?: string;
+  company?: string;
+  city?: string;
+  score?: number;
+  why?: string[];
+};
+
+type HunterFeature = {
+  type: 'Feature';
+  geometry: {
+    type: 'Point';
+    coordinates: [number, number];
+  };
+  properties: HunterFeatureProperties;
+};
+
+export type HunterFeatureCollection = {
+  type: 'FeatureCollection';
+  features: HunterFeature[];
+};
 
 type HunterResultWithCoordinates = HunterResult & {
   lat?: number | null;
@@ -39,7 +60,7 @@ export class MapboxService {
     return map;
   }
 
-  addClusteredSource(map: MapboxMap, sourceId: string, data: FeatureCollection): void {
+  addClusteredSource(map: MapboxMap, sourceId: string, data: HunterFeatureCollection): void {
     const existing = map.getSource(sourceId) as GeoJSONSource | undefined;
     if (existing) {
       existing.setData(data);
@@ -125,9 +146,9 @@ export class MapboxService {
     }
   }
 
-  fitTo(data: FeatureCollection): void;
-  fitTo(map: MapboxMap, data: FeatureCollection): void;
-  fitTo(mapOrData: MapboxMap | FeatureCollection, data?: FeatureCollection): void {
+  fitTo(data: HunterFeatureCollection): void;
+  fitTo(map: MapboxMap, data: HunterFeatureCollection): void;
+  fitTo(mapOrData: MapboxMap | HunterFeatureCollection, data?: HunterFeatureCollection): void {
     const map = mapOrData instanceof mapboxgl.Map ? mapOrData : this.mapInstance;
     const collection = mapOrData instanceof mapboxgl.Map ? data : mapOrData;
 
@@ -153,23 +174,10 @@ export class MapboxService {
   }
 }
 
-export function scoreToColor(score: number): string {
-  if (!Number.isFinite(score)) {
-    return '#9ca3af';
-  }
-  if (score <= 40) {
-    return '#F87171';
-  }
-  if (score <= 69) {
-    return '#F59E0B';
-  }
-  return '#60F7A3';
-}
-
 export function toGeoJSON(
   results: HunterResultWithCoordinates[] | null | undefined,
-): FeatureCollection {
-  const features: Feature[] = [];
+): HunterFeatureCollection {
+  const features: HunterFeature[] = [];
   if (!results) {
     return { type: 'FeatureCollection', features };
   }

@@ -16,8 +16,8 @@ export interface PagedContactsResponse {
   items: Contact[];
 }
 
-export type MessageDirection = 'in' | 'out';
-export type MessageType = 'text' | 'template' | 'media';
+type MessageDirection = 'in' | 'out';
+type MessageType = 'text' | 'template' | 'media';
 export type MessageStatus = 'queued' | 'sent' | 'delivered' | 'opened' | 'failed' | 'bounced';
 
 export interface Message {
@@ -70,7 +70,7 @@ export interface DeliveryChannelBreakdown extends DeliveryTotals {
   channel: string | null;
 }
 
-export interface DeliveryTemplateBreakdown extends DeliveryTotals {
+interface DeliveryTemplateBreakdown extends DeliveryTotals {
   template: string | null;
   channel: string | null;
 }
@@ -82,7 +82,7 @@ export interface DeliveryAnalyticsResponse {
   timeline?: DeliveryTimelinePoint[] | null;
 }
 
-export interface DemoRunMessage {
+interface DemoRunMessage {
   contactId: string;
   conversationId: string;
   messageId: string;
@@ -180,28 +180,13 @@ export interface FollowupPreviewResponse {
   count: number;
 }
 
-export interface WhatsAppSettings {
-  phone_number_id?: string;
-  access_token?: string;
-  verify_token?: string;
-}
-
-export interface EmailSettings {
-  apiKey?: string;
-  domain?: string;
-}
-
-export interface SmsSettings {
-  apiKey?: string;
-}
-
 export const ChannelLabels: Record<Channel, string> = {
   whatsapp: 'WhatsApp',
   email: 'Email',
   sms: 'SMS',
 };
 
-export type ProspectStatus =
+type ProspectStatus =
   | 'new'
   | 'enriching'
   | 'scheduled'
@@ -235,7 +220,7 @@ export interface ProspectImportResult {
 
 export type SequenceStepType = 'email' | 'wait' | 'task';
 
-export interface ProspectingSequenceStep {
+interface ProspectingSequenceStep {
   id: string;
   order: number;
   stepType: SequenceStepType;
@@ -299,7 +284,7 @@ export interface ProspectingCampaignCreateRequest {
   scheduledAtUtc?: string | null;
 }
 
-export interface ProspectingCampaignPreviewStep {
+interface ProspectingCampaignPreviewStep {
   stepId: string;
   scheduledAtUtc: string;
   label: string;
@@ -311,7 +296,7 @@ export interface ProspectingCampaignPreview {
   steps: ProspectingCampaignPreviewStep[];
 }
 
-export interface ProspectingSeriesPoint {
+interface ProspectingSeriesPoint {
   date: string;
   sent: number;
   opened: number;
@@ -319,7 +304,7 @@ export interface ProspectingSeriesPoint {
   booked: number;
 }
 
-export interface ProspectingStepBreakdown {
+interface ProspectingStepBreakdown {
   stepId: string;
   label: string;
   sent: number;
@@ -396,7 +381,7 @@ export interface AutoReplyResponse {
   variant: string;
 }
 
-export interface AiMessageContext {
+interface AiMessageContext {
   firstName?: string | null;
   lastName?: string | null;
   company?: string | null;
@@ -421,7 +406,7 @@ export interface AiGenerateMessageResponse {
   languageDetected?: string | null;
 }
 
-export type AiIntent = 'Interested' | 'Maybe' | 'NotNow' | 'NotRelevant' | 'OOO' | 'AutoReply';
+type AiIntent = 'Interested' | 'Maybe' | 'NotNow' | 'NotRelevant' | 'OOO' | 'AutoReply';
 
 export interface AiClassifyReplyRequest {
   text: string;
@@ -433,7 +418,7 @@ export interface AiClassifyReplyResponse {
   confidence: number;
 }
 
-export interface AiPerformanceHints {
+interface AiPerformanceHints {
   goodHours?: number[] | null;
   badDays?: string[] | null;
 }
@@ -480,7 +465,7 @@ export interface FollowupConversationPreviewResponse {
   timezone: string;
   proposal: FollowupProposalPreview;
 }
-export interface HunterGeoCriteria {
+interface HunterGeoCriteria {
   lat: number;
   lng: number;
   radiusKm: number;
@@ -495,7 +480,7 @@ export interface HunterFilters {
   ratingMin?: number;
 }
 
-export type HunterSource = 'csv' | 'mapsStub' | 'directoryStub';
+type HunterSource = 'csv' | 'mapsStub' | 'directoryStub';
 
 export interface HunterSearchCriteria {
   industry?: string;
@@ -506,13 +491,13 @@ export interface HunterSearchCriteria {
   csvId?: string;
 }
 
-export interface HunterSocial {
+interface HunterSocial {
   instagram?: string | null;
   linkedIn?: string | null;
   facebook?: string | null;
 }
 
-export interface HunterProspect {
+interface HunterProspect {
   firstName?: string | null;
   lastName?: string | null;
   company?: string | null;
@@ -525,7 +510,7 @@ export interface HunterProspect {
   social?: HunterSocial | null;
 }
 
-export interface HunterFeatures {
+interface HunterFeatures {
   rating?: number | null;
   reviews?: number | null;
   hasSite?: boolean | null;
@@ -559,7 +544,7 @@ export interface ListSummary {
   updatedAtUtc: string;
 }
 
-export interface ProspectListItem {
+interface ProspectListItem {
   prospectId: string;
   prospect: HunterProspect;
   score: number;
@@ -589,7 +574,7 @@ export interface AddToListResponse {
   skipped: number;
 }
 
-export interface CadenceStepPayload {
+interface CadenceStepPayload {
   offsetDays: number;
   channel: Channel;
   templateId?: string | null;

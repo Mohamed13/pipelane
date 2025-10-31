@@ -3,6 +3,7 @@ import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
+  OnDestroy,
   ViewChild,
   inject,
   signal,
@@ -23,6 +24,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { ApiService } from '../../core/api.service';
 import { Contact, PagedContactsResponse } from '../../core/models';
+import { SubscriptionStore } from '../../core/subscription-store';
 
 @Component({
   standalone: true,
@@ -166,7 +168,7 @@ import { Contact, PagedContactsResponse } from '../../core/models';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ContactsListComponent implements AfterViewInit {
+export class ContactsListComponent implements AfterViewInit, OnDestroy {
   private readonly api = inject(ApiService);
   private readonly router = inject(Router);
 
@@ -182,18 +184,21 @@ export class ContactsListComponent implements AfterViewInit {
   isLoading = signal(false);
   pageIndex = 0;
   pageSize = 10;
+  private readonly subscriptions = new SubscriptionStore();
 
   @ViewChild(MatPaginator) paginator?: MatPaginator;
   @ViewChild(MatSort) sort?: MatSort;
 
   constructor() {
     this.loadContacts('');
-    this.searchControl.valueChanges
-      ?.pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed())
-      .subscribe((value) => {
-        this.pageIndex = 0;
-        this.loadContacts(value ?? '');
-      });
+    this.subscriptions.track(
+      this.searchControl.valueChanges
+        .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed())
+        .subscribe((value) => {
+          this.pageIndex = 0;
+          this.loadContacts(value ?? '');
+        }),
+    );
   }
 
   ngAfterViewInit(): void {
@@ -230,17 +235,24 @@ export class ContactsListComponent implements AfterViewInit {
 
   private loadContacts(query: string): void {
     this.isLoading.set(true);
-    this.api.searchContacts(query, this.pageIndex + 1, this.pageSize).subscribe({
-      next: (response: PagedContactsResponse) => {
-        this.dataSource.data = response.items;
-        this.total.set(response.total);
-        this.isLoading.set(false);
-      },
-      error: () => {
-        this.dataSource.data = [];
-        this.total.set(0);
-        this.isLoading.set(false);
-      },
-    });
+    this.subscriptions.set(
+      'load-contacts',
+      this.api.searchContacts(query, this.pageIndex + 1, this.pageSize).subscribe({
+        next: (response: PagedContactsResponse) => {
+          this.dataSource.data = response.items;
+          this.total.set(response.total);
+          this.isLoading.set(false);
+        },
+        error: () => {
+          this.dataSource.data = [];
+          this.total.set(0);
+          this.isLoading.set(false);
+        },
+      }),
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.clear();
   }
 }

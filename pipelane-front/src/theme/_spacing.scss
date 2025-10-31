@@ -1,0 +1,75 @@
+:root {
+  --gap-xs: 8px;
+  --gap-sm: 12px;
+  --gap: 16px;
+  --gap-lg: 24px;
+  --gap-xl: 40px;
+  --section: 56px;
+}
+
+.page {
+  padding-block: var(--section);
+  padding-inline: clamp(16px, 4vw, 48px);
+}
+
+.container-page {
+  max-width: 1360px;
+  margin-inline: auto;
+  padding-inline: clamp(16px, 3vw, 32px);
+  width: 100%;
+}
+
+.gap-sm {
+  gap: var(--gap-sm);
+}
+
+.gap {
+  gap: var(--gap);
+}
+
+.gap-lg {
+  gap: var(--gap-lg);
+}
+
+.gap-xl {
+  gap: var(--gap-xl);
+}
+
+.margin-block {
+  margin-block: var(--gap);
+}
+
+.margin-block-lg {
+  margin-block: var(--gap-lg);
+}
+
+.padding-inline {
+  padding-inline: var(--gap);
+}
+
+.padding-inline-lg {
+  padding-inline: clamp(24px, 6vw, 64px);
+}
+
+.padding-block {
+  padding-block: var(--gap);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.page-grid {
+  display: grid;
+  gap: var(--gap-lg);
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .page-grid {
+    grid-template-columns: 1fr;
+  }
+}
